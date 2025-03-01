@@ -29,6 +29,7 @@ import org.junit.internal.runners.statements.FailOnTimeout;
 import org.junit.rules.RunRules;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
@@ -133,12 +134,18 @@ public class SandboxTestRunner extends BlockJUnit4ClassRunner {
     // Use a linked hashmap as a slight improvement to run tests in the order of getChildren.
     Map<Sandbox, List<FrameworkMethod>> methodsBySandbox = new LinkedHashMap<>();
     for (FrameworkMethod method : children) {
+      Description description = describeChild(method);
       if (!isIgnored(method)) {
-        Sandbox sandbox = getSandbox(method);
-        methodsBySandbox.computeIfAbsent(sandbox, k -> new ArrayList<>()).add(method);
+        try {
+          Sandbox sandbox = getSandbox(method);
+          methodsBySandbox.computeIfAbsent(sandbox, k -> new ArrayList<>()).add(method);
+        } catch (IllegalArgumentException e) {
+          notifier.fireTestStarted(description);
+          notifier.fireTestFailure(new Failure(description, e));
+          notifier.fireTestFinished(description);
+        }
       } else {
         // send ignored tests to the notifier listeners
-        Description description = describeChild(method);
         notifier.fireTestIgnored(description);
       }
     }
@@ -148,6 +155,12 @@ public class SandboxTestRunner extends BlockJUnit4ClassRunner {
         // generating nested statement for all the tests in each sandboxes
         for (Map.Entry<Sandbox, List<FrameworkMethod>> entry : methodsBySandbox.entrySet()) {
           Sandbox sandbox = entry.getKey();
+          FrameworkMethod firstMethod = entry.getValue().get(0);
+
+          // Recreate the sandbox if the stored sandbox is removed from the cache
+          if (sandbox.isShutdown()) {
+            sandbox = getSandbox(firstMethod);
+          }
           Statement statement = childrenInvoker(entry.getValue(), notifier);
 
           Class<?> bootstrappedTestClass = sandbox.bootstrappedClass(getTestClass().getJavaClass());
@@ -159,7 +172,6 @@ public class SandboxTestRunner extends BlockJUnit4ClassRunner {
           statement = withClassRules(statement, bootstrappedTestClass);
 
           // Use the first method to setup a sandbox and invoke everything in that sandbox
-          FrameworkMethod firstMethod = entry.getValue().get(0);
           Statement statementsOfTestGroup = inSandboxThread(sandbox, firstMethod, statement);
           statementsOfTestGroup.evaluate();
         }
