@@ -257,6 +257,7 @@ java_host_for_device {
         "//packages/apps/ThemePicker/tests/robotests:__pkg__",
         "//packages/apps/TV/common/tests/robotests:__pkg__",
         "//packages/apps/TvSettings/Settings/tests/robotests:__pkg__",
+        "//packages/apps/TvSystemUI/tests/screenshot",
         "//packages/apps/TV/tests/common:__pkg__",
         "//packages/apps/WallpaperPicker2/tests/robotests:__pkg__",
         "//packages/apps/WallpaperPicker2/tests/robotests/common:__pkg__",
