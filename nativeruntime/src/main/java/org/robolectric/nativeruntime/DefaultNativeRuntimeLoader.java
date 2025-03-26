@@ -7,8 +7,10 @@ import android.database.CursorWindow;
 import android.graphics.Typeface;
 import com.google.auto.service.AutoService;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import java.io.File;
@@ -150,31 +152,23 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
     nativeRuntimeLoader.get().ensureLoaded();
   }
 
-  /**
-   * Overridable in Android, due to private resources.
-   */
+  /** Overridable in Android, due to private resources. */
   protected void maybeCopyExtraResources(TempDirectory dir) {
-    //default to no-op
+    // default to no-op
   }
 
-  /**
-   * Overridable in Android, due to changing shadows in private branches.
-   */
-  protected List<String> getCoreClassNatives(){
+  /** Overridable in Android, due to changing shadows in private branches. */
+  protected List<String> getCoreClassNatives() {
     return CORE_CLASS_NATIVES;
   }
 
-  /**
-   * Overridable in Android, due to changing shadows in private branches.
-   */
-  protected  List<String> getDeferredStaticInitializers(){
+  /** Overridable in Android, due to changing shadows in private branches. */
+  protected List<String> getDeferredStaticInitializers() {
     return DEFERRED_STATIC_INITIALIZERS;
   }
 
-  /**
-   * Overridable in Android, due to changing shadows in private branches.
-   */
-  protected List<String> getGraphicsNatives(){
+  /** Overridable in Android, due to changing shadows in private branches. */
+  protected List<String> getGraphicsNatives() {
     return GRAPHICS_CLASS_NATIVES;
   }
 
@@ -206,7 +200,8 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
                 maybeCopyIcuData(extractDirectory);
                 maybeCopyExtraResources(extractDirectory);
                 if (isAndroidVOrGreater()) {
-                  System.setProperty("core_native_classes", String.join(",", getCoreClassNatives()));
+                  System.setProperty(
+                      "core_native_classes", String.join(",", getCoreClassNatives()));
                   System.setProperty(
                       "graphics_native_classes", String.join(",", getGraphicsNatives()));
                   System.setProperty("method_binding_format", METHOD_BINDING_FORMAT);
@@ -222,10 +217,12 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
     }
   }
 
-
   private static List<String> getResourcesInAndroidAll(String prefix) throws IOException {
     try {
-      String jarPath = Resources.getResource("build.prop").toURI().toString().split("!")[0].substring("jar:file:".length());
+      String jarPath =
+          Iterables.get(
+                  Splitter.on('!').split(Resources.getResource("build.prop").toURI().toString()), 0)
+              .substring("jar:file:".length());
       List<String> resources = new ArrayList<>();
       try (JarFile jarFile = new JarFile(jarPath)) {
         Enumeration<JarEntry> entries = jarFile.entries();
@@ -246,7 +243,7 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
   private void maybeCopyIcuData(TempDirectory tempDirectory) throws IOException {
     URL icuDatUrl;
     try {
-      if ( AndroidVersions.CURRENT.getSdkInt() <= AndroidVersions.U.SDK_INT ) {
+      if (AndroidVersions.CURRENT.getSdkInt() <= AndroidVersions.U.SDK_INT) {
         icuDatUrl = Resources.getResource("icu/icudt68l.dat");
       } else {
         List<String> resources = getResourcesInAndroidAll("icu/icudt");
@@ -255,7 +252,6 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
         } else {
           icuDatUrl = Resources.getResource(resources.get(0));
         }
-
       }
     } catch (IllegalArgumentException e) {
       System.out.println("Could not load icu data file ");
@@ -263,11 +259,11 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
     }
     Path icuPath = tempDirectory.create("icu");
     Path icuDatPath;
-    if ( AndroidVersions.CURRENT.getSdkInt() <= AndroidVersions.U.SDK_INT ) {
+    if (AndroidVersions.CURRENT.getSdkInt() <= AndroidVersions.U.SDK_INT) {
       icuDatPath = icuPath.resolve("icudt68l.dat");
     } else {
-      String[] parts = icuDatUrl.toString().split("/");
-      icuDatPath = icuPath.resolve(parts[parts.length-1]);
+      List<String> parts = Splitter.on('/').splitToList(icuDatUrl.toString());
+      icuDatPath = icuPath.resolve(Iterables.getLast(parts));
     }
     Resources.asByteSource(icuDatUrl).copyTo(Files.asByteSink(icuDatPath.toFile()));
     System.setProperty("icu.data.path", icuDatPath.toAbsolutePath().toString());
@@ -321,7 +317,7 @@ public class DefaultNativeRuntimeLoader implements NativeRuntimeLoader {
   private void loadLibrary(TempDirectory tempDirectory) throws IOException {
     Path libraryPath = tempDirectory.getBasePath().resolve(libraryName());
     URL libraryResource = Resources.getResource(nativeLibraryPath());
-    Logger.info("Reading android native library from: " + libraryResource);
+    Logger.info("Loading android native library from: " + libraryResource);
     Resources.asByteSource(libraryResource).copyTo(Files.asByteSink(libraryPath.toFile()));
     System.load(libraryPath.toAbsolutePath().toString());
   }
