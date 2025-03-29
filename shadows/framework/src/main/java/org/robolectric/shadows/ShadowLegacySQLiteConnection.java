@@ -53,8 +53,8 @@ import org.robolectric.annotation.InDevelopment;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.shadows.util.SQLiteLibraryLoader;
 import org.robolectric.util.PerfStatsCollector;
-import org.robolectric.versioning.AndroidVersions.V;
 import org.robolectric.versioning.AndroidVersions.Baklava;
+import org.robolectric.versioning.AndroidVersions.V;
 
 /** Shadow for {@link android.database.sqlite.SQLiteConnection} that is backed by sqlite4java. */
 @Implements(value = android.database.sqlite.SQLiteConnection.class, isInAndroidSdk = false)
@@ -104,13 +104,13 @@ public class ShadowLegacySQLiteConnection extends ShadowSQLiteConnection {
     CONNECTIONS.reset();
   }
 
-  @Implementation(maxSdk=V.SDK_INT)
+  @Implementation(maxSdk = V.SDK_INT)
   protected static void nativeClose(long connectionPtr) {
     CONNECTIONS.close(connectionPtr);
   }
 
   @InDevelopment
-  @Implementation(minSdk=Baklava.SDK_INT)
+  @Implementation(minSdk = Baklava.SDK_INT)
   protected static void nativeClose(long connectionPtr, boolean fast) {
     CONNECTIONS.close(connectionPtr);
   }
