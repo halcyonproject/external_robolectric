@@ -63,6 +63,18 @@ robolectric_build_props {
 }
 
 java_genrule {
+    name: "libandroid_runtime_jar",
+    host_supported: true,
+    device_supported: false,
+    tools: ["soong_zip"],
+    host_first_src: [":libandroid_runtime"],
+    out: ["libandroid_runtime.jar"],
+    cmd: "mkdir -p ./native/linux/x86_64/ && " +
+        "cp $(location :libandroid_runtime) ./native/linux/x86_64/ && " +
+        "$(location soong_zip) -o $(location libandroid_runtime.jar) -D ./native",
+}
+
+java_genrule {
     name: "robolectric_props_jar",
     host_supported: true,
     tools: ["soong_zip"],
@@ -117,6 +129,8 @@ java_library {
         "robolectric_tzdata",
         "robolectric_framework_res",
         "robolectric_props_jar",
+        // To attempt to use the local libandroid_runtime.so, uncomment the line below, and comment the line after.
+        //"libandroid_runtime_jar",
         "robolectric_nativeruntime_native_prebuilt_main",
         "icu-data_host_robolectric",
     ],
