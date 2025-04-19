@@ -9,8 +9,13 @@ import org.robolectric.annotation.Implements;
 /** */
 @Implements(value = OsConstants.class, minSdk = 21)
 public final class ShadowOsConstants {
+
   @Implementation
-  protected static void initConstants() {
+  protected static void __staticInitializer__() {
+    shadowInitConstants();
+  }
+
+  private static void shadowInitConstants() {
 
     // In real android these constants are populated via reflection in native linux-only code.
     // This shadow performs similar logic here , using the values obtained from
