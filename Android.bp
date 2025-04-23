@@ -67,7 +67,7 @@ java_genrule {
     host_supported: true,
     device_supported: false,
     tools: ["soong_zip"],
-    host_first_src: [":libandroid_runtime"],
+    host_first_srcs: [":libandroid_runtime"],
     out: ["libandroid_runtime.jar"],
     cmd: "mkdir -p ./native/linux/x86_64/ && " +
         "cp $(location :libandroid_runtime) ./native/linux/x86_64/ && " +
