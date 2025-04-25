@@ -10,11 +10,14 @@ import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadow.api.Shadow;
 
+/**
+ * @deprecated This package is no longer maintained and will be removed in Robolectric 4.16.
+ */
+@Deprecated
 @Implements(GoogleApiAvailability.class)
 public class ShadowGoogleApiAvailability {
   private int availabilityCode = ConnectionResult.SERVICE_MISSING;
   private boolean isUserResolvableError = false;
-  private String openSourceSoftwareLicenseInfo = "";
   private Dialog errorDialog;
 
   @Implementation
@@ -42,7 +45,7 @@ public class ShadowGoogleApiAvailability {
 
   @Implementation
   public String getOpenSourceSoftwareLicenseInfo(Context context) {
-    return openSourceSoftwareLicenseInfo;
+    return "";
   }
 
   @Implementation

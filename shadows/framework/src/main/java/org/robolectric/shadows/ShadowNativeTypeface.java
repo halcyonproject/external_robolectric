@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
@@ -71,7 +72,7 @@ public class ShadowNativeTypeface extends ShadowTypeface {
       ArrayMap<String, Typeface> fontMap,
       ArrayMap<String, FontFamily[]> fallbackMap) {
     String fontDir = System.getProperty("robolectric.nativeruntime.fontdir");
-    Preconditions.checkNotNull(fontDir);
+    Objects.requireNonNull(fontDir);
     Preconditions.checkState(new File(fontDir).isDirectory(), "Missing fonts directory");
     Preconditions.checkState(
         fontDir.endsWith(File.separator), "Fonts directory must end with a slash");
@@ -85,14 +86,13 @@ public class ShadowNativeTypeface extends ShadowTypeface {
     // `robolectric.nativeruntime.fontdir` system property is valid.
     DefaultNativeRuntimeLoader.injectAndLoad();
     String fontDir = System.getProperty("robolectric.nativeruntime.fontdir");
-    Preconditions.checkNotNull(fontDir);
+    Objects.requireNonNull(fontDir);
     Preconditions.checkState(new File(fontDir).isDirectory(), "Missing fonts directory");
     Preconditions.checkState(
         fontDir.endsWith(File.separator), "Fonts directory must end with a slash");
     return new File(fontDir);
   }
 
-  @SuppressWarnings("unchecked")
   @Implementation(minSdk = O, maxSdk = O_MR1)
   protected static @ClassName("android.graphics.FontFamily") Object makeFamilyFromParsed(
       @ClassName("android.text.FontConfig$Family") Object family,

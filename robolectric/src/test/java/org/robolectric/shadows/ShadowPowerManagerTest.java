@@ -219,10 +219,7 @@ public class ShadowPowerManagerTest {
   @Config(minSdk = Q)
   public void addThermalStatusListener() {
     int[] listenerValue = new int[] {-1};
-    powerManager.addThermalStatusListener(
-        level -> {
-          listenerValue[0] = level;
-        });
+    powerManager.addThermalStatusListener(level -> listenerValue[0] = level);
     shadowOf(powerManager).setCurrentThermalStatus(PowerManager.THERMAL_STATUS_MODERATE);
     assertThat(listenerValue[0]).isEqualTo(PowerManager.THERMAL_STATUS_MODERATE);
   }
@@ -696,8 +693,7 @@ public class ShadowPowerManagerTest {
 
     LowPowerStandbyPortsLock lock = powerManager.newLowPowerStandbyPortsLock(ports);
 
-    ShadowLowPowerStandbyPortsLock shadowLock =
-        (ShadowLowPowerStandbyPortsLock) Shadow.extract(lock);
+    ShadowLowPowerStandbyPortsLock shadowLock = Shadow.extract(lock);
     assertThat(shadowLock.getPorts()).isEqualTo(ports);
   }
 
@@ -709,8 +705,7 @@ public class ShadowPowerManagerTest {
     ImmutableList<LowPowerStandbyPortDescription> portDescriptions = ImmutableList.of(defaultPort);
 
     LowPowerStandbyPortsLock lock = powerManager.newLowPowerStandbyPortsLock(portDescriptions);
-    ShadowLowPowerStandbyPortsLock shadowLock =
-        (ShadowLowPowerStandbyPortsLock) Shadow.extract(lock);
+    ShadowLowPowerStandbyPortsLock shadowLock = Shadow.extract(lock);
     lock.acquire();
     lock.acquire();
     assertThat(shadowLock.getAcquireCount()).isEqualTo(2);
@@ -724,8 +719,7 @@ public class ShadowPowerManagerTest {
     ImmutableList<LowPowerStandbyPortDescription> portDescriptions = ImmutableList.of(defaultPort);
 
     LowPowerStandbyPortsLock lock = powerManager.newLowPowerStandbyPortsLock(portDescriptions);
-    ShadowLowPowerStandbyPortsLock shadowLock =
-        (ShadowLowPowerStandbyPortsLock) Shadow.extract(lock);
+    ShadowLowPowerStandbyPortsLock shadowLock = Shadow.extract(lock);
     lock.acquire();
     assertThat(shadowLock.isAcquired()).isTrue();
   }
@@ -738,8 +732,7 @@ public class ShadowPowerManagerTest {
     ImmutableList<LowPowerStandbyPortDescription> portDescriptions = ImmutableList.of(defaultPort);
 
     LowPowerStandbyPortsLock lock = powerManager.newLowPowerStandbyPortsLock(portDescriptions);
-    ShadowLowPowerStandbyPortsLock shadowLock =
-        (ShadowLowPowerStandbyPortsLock) Shadow.extract(lock);
+    ShadowLowPowerStandbyPortsLock shadowLock = Shadow.extract(lock);
     lock.acquire();
     lock.release();
     assertThat(shadowLock.isAcquired()).isFalse();

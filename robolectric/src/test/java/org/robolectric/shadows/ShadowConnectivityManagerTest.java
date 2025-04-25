@@ -35,6 +35,7 @@ import android.telephony.TelephonyManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -299,13 +300,13 @@ public class ShadowConnectivityManagerTest {
 
     Map<Network, Boolean> reportedNetworks =
         shadowOf(connectivityManager).getReportedNetworkConnectivity();
-    assertThat(reportedNetworks.size()).isEqualTo(1);
+    assertThat(reportedNetworks).hasSize(1);
     assertThat(reportedNetworks.get(wifiNetwork)).isTrue();
 
     // Update the status.
     connectivityManager.reportNetworkConnectivity(wifiNetwork, false);
     reportedNetworks = shadowOf(connectivityManager).getReportedNetworkConnectivity();
-    assertThat(reportedNetworks.size()).isEqualTo(1);
+    assertThat(reportedNetworks).hasSize(1);
     assertThat(reportedNetworks.get(wifiNetwork)).isFalse();
   }
 
@@ -326,10 +327,10 @@ public class ShadowConnectivityManagerTest {
   private static ConnectivityManager.NetworkCallback createSimpleCallback() {
     return new ConnectivityManager.NetworkCallback() {
       @Override
-      public void onAvailable(Network network) {}
+      public void onAvailable(@Nonnull Network network) {}
 
       @Override
-      public void onLost(Network network) {}
+      public void onLost(@Nonnull Network network) {}
     };
   }
 
@@ -516,6 +517,7 @@ public class ShadowConnectivityManagerTest {
   }
 
   private static ConnectivityManager.OnNetworkActiveListener createSimpleOnNetworkActiveListener() {
+    //noinspection Convert2Lambda
     return new ConnectivityManager.OnNetworkActiveListener() {
       @Override
       public void onNetworkActive() {}

@@ -32,7 +32,7 @@ import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.S_V2;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.robolectric.annotation.GetInstallerPackageNameMode.Mode.REALISTIC;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
@@ -161,7 +161,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
   private List<PackageInfo> getInstalledPackages(long flags) {
     List<PackageInfo> result = new ArrayList<>();
     synchronized (lock) {
-      Set<String> packageNames = null;
+      Set<String> packageNames;
       if ((flags & MATCH_UNINSTALLED_PACKAGES) == 0) {
         packageNames = packageInfos.keySet();
       } else {
@@ -314,7 +314,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
       }
     }
 
-    return results.isEmpty() ? null : results.toArray(new String[results.size()]);
+    return results.isEmpty() ? null : results.toArray(new String[0]);
   }
 
   @Implementation
@@ -702,7 +702,6 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
         } catch (NameNotFoundException e) {
           Log.d(TAG, "ComponentInfo doesn't match flags:" + e.getMessage());
           iterator.remove();
-          continue;
         }
       }
       Collections.sort(result, new ResolveInfoComparator());
@@ -1011,7 +1010,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
     }
     // Android don't override the enabled field of component with the actual value.
     boolean isEnabledForFiltering =
-        isComponentEnabled && (Build.VERSION.SDK_INT >= 24 ? isApplicationEnabled : true);
+        isComponentEnabled && (VERSION.SDK_INT < 24 || isApplicationEnabled);
     if ((flags & MATCH_DISABLED_COMPONENTS) == 0 && !isEnabledForFiltering) {
       throw new NameNotFoundException("Disabled component: " + componentInfo);
     }
@@ -1159,7 +1158,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
   protected FeatureInfo[] getSystemAvailableFeatures() {
     return systemAvailableFeatures.isEmpty()
         ? null
-        : systemAvailableFeatures.toArray(new FeatureInfo[systemAvailableFeatures.size()]);
+        : systemAvailableFeatures.toArray(new FeatureInfo[0]);
   }
 
   @Implementation
@@ -1223,7 +1222,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
       String pkgName,
       int uid,
       final @ClassName("android.content.pm.IPackageStatsObserver") Object observer) {
-    final PackageStats packageStats = packageStatsMap.get((String) pkgName);
+    final PackageStats packageStats = packageStatsMap.get(pkgName);
     new Handler(Looper.getMainLooper())
         .post(
             () -> {
@@ -1588,7 +1587,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
    */
   @Implementation
   protected String[] getSystemSharedLibraryNames() {
-    return systemSharedLibraryNames.toArray(new String[systemSharedLibraryNames.size()]);
+    return systemSharedLibraryNames.toArray(new String[0]);
   }
 
   @Implementation(minSdk = N)
@@ -1734,7 +1733,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
       @PackageManager.PermissionFlags int flagValues,
       UserHandle user) {
     if (!permissionFlags.containsKey(packageName)) {
-      permissionFlags.put(packageName, new HashMap<String, Integer>());
+      permissionFlags.put(packageName, new HashMap<>());
     }
 
     int existingFlags =
@@ -2414,7 +2413,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
   @Implementation(minSdk = Q)
   @RequiresPermission(permission.SUSPEND_APPS)
   protected String[] getUnsuspendablePackages(String[] packageNames) {
-    checkNotNull(packageNames, "packageNames cannot be null");
+    requireNonNull(packageNames, "packageNames cannot be null");
     if (getContext().checkSelfPermission(permission.SUSPEND_APPS)
         != PackageManager.PERMISSION_GRANTED) {
       throw new SecurityException("Current process does not have " + permission.SUSPEND_APPS);

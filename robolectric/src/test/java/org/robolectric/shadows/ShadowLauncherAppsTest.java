@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -219,7 +220,7 @@ public class ShadowLauncherAppsTest {
 
   @Test
   @Config(minSdk = O)
-  public void testGetApplicationInfo_packageNotFound() throws Exception {
+  public void testGetApplicationInfo_packageNotFound() {
     Throwable throwable =
         assertThrows(
             NameNotFoundException.class,
@@ -232,7 +233,7 @@ public class ShadowLauncherAppsTest {
   }
 
   @Test
-  public void testGetApplicationInfo_incorrectPackage() throws Exception {
+  public void testGetApplicationInfo_incorrectPackage() {
     ApplicationInfo applicationInfo = new ApplicationInfo();
     applicationInfo.name = "Test app";
     shadowOf(launcherApps).addApplicationInfo(USER_HANDLE, TEST_PACKAGE_NAME_2, applicationInfo);
@@ -273,7 +274,9 @@ public class ShadowLauncherAppsTest {
           new DefaultCallback() {
             @Override
             public void onShortcutsChanged(
-                String packageName, List<ShortcutInfo> shortcuts, UserHandle user) {
+                @Nonnull String packageName,
+                List<ShortcutInfo> shortcuts,
+                @Nonnull UserHandle user) {
               assertEquals(shortcuts.get(0).getPackage(), packageName);
               wasCalled[0] = true;
               latch1.countDown();

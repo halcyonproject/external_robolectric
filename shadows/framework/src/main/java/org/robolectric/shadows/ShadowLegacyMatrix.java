@@ -198,7 +198,7 @@ public class ShadowLegacyMatrix extends ShadowMatrix {
 
   @Implementation
   protected boolean preRotate(float degrees) {
-    preOps.addFirst(ROTATE + " " + Float.toString(degrees));
+    preOps.addFirst(ROTATE + " " + degrees);
     return preConcat(SimpleMatrix.rotate(degrees));
   }
 
@@ -246,7 +246,7 @@ public class ShadowLegacyMatrix extends ShadowMatrix {
 
   @Implementation
   protected boolean postRotate(float degrees) {
-    postOps.addLast(ROTATE + " " + Float.toString(degrees));
+    postOps.addLast(ROTATE + " " + degrees);
     return postConcat(SimpleMatrix.rotate(degrees));
   }
 
@@ -571,9 +571,7 @@ public class ShadowLegacyMatrix extends ShadowMatrix {
                 mValues[2] = mValues[3] = mValues[4] = mValues[5] = mValues[6] = mValues[7] = 0;
         mValues[8] = 1;
       } else {
-        float tx = dst.width() / src.width();
         float sx = dst.width() / src.width();
-        float ty = dst.height() / src.height();
         float sy = dst.height() / src.height();
         boolean xLarger = false;
 
@@ -586,8 +584,8 @@ public class ShadowLegacyMatrix extends ShadowMatrix {
           }
         }
 
-        tx = dst.left - src.left * sx;
-        ty = dst.top - src.top * sy;
+        float tx = dst.left - src.left * sx;
+        float ty = dst.top - src.top * sy;
         if (stf == ScaleToFit.CENTER || stf == ScaleToFit.END) {
           float diff;
 

@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -157,8 +158,8 @@ public final class ShadowMediaCodecTest {
 
     codec.releaseOutputBuffer(bufferIndex, /* render= */ false);
     // We should be able to dequeue the corresponding input buffer.
-    int dequeuedInputbufferIndex = codec.dequeueInputBuffer(/* timeoutUs= */ 0);
-    assertThat(dequeuedInputbufferIndex).isEqualTo(bufferIndex);
+    int dequeuedInputBufferIndex = codec.dequeueInputBuffer(/* timeoutUs= */ 0);
+    assertThat(dequeuedInputBufferIndex).isEqualTo(bufferIndex);
   }
 
   @Test
@@ -167,7 +168,7 @@ public final class ShadowMediaCodecTest {
     MediaCodecCallback callback =
         new MediaCodecCallback() {
           @Override
-          public void onInputBufferAvailable(MediaCodec codec, int inputBufferId) {
+          public void onInputBufferAvailable(@Nonnull MediaCodec codec, int inputBufferId) {
             inputBuffers.add(inputBufferId);
           }
         };
@@ -183,7 +184,7 @@ public final class ShadowMediaCodecTest {
     MediaCodecCallback callback =
         new MediaCodecCallback() {
           @Override
-          public void onInputBufferAvailable(MediaCodec codec, int inputBufferId) {
+          public void onInputBufferAvailable(@Nonnull MediaCodec codec, int inputBufferId) {
             inputBuffers.add(inputBufferId);
           }
         };
@@ -782,16 +783,17 @@ public final class ShadowMediaCodecTest {
   public static class MediaCodecCallback extends MediaCodec.Callback {
 
     @Override
-    public void onInputBufferAvailable(MediaCodec codec, int inputBufferId) {}
+    public void onInputBufferAvailable(@Nonnull MediaCodec codec, int inputBufferId) {}
 
     @Override
-    public void onOutputBufferAvailable(MediaCodec codec, int outputBufferId, BufferInfo info) {}
+    public void onOutputBufferAvailable(
+        @Nonnull MediaCodec codec, int outputBufferId, @Nonnull BufferInfo info) {}
 
     @Override
-    public void onOutputFormatChanged(MediaCodec codec, MediaFormat format) {}
+    public void onOutputFormatChanged(@Nonnull MediaCodec codec, @Nonnull MediaFormat format) {}
 
     @Override
-    public void onError(MediaCodec codec, MediaCodec.CodecException e) {}
+    public void onError(@Nonnull MediaCodec codec, @Nonnull MediaCodec.CodecException e) {}
   }
 
   /**

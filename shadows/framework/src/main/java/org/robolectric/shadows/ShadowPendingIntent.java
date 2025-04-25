@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
 import java.util.ArrayList;
@@ -243,13 +242,7 @@ public class ShadowPendingIntent {
     if (isActivity()) {
       for (Intent intentToSend : intentsToSend) {
         shadowInstrumentation.execStartActivity(
-            context,
-            (IBinder) null,
-            (IBinder) null,
-            (Activity) null,
-            intentToSend,
-            requestCode,
-            options);
+            context, null, null, (Activity) null, intentToSend, requestCode, options);
       }
     } else if (isBroadcast()) {
       for (Intent intentToSend : intentsToSend) {
@@ -425,7 +418,7 @@ public class ShadowPendingIntent {
   }
 
   /**
-   * @return {@true} iff this PendingIntent has been canceled
+   * @return {@code true} iff this PendingIntent has been canceled
    */
   public boolean isCanceled() {
     return canceled;
@@ -503,7 +496,7 @@ public class ShadowPendingIntent {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || realPendingIntent.getClass() != o.getClass()) return false;
-    ShadowPendingIntent that = Shadow.extract((PendingIntent) o);
+    ShadowPendingIntent that = Shadow.extract(o);
 
     String packageName = savedContext == null ? null : savedContext.getPackageName();
     String thatPackageName = that.savedContext == null ? null : that.savedContext.getPackageName();
@@ -521,10 +514,7 @@ public class ShadowPendingIntent {
       }
     }
 
-    if (this.requestCode != that.requestCode) {
-      return false;
-    }
-    return true;
+    return this.requestCode == that.requestCode;
   }
 
   @Override

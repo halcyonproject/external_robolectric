@@ -7,9 +7,9 @@ import android.net.wifi.p2p.WifiP2pManager.ActionListener;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.os.Handler;
 import android.os.Looper;
-import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
@@ -42,10 +42,10 @@ public class ShadowWifiP2pManager {
   @Implementation
   protected void setWifiP2pChannels(
       Channel c, int listeningChannel, int operatingChannel, ActionListener al) {
-    Preconditions.checkNotNull(c);
-    Preconditions.checkNotNull(al);
-    this.listeningChannel = listeningChannel;
-    this.operatingChannel = operatingChannel;
+    Objects.requireNonNull(c);
+    Objects.requireNonNull(al);
+    ShadowWifiP2pManager.listeningChannel = listeningChannel;
+    ShadowWifiP2pManager.operatingChannel = operatingChannel;
   }
 
   @Implementation
@@ -66,16 +66,13 @@ public class ShadowWifiP2pManager {
     }
 
     handler.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (nextActionFailure == -1) {
-              al.onSuccess();
-            } else {
-              al.onFailure(nextActionFailure);
-            }
-            nextActionFailure = NO_FAILURE;
+        () -> {
+          if (nextActionFailure == -1) {
+            al.onSuccess();
+          } else {
+            al.onFailure(nextActionFailure);
           }
+          nextActionFailure = NO_FAILURE;
         });
   }
 
@@ -85,13 +82,7 @@ public class ShadowWifiP2pManager {
       return;
     }
 
-    handler.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            gl.onGroupInfoAvailable(p2pGroupmap.get(c));
-          }
-        });
+    handler.post(() -> gl.onGroupInfoAvailable(p2pGroupmap.get(c)));
   }
 
   @Implementation
@@ -100,7 +91,7 @@ public class ShadowWifiP2pManager {
   }
 
   public void setNextActionFailure(int nextActionFailure) {
-    this.nextActionFailure = nextActionFailure;
+    ShadowWifiP2pManager.nextActionFailure = nextActionFailure;
   }
 
   public void setGroupInfo(Channel channel, WifiP2pGroup wifiP2pGroup) {

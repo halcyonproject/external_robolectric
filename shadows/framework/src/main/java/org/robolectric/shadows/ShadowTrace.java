@@ -30,10 +30,10 @@ public class ShadowTrace {
   private static final String TAG = "ShadowTrace";
 
   private static final ThreadLocal<Deque<String>> currentSections =
-      ThreadLocal.withInitial(() -> new ArrayDeque<>());
+      ThreadLocal.withInitial(ArrayDeque::new);
 
   private static final ThreadLocal<Queue<String>> previousSections =
-      ThreadLocal.withInitial((Supplier<Deque<String>>) () -> new ArrayDeque<>());
+      ThreadLocal.withInitial((Supplier<Deque<String>>) ArrayDeque::new);
 
   private static final Set<AsyncTraceSection> currentAsyncSections = new HashSet<>();
 
@@ -168,7 +168,7 @@ public class ShadowTrace {
    * Do not use this method unless absolutely necessary. Prefer fixing the tests instead.
    *
    * <p>Sets whether to crash on incorrect usage (e.g., calling {@link #endSection()} before {@link
-   * beginSection(String)}. Default value - {@code true}.
+   * #beginSection(String)}. Default value - {@code true}.
    */
   public static void doNotUseSetCrashOnIncorrectUsage(boolean crashOnIncorrectUsage) {
     ShadowTrace.crashOnIncorrectUsage = crashOnIncorrectUsage;

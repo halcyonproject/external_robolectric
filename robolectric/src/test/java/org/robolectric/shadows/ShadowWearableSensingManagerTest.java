@@ -113,7 +113,7 @@ public class ShadowWearableSensingManagerTest {
   }
 
   @Test
-  public void getLastDataBundle_noDataProvided_doesNotThrow() throws Exception {
+  public void getLastDataBundle_noDataProvided_doesNotThrow() {
     WearableSensingManager wearableSensingManager =
         (WearableSensingManager)
             getApplicationContext().getSystemService(Context.WEARABLE_SENSING_SERVICE);
@@ -124,7 +124,7 @@ public class ShadowWearableSensingManagerTest {
   }
 
   @Test
-  public void getLastSharedMemory_noDataProvided_doesNotThrow() throws Exception {
+  public void getLastSharedMemory_noDataProvided_doesNotThrow() {
     WearableSensingManager wearableSensingManager =
         (WearableSensingManager)
             getApplicationContext().getSystemService(Context.WEARABLE_SENSING_SERVICE);

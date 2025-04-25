@@ -14,18 +14,19 @@ import android.os.MessageQueue.IdleHandler;
 import android.os.SystemClock;
 import android.util.Log;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
@@ -43,8 +44,7 @@ import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
 
 /**
- * The shadow Looper for {@link LooperMode.Mode.PAUSED and @link
- * LooperMode.Mode.INSTRUMENTATION_TEST}.
+ * The shadow Looper for {@link LooperMode.Mode#PAUSED and {@link LooperMode.Mode#INSTRUMENTATION_TEST}.
  *
  * <p>This shadow differs from the legacy {@link ShadowLegacyLooper} in the following ways:\ - Has
  * no connection to {@link org.robolectric.util.Scheduler}. Its APIs are standalone - The main
@@ -64,8 +64,8 @@ import org.robolectric.util.reflector.Static;
 public final class ShadowPausedLooper extends ShadowLooper {
 
   // Keep reference to all created Loopers so they can be torn down after test
-  private static Set<Looper> loopingLoopers =
-      Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<Looper, Boolean>()));
+  private static final Set<Looper> loopingLoopers =
+      Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
   private static boolean ignoreUncaughtExceptions = false;
 
@@ -472,7 +472,7 @@ public final class ShadowPausedLooper extends ShadowLooper {
     try {
       reflector(LooperReflector.class).loop();
     } catch (Exception e) {
-      Looper realLooper = Preconditions.checkNotNull(Looper.myLooper());
+      Looper realLooper = Objects.requireNonNull(Looper.myLooper());
       ShadowPausedMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
 
       if (ignoreUncaughtExceptions) {
@@ -709,7 +709,7 @@ public final class ShadowPausedLooper extends ShadowLooper {
     private final LinkedBlockingQueue<Runnable> executionQueue = new LinkedBlockingQueue<>();
 
     @Override
-    public void execute(Runnable runnable) {
+    public void execute(@Nonnull Runnable runnable) {
       shadowQueue().checkQueueState();
       executionQueue.add(runnable);
     }
@@ -762,7 +762,7 @@ public final class ShadowPausedLooper extends ShadowLooper {
     }
 
     @Override
-    public void execute(Runnable runnable) {
+    public void execute(@Nonnull Runnable runnable) {
       if (!handler.post(runnable)) {
         throw new IllegalStateException(
             String.format("post to %s failed. Is handler thread dead?", handler));

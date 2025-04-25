@@ -9,6 +9,7 @@ import android.content.res.AssetManager.AssetInputStream;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -43,7 +44,7 @@ import org.robolectric.util.reflector.Static;
 @SuppressWarnings({"UnusedDeclaration"})
 @Implements(BitmapFactory.class)
 public class ShadowBitmapFactory {
-  private static Map<String, Point> widthAndHeightMap = new HashMap<>();
+  private static final Map<String, Point> widthAndHeightMap = new HashMap<>();
 
   // Determines whether BitmapFactory.decode methods should allow invalid bitmap data and always
   // return a Bitmap object. Currently defaults to true to preserve legacy behavior. A
@@ -127,7 +128,7 @@ public class ShadowBitmapFactory {
     // If a real FileDescriptor is used, attempt to get the image size.
     if (fd != null && fd.valid()) {
       try (FileInputStream fileInputStream = new FileInputStream(fd);
-          BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream); ) {
+          BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream)) {
         image = getImageFromStream(bufferedInputStream);
       } catch (IOException e) {
         Logger.warn("Error getting size of bitmap file", e);

@@ -50,6 +50,7 @@ public class ShadowNativeHardwareRenderer {
 
   @Implementation(maxSdk = U.SDK_INT)
   protected static void preload() {
+    DefaultNativeRuntimeLoader.injectAndLoad();
     HardwareRendererNatives.preload();
   }
 

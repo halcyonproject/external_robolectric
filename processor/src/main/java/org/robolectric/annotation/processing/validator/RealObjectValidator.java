@@ -8,7 +8,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic.Kind;
 import org.robolectric.annotation.processing.RobolectricModel;
 
@@ -20,20 +20,20 @@ public class RealObjectValidator extends FoundOnImplementsValidator {
   }
 
   public static String join(List<?> params) {
-    StringBuilder retval = new StringBuilder();
+    StringBuilder result = new StringBuilder();
     boolean comma = false;
     for (Object p : params) {
       if (comma) {
-        retval.append(',');
+        result.append(',');
       }
       comma = true;
-      retval.append(p);
+      result.append(p);
     }
-    return retval.toString();
+    return result.toString();
   }
 
   TypeVisitor<Void, VariableElement> typeVisitor =
-      new SimpleTypeVisitor6<Void, VariableElement>() {
+      new SimpleTypeVisitor8<Void, VariableElement>() {
         @Override
         public Void visitDeclared(DeclaredType t, VariableElement v) {
           List<? extends TypeMirror> typeParams = t.getTypeArguments();

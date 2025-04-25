@@ -21,7 +21,7 @@ import org.robolectric.util.Logger;
 /**
  * Executor service that queues any posted tasks.
  *
- * <p>Users must explicitly call {@link runAll()} to execute all pending tasks.
+ * <p>Users must explicitly call {@link #runAll()} to execute all pending tasks.
  *
  * <p>Intended to be a replacement for {@link RoboExecutorService} when using {@link
  * LooperMode.Mode#PAUSED}. Unlike {@link RoboExecutorService}, will execute tasks on a background
@@ -134,6 +134,7 @@ public class PausedExecutorService extends AbstractExecutorService {
     deferredTasks.clear();
   }
 
+  @Nonnull
   @Override
   public List<Runnable> shutdownNow() {
     realService.shutdownNow();
@@ -153,7 +154,7 @@ public class PausedExecutorService extends AbstractExecutorService {
   }
 
   @Override
-  public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
+  public boolean awaitTermination(long l, @Nonnull TimeUnit timeUnit) throws InterruptedException {
     // If not shut down first, timeout would occur with normal behavior.
     return realService.awaitTermination(l, timeUnit);
   }
@@ -174,6 +175,6 @@ public class PausedExecutorService extends AbstractExecutorService {
 
   @Override
   protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
-    return new DeferredTask<T>(callable, realService);
+    return new DeferredTask<>(callable, realService);
   }
 }

@@ -9,9 +9,9 @@ import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.N_MR1;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.P;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static java.util.Objects.requireNonNull;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.app.Activity;
@@ -30,6 +30,7 @@ import android.content.Intent;
 import android.content.Intent.FilterComparison;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -39,12 +40,10 @@ import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Pair;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -317,7 +316,7 @@ public class ShadowInstrumentation {
     }
   }
 
-  /** Returns the BroadcaseReceivers wrappers, matching intent's action and permissions. */
+  /** Returns the BroadcastReceivers wrappers, matching intent's action and permissions. */
   private List<Wrapper> getAppropriateWrappers(
       Context context,
       @Nullable UserHandle userHandle,
@@ -409,13 +408,10 @@ public class ShadowInstrumentation {
     final ShadowBroadcastReceiver shReceiver = Shadow.extract(receiver);
     final Intent broadcastIntent = intent;
     scheduler.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            receiver.setPendingResult(
-                ShadowBroadcastPendingResult.create(resultCode, null, null, false));
-            shReceiver.onReceive(context, broadcastIntent, abort);
-          }
+        () -> {
+          receiver.setPendingResult(
+              ShadowBroadcastPendingResult.create(resultCode, null, null, false));
+          shReceiver.onReceive(context, broadcastIntent, abort);
         });
   }
 
@@ -444,23 +440,16 @@ public class ShadowInstrumentation {
     }
     final ListenableFuture<?> finalFuture = future;
     future.addListener(
-        new Runnable() {
-          @Override
-          public void run() {
+        () ->
             getMainHandler(context)
                 .post(
-                    new Runnable() {
-                      @Override
-                      public void run() {
-                        try {
-                          finalFuture.get();
-                        } catch (InterruptedException | ExecutionException e) {
-                          throw new RuntimeException(e);
-                        }
+                    () -> {
+                      try {
+                        finalFuture.get();
+                      } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
                       }
-                    });
-          }
-        },
+                    }),
         directExecutor());
   }
 
@@ -478,25 +467,21 @@ public class ShadowInstrumentation {
         (wrapper.scheduler != null) ? wrapper.scheduler : getMainHandler(context);
     return Futures.transformAsync(
         oldResult,
-        new AsyncFunction<BroadcastResultHolder, BroadcastResultHolder>() {
-          @Override
-          public ListenableFuture<BroadcastResultHolder> apply(
-              BroadcastResultHolder broadcastResultHolder) throws Exception {
-            final BroadcastReceiver.PendingResult result =
-                ShadowBroadcastPendingResult.create(
-                    broadcastResultHolder.resultCode,
-                    broadcastResultHolder.resultData,
-                    broadcastResultHolder.resultExtras,
-                    true /*ordered */);
-            wrapper.broadcastReceiver.setPendingResult(result);
-            scheduler.post(
-                () -> {
-                  ShadowBroadcastReceiver shadowBroadcastReceiver =
-                      Shadow.extract(wrapper.broadcastReceiver);
-                  shadowBroadcastReceiver.onReceive(context, intent, abort);
-                });
-            return BroadcastResultHolder.transform(result);
-          }
+        broadcastResultHolder -> {
+          final BroadcastReceiver.PendingResult result =
+              ShadowBroadcastPendingResult.create(
+                  broadcastResultHolder.resultCode,
+                  broadcastResultHolder.resultData,
+                  broadcastResultHolder.resultExtras,
+                  true /*ordered */);
+          wrapper.broadcastReceiver.setPendingResult(result);
+          scheduler.post(
+              () -> {
+                ShadowBroadcastReceiver shadowBroadcastReceiver =
+                    Shadow.extract(wrapper.broadcastReceiver);
+                shadowBroadcastReceiver.onReceive(context, intent, abort);
+              });
+          return BroadcastResultHolder.transform(result);
         },
         directExecutor());
   }
@@ -566,13 +551,9 @@ public class ShadowInstrumentation {
   private void sortByPriority(List<Wrapper> wrappers) {
     Collections.sort(
         wrappers,
-        new Comparator<Wrapper>() {
-          @Override
-          public int compare(Wrapper o1, Wrapper o2) {
-            return Integer.compare(
-                o2.getIntentFilter().getPriority(), o1.getIntentFilter().getPriority());
-          }
-        });
+        (o1, o2) ->
+            Integer.compare(
+                o2.getIntentFilter().getPriority(), o1.getIntentFilter().getPriority()));
   }
 
   List<Intent> getBroadcastIntents() {
@@ -654,11 +635,10 @@ public class ShadowInstrumentation {
   }
 
   TargetAndRequestCode getTargetAndRequestCodeForIntent(Intent requestIntent) {
-    return checkNotNull(
+    return requireNonNull(
         intentRequestCodeMap.get(new Intent.FilterComparison(requestIntent)),
-        "No intent matches %s among %s",
-        requestIntent,
-        intentRequestCodeMap.keySet());
+        String.format(
+            "No intent matches %s among %s", requestIntent, intentRequestCodeMap.keySet()));
   }
 
   protected ComponentName startService(Intent intent) {
@@ -807,7 +787,7 @@ public class ShadowInstrumentation {
   }
 
   void declareComponentUnbindable(ComponentName component) {
-    checkNotNull(component);
+    requireNonNull(component);
     unbindableComponents.add(component);
   }
 
@@ -904,6 +884,10 @@ public class ShadowInstrumentation {
         receiver, filter, broadcastPermission, scheduler, flags, context);
   }
 
+  private static boolean validateReceiverExportFlags() {
+    return Boolean.getBoolean("robolectric.validateReceiverExportFlags");
+  }
+
   Intent registerReceiverWithContext(
       BroadcastReceiver receiver,
       IntentFilter filter,
@@ -911,6 +895,30 @@ public class ShadowInstrumentation {
       Handler scheduler,
       int flags,
       Context context) {
+    // See ActivityManagerService#registerReceiverWithFeature.
+    if (validateReceiverExportFlags()
+        && RuntimeEnvironment.getApiLevel() >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      final boolean explicitExportStateDefined =
+          (flags & (Context.RECEIVER_EXPORTED | Context.RECEIVER_NOT_EXPORTED)) != 0;
+      if (((flags & Context.RECEIVER_EXPORTED) != 0)
+          && ((flags & Context.RECEIVER_NOT_EXPORTED) != 0)) {
+        throw new IllegalArgumentException(
+            "Receiver can't specify both RECEIVER_EXPORTED and RECEIVER_NOT_EXPORTED flag");
+      }
+      // DYNAMIC_RECEIVER_EXPLICIT_EXPORT_REQUIRED is enabled if targetSdk from UPSIDE_DOWN_CAKE.
+      // See android.server.am.BroadcastController.
+      boolean requireExplicitFlagForDynamicReceivers =
+          context.getApplicationInfo().targetSdkVersion >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+      if (receiver != null
+          && requireExplicitFlagForDynamicReceivers
+          && !explicitExportStateDefined) {
+        throw new SecurityException(
+            context.getPackageName()
+                + ": One of RECEIVER_EXPORTED or "
+                + "RECEIVER_NOT_EXPORTED should be specified when a receiver "
+                + "isn't being registered exclusively for system broadcasts");
+      }
+    }
     if (receiver != null) {
       synchronized (registeredReceivers) {
         registeredReceivers.add(
@@ -1019,7 +1027,7 @@ public class ShadowInstrumentation {
       }
       return PERMISSION_DENIED;
     } else {
-      Set<String> grantedPermissionsForPidUid = grantedPermissionsMap.get(new Pair(pid, uid));
+      Set<String> grantedPermissionsForPidUid = grantedPermissionsMap.get(new Pair<>(pid, uid));
       return grantedPermissionsForPidUid != null && grantedPermissionsForPidUid.contains(permission)
           ? PERMISSION_GRANTED
           : PERMISSION_DENIED;
@@ -1185,7 +1193,7 @@ public class ShadowInstrumentation {
   public static void runOnMainSyncNoIdle(Runnable runnable) {
     if (ShadowLooper.looperMode() == LooperMode.Mode.INSTRUMENTATION_TEST
         && Looper.myLooper() != Looper.getMainLooper()) {
-      checkNotNull(getInstrumentation()).runOnMainSync(runnable);
+      requireNonNull(getInstrumentation()).runOnMainSync(runnable);
     } else {
       runnable.run();
     }

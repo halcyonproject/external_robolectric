@@ -315,15 +315,15 @@ public class ShadowMediaCodec {
           /* errorCode= */ 0, /* actionCode= */ 0, "Input buffer not owned by client: " + index);
     }
 
+    inputBuffersPendingQueuing.remove(Integer.valueOf(index));
+
     if (VERSION.SDK_INT >= 34 && (flags & MediaCodec.BUFFER_FLAG_DECODE_ONLY) != 0) {
-      inputBuffersPendingQueuing.remove(Integer.valueOf(index));
       makeInputBufferAvailable(index);
     } else {
       BufferInfo info = new BufferInfo();
       info.set(offset, size, presentationTimeUs, flags);
 
       makeOutputBufferAvailable(index, info);
-      inputBuffersPendingQueuing.remove(Integer.valueOf(index));
     }
   }
 
@@ -417,8 +417,8 @@ public class ShadowMediaCodec {
     outputBuffersPendingDequeue.add(index);
 
     if (isAsync) {
-      // Dequeue the buffer to signal its availablility to the client.
-      outputBuffersPendingDequeue.remove(Integer.valueOf(index));
+      // Dequeue the buffer to signal its availability to the client.
+      outputBuffersPendingDequeue.remove(index);
       // Signal output buffer availability.
       postFakeNativeEvent(EVENT_CALLBACK, CB_OUTPUT_AVAILABLE, index, outputBufferInfos[index]);
     }
@@ -473,7 +473,7 @@ public class ShadowMediaCodec {
   protected void validateOutputByteBuffer(
       @Nullable ByteBuffer[] buffers, int index, @Nonnull BufferInfo info) {
     if (buffers != null && index >= 0 && index < buffers.length) {
-      Buffer buffer = (Buffer) buffers[index];
+      Buffer buffer = buffers[index];
       if (buffer != null) {
         buffer.limit(info.offset + info.size).position(info.offset);
       }

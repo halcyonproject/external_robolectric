@@ -9,6 +9,7 @@ import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static android.os.UserManager.RESTRICTION_SOURCE_SYSTEM;
 import static android.os.UserManager.USER_TYPE_FULL_GUEST;
 import static android.os.UserManager.USER_TYPE_FULL_RESTRICTED;
@@ -464,6 +465,16 @@ public class ShadowUserManager {
     return getUserInfo(getContext().getUserId()).isProfile();
   }
 
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
+  protected boolean isAdminUser() {
+    if (userManagerState.enforcePermissions && !hasManageUsersPermission()) {
+      throw new SecurityException(
+          "You need INTERACT_ACROSS_USERS or MANAGE_USERS permission to: check isAdminUser");
+    }
+
+    return getUserInfo(getContext().getUserId()).isAdmin();
+  }
+
   @Implementation(minSdk = R)
   protected boolean isUserOfType(String userType) {
     if (userManagerState.enforcePermissions && !hasManageUsersPermission()) {
@@ -745,7 +756,7 @@ public class ShadowUserManager {
    */
   @Implementation(minSdk = M)
   protected boolean isSystemUser() {
-    if (userManagerState.isSystemUser == false) {
+    if (!userManagerState.isSystemUser) {
       return false;
     } else {
       return reflector(UserManagerReflector.class, realObject).isSystemUser();
@@ -814,7 +825,7 @@ public class ShadowUserManager {
    * Sets this process running under a restricted profile; controls the return value of {@link
    * UserManager#isRestrictedProfile()}.
    *
-   * @deprecated use {@link ShadowUserManager#addUser()} instead
+   * @deprecated use {@link ShadowUserManager#addUser(int, String, int)} instead
    */
   @Deprecated
   public void setIsRestrictedProfile(boolean isRestrictedProfile) {
@@ -1032,7 +1043,7 @@ public class ShadowUserManager {
 
   /**
    * Sets whether switching users is allowed or not; controls the return value of {@link
-   * UserManager#canSwitchUser()}
+   * UserManager#canSwitchUsers()}
    *
    * @deprecated use {@link #setUserSwitchability} instead
    */
@@ -1123,7 +1134,7 @@ public class ShadowUserManager {
 
   /**
    * Sets whether multiple users are supported; controls the return value of {@link
-   * UserManager#supportsMultipleUser}.
+   * UserManager#supportsMultipleUsers()}.
    */
   public void setSupportsMultipleUsers(boolean isMultiUserSupported) {
     userManagerState.isMultiUserSupported = isMultiUserSupported;

@@ -9,14 +9,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
 import static org.robolectric.shadows.ShadowLooper.shadowMainLooper;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -50,6 +53,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -57,11 +61,14 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.testing.TestActivity;
 import org.robolectric.util.Scheduler;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowApplicationTest {
+
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private Application context;
 
@@ -71,7 +78,7 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void shouldBeAContext() throws Exception {
+  public void shouldBeAContext() {
     assertThat(Robolectric.setupActivity(Activity.class).getApplication())
         .isSameInstanceAs(ApplicationProvider.getApplicationContext());
     assertThat(Robolectric.setupActivity(Activity.class).getApplication().getApplicationContext())
@@ -79,7 +86,7 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void shouldProvideServices() throws Exception {
+  public void shouldProvideServices() {
     assertThat(context.getSystemService(Context.ACTIVITY_SERVICE))
         .isInstanceOf(android.app.ActivityManager.class);
     assertThat(context.getSystemService(Context.POWER_SERVICE))
@@ -125,7 +132,7 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void shouldProvideServicesAvailableInAllSdKs() throws Exception {
+  public void shouldProvideServicesAvailableInAllSdKs() {
     assertThat(context.getSystemService(Context.DISPLAY_SERVICE))
         .isInstanceOf(android.hardware.display.DisplayManager.class);
     assertThat(context.getSystemService(Context.USER_SERVICE)).isInstanceOf(UserManager.class);
@@ -142,21 +149,21 @@ public class ShadowApplicationTest {
 
   @Test
   @Config(minSdk = LOLLIPOP_MR1)
-  public void shouldProvideServicesIntroducedInLollipopMr1() throws Exception {
+  public void shouldProvideServicesIntroducedInLollipopMr1() {
     assertThat(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
         .isInstanceOf(SubscriptionManager.class);
   }
 
   @Test
   @Config(minSdk = M)
-  public void shouldProvideServicesIntroducedMarshmallow() throws Exception {
+  public void shouldProvideServicesIntroducedMarshmallow() {
     assertThat(context.getSystemService(Context.FINGERPRINT_SERVICE))
         .isInstanceOf(FingerprintManager.class);
   }
 
   @Test
   @Config(minSdk = O)
-  public void shouldProvideServicesIntroducedOreo() throws Exception {
+  public void shouldProvideServicesIntroducedOreo() {
     // Context.AUTOFILL_MANAGER_SERVICE is marked @hide and this is the documented way to obtain
     // this service.
     AutofillManager autofillManager = context.getSystemService(AutofillManager.class);
@@ -167,13 +174,13 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void shouldProvideLayoutInflater() throws Exception {
+  public void shouldProvideLayoutInflater() {
     Object systemService = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     assertThat(systemService).isInstanceOf(LayoutInflater.class);
   }
 
   @Test
-  public void shouldCorrectlyInstantiatedAccessibilityService() throws Exception {
+  public void shouldCorrectlyInstantiatedAccessibilityService() {
     AccessibilityManager accessibilityManager =
         (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
 
@@ -699,7 +706,7 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void canFindAllReceiversForAnIntent() throws Exception {
+  public void canFindAllReceiversForAnIntent() {
     BroadcastReceiver expectedReceiver = new TestBroadcastReceiver();
     assertFalse(shadowOf(context).hasReceiverForIntent(new Intent("Foo")));
     context.registerReceiver(expectedReceiver, new IntentFilter("Foo"));
@@ -723,7 +730,7 @@ public class ShadowApplicationTest {
     Activity activity = Robolectric.setupActivity(Activity.class);
     activity.registerReceiver(new TestBroadcastReceiver(), new IntentFilter("Foo"));
 
-    assertThat(shadowOf(context).getRegisteredReceivers().size()).isAtLeast(1);
+    assertThat(shadowOf(context).getRegisteredReceivers()).isNotEmpty();
 
     shadowOf(context).clearRegisteredReceivers();
 
@@ -770,13 +777,90 @@ public class ShadowApplicationTest {
     assertThat(receiverWithPermission.intent).isEqualTo(broadcastIntent);
   }
 
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
   @Test
-  public void shouldRememberResourcesAfterLazilyLoading() throws Exception {
+  @Config(
+      manifest = "TestAndroidManifestWithTargetSdk34.xml",
+      minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withoutAnyExportedFlagsAndTargetSdk34OnAndroidFromU_throwsSecurityException() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+
+    assertThrows(
+        SecurityException.class,
+        () -> context.registerReceiver(new TestBroadcastReceiver(), filter));
+  }
+
+  @Test
+  @Config(
+      manifest = "TestAndroidManifestWithTargetSdk34.xml",
+      minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void registerReceiver_withReceiverExportedFlagAndTargetSdk34OnAndroidFromU_succeed() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    context.registerReceiver(new TestBroadcastReceiver(), filter, Context.RECEIVER_EXPORTED);
+  }
+
+  @Test
+  @Config(
+      manifest = "TestAndroidManifestWithTargetSdk34.xml",
+      minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void registerReceiver_withReceiverNotExportedFlagAndTargetSdk34OnAndroidFromU_succeed() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    context.registerReceiver(new TestBroadcastReceiver(), filter, Context.RECEIVER_NOT_EXPORTED);
+  }
+
+  @Test
+  @Config(manifest = "TestAndroidManifest.xml", minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withoutAnyExportedFlagsAndTargetSdk23OnAndroidFromU_notThrowsSecurityException() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    context.registerReceiver(new TestBroadcastReceiver(), filter);
+  }
+
+  @Test
+  @Config(
+      manifest = "TestAndroidManifestWithTargetSdk34.xml",
+      minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withBothExportedFlagsAndTargetSdk34OnAndroidFromU_throwsIllegalArgumentException() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            context.registerReceiver(
+                new TestBroadcastReceiver(),
+                filter,
+                Context.RECEIVER_EXPORTED | Context.RECEIVER_NOT_EXPORTED));
+  }
+
+  @Test
+  @Config(manifest = "TestAndroidManifest.xml", minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withBothExportedFlagsAndTargetSdk23OnAndroidFromU_throwsIllegalArgumentException() {
+    setSystemPropertyRule.set("robolectric.validateReceiverExportFlags", "true");
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            context.registerReceiver(
+                new TestBroadcastReceiver(),
+                filter,
+                Context.RECEIVER_EXPORTED | Context.RECEIVER_NOT_EXPORTED));
+  }
+
+  @Test
+  public void shouldRememberResourcesAfterLazilyLoading() {
     assertSame(context.getResources(), context.getResources());
   }
 
   @Test
-  public void startActivity_whenActivityCheckingEnabled_doesntFindResolveInfo() throws Exception {
+  public void startActivity_whenActivityCheckingEnabled_doesntFindResolveInfo() {
     shadowOf(context).checkActivities(true);
 
     String action = "com.does.not.exist.android.app.v2.mobile";
@@ -791,7 +875,7 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void startActivity_whenActivityCheckingEnabled_findsResolveInfo() throws Exception {
+  public void startActivity_whenActivityCheckingEnabled_findsResolveInfo() {
     shadowOf(context).checkActivities(true);
 
     context.startActivity(
@@ -806,7 +890,7 @@ public class ShadowApplicationTest {
   public void bindServiceShouldAddServiceConnectionToListOfBoundServiceConnections() {
     final ServiceConnection expectedServiceConnection = new EmptyServiceConnection();
 
-    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).hasSize(0);
+    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).isEmpty();
     assertThat(
             context.bindService(
                 new Intent("connect").setPackage("dummy.package"), expectedServiceConnection, 0))
@@ -823,7 +907,7 @@ public class ShadowApplicationTest {
     final String unboundableAction = "refuse";
     final Intent serviceIntent = new Intent(unboundableAction).setPackage("dummy.package");
     Shadows.shadowOf(context).declareActionUnbindable(unboundableAction);
-    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).hasSize(0);
+    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).isEmpty();
     assertThat(context.bindService(serviceIntent, expectedServiceConnection, 0)).isFalse();
     assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).hasSize(1);
     assertThat(Shadows.shadowOf(context).getBoundServiceConnections().get(0))
@@ -839,9 +923,9 @@ public class ShadowApplicationTest {
                 new Intent("connect").setPackage("dummy.package"), expectedServiceConnection, 0))
         .isTrue();
     assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).hasSize(1);
-    assertThat(Shadows.shadowOf(context).getUnboundServiceConnections()).hasSize(0);
+    assertThat(Shadows.shadowOf(context).getUnboundServiceConnections()).isEmpty();
     context.unbindService(expectedServiceConnection);
-    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).hasSize(0);
+    assertThat(Shadows.shadowOf(context).getBoundServiceConnections()).isEmpty();
     assertThat(Shadows.shadowOf(context).getUnboundServiceConnections()).hasSize(1);
     assertThat(Shadows.shadowOf(context).getUnboundServiceConnections().get(0))
         .isSameInstanceAs(expectedServiceConnection);

@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -86,8 +87,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -238,7 +239,7 @@ public class ShadowTelephonyManagerTest {
   public void setImei_withSlotId_acceptsNull() {
     shadowOf(telephonyManager).setImei(0, "imei0");
     shadowOf(telephonyManager).setImei(0, null);
-    assertEquals(null, telephonyManager.getImei(0));
+    assertNull(telephonyManager.getImei(0));
   }
 
   @Test
@@ -274,8 +275,7 @@ public class ShadowTelephonyManagerTest {
 
   @Test(expected = SecurityException.class)
   public void
-      getSimSerialNumber_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
-          throws Exception {
+      getSimSerialNumber_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted() {
     shadowOf(telephonyManager).setReadPhoneStatePermission(false);
     telephonyManager.getSimSerialNumber();
   }
@@ -341,15 +341,10 @@ public class ShadowTelephonyManagerTest {
     CountDownLatch callbackLatch = new CountDownLatch(1);
     shadowOf(telephonyManager)
         .requestCellInfoUpdate(
-            new Executor() {
-              @Override
-              public void execute(Runnable r) {
-                r.run();
-              }
-            },
+            Runnable::run,
             new CellInfoCallback() {
               @Override
-              public void onCellInfo(List<CellInfo> list) {
+              public void onCellInfo(@Nonnull List<CellInfo> list) {
                 assertEquals(callbackCellInfo, list);
                 callbackLatch.countDown();
               }
@@ -402,8 +397,7 @@ public class ShadowTelephonyManagerTest {
   }
 
   @Test(expected = SecurityException.class)
-  public void getDeviceId_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
-      throws Exception {
+  public void getDeviceId_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted() {
     shadowOf(telephonyManager).setReadPhoneStatePermission(false);
     telephonyManager.getDeviceId();
   }
@@ -411,16 +405,14 @@ public class ShadowTelephonyManagerTest {
   @Test
   @Config(minSdk = M)
   public void
-      getDeviceIdForSlot_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
-          throws Exception {
+      getDeviceIdForSlot_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted() {
     shadowOf(telephonyManager).setReadPhoneStatePermission(false);
     assertThrows(SecurityException.class, () -> telephonyManager.getDeviceId(1));
   }
 
   @Test
   public void
-      getDeviceSoftwareVersion_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
-          throws Exception {
+      getDeviceSoftwareVersion_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted() {
     shadowOf(telephonyManager).setReadPhoneStatePermission(false);
     assertThrows(SecurityException.class, () -> telephonyManager.getDeviceSoftwareVersion());
   }
@@ -901,9 +893,8 @@ public class ShadowTelephonyManagerTest {
   }
 
   private String callGetSimCountryIso(TelephonyManager telephonyManager, int subId) {
-    return (String)
-        ReflectionHelpers.callInstanceMethod(
-            telephonyManager, "getSimCountryIso", ClassParameter.from(int.class, subId));
+    return ReflectionHelpers.callInstanceMethod(
+        telephonyManager, "getSimCountryIso", ClassParameter.from(int.class, subId));
   }
 
   @Test
@@ -1231,8 +1222,7 @@ public class ShadowTelephonyManagerTest {
   @Test
   @Config(minSdk = M)
   public void
-      isTtyModeSupported_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted()
-          throws Exception {
+      isTtyModeSupported_shouldThrowSecurityExceptionWhenReadPhoneStatePermissionNotGranted() {
     shadowOf(telephonyManager).setReadPhoneStatePermission(false);
     assertThrows(SecurityException.class, () -> telephonyManager.isTtyModeSupported());
   }
@@ -1644,5 +1634,16 @@ public class ShadowTelephonyManagerTest {
     } finally {
       System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
+  }
+
+  @Test
+  @Config(minSdk = N)
+  public void shouldGetIccAuthentication() {
+    shadowOf(telephonyManager).setIccAuthentication("iccAuth");
+
+    assertThat(
+            telephonyManager.getIccAuthentication(
+                /* appType= */ 1, /* authType= */ 1, /* data= */ "data"))
+        .isEqualTo("iccAuth");
   }
 }

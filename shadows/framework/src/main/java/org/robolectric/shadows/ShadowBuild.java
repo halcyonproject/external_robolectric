@@ -5,7 +5,7 @@ import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.S;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
-import android.annotation.TargetApi;
+import android.annotation.RequiresApi;
 import android.os.Build;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -141,7 +141,7 @@ public class ShadowBuild {
    *
    * <p>It will be reset for the next test.
    */
-  @TargetApi(S)
+  @RequiresApi(S)
   public static void setVersionMediaPerformanceClass(int performanceClass) {
     ReflectionHelpers.setStaticField(
         Build.VERSION.class, "MEDIA_PERFORMANCE_CLASS", performanceClass);
@@ -161,7 +161,7 @@ public class ShadowBuild {
    *
    * <p>It will be reset for the next test.
    */
-  @TargetApi(M)
+  @RequiresApi(M)
   public static void setVersionSecurityPatch(String securityPatch) {
     ReflectionHelpers.setStaticField(Build.VERSION.class, "SECURITY_PATCH", securityPatch);
   }
@@ -253,6 +253,17 @@ public class ShadowBuild {
     reflector(_Build_.class).setOdmSku(odmSku);
   }
 
+  /**
+   * Sets the value of the {@link Build#SKU} field.
+   *
+   * <p>It will be reset for the next test.
+   *
+   * <p>Added in API level 31.
+   */
+  public static void setSku(String sku) {
+    reflector(_Build_.class).setSku(sku);
+  }
+
   @Implementation
   protected static String getRadioVersion() {
     if (radioVersionOverride != null) {
@@ -284,6 +295,10 @@ public class ShadowBuild {
     @Static
     @Accessor("ODM_SKU")
     void setOdmSku(String odmSku);
+
+    @Static
+    @Accessor("SKU")
+    void setSku(String sku);
 
     @Static
     @Direct

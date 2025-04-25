@@ -8,16 +8,19 @@ import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
 
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
@@ -33,7 +36,7 @@ public class ShadowHandlerTest {
   private final Handler.Callback callback =
       new Handler.Callback() {
         @Override
-        public boolean handleMessage(Message msg) {
+        public boolean handleMessage(@Nonnull Message msg) {
           hasHandlerCallbackHandledMessage = true;
           return false;
         }
@@ -348,7 +351,7 @@ public class ShadowHandlerTest {
     Handler handler =
         new Handler() {
           @Override
-          public void handleMessage(Message msg) {
+          public void handleMessage(@Nonnull Message msg) {
             wasRun[0] = true;
           }
         };
@@ -365,7 +368,7 @@ public class ShadowHandlerTest {
     Handler handler =
         new Handler() {
           @Override
-          public void handleMessage(Message msg) {
+          public void handleMessage(@Nonnull Message msg) {
             runAt.add(shadowOf(Looper.myLooper()).getScheduler().getCurrentTime());
           }
         };
@@ -390,7 +393,7 @@ public class ShadowHandlerTest {
     Handler handler =
         new Handler() {
           @Override
-          public void handleMessage(Message msg) {
+          public void handleMessage(@Nonnull Message msg) {
             wasRun[0] = true;
           }
         };
@@ -465,7 +468,7 @@ public class ShadowHandlerTest {
 
     Message m2 = new Handler().obtainMessage(1, "foo");
     assertThat(m2.what).isEqualTo(1);
-    assertThat(m2.obj).isEqualTo((Object) "foo");
+    assertThat(m2.obj).isEqualTo("foo");
 
     Message m3 = new Handler().obtainMessage(1, 2, 3);
     assertThat(m3.what).isEqualTo(1);
@@ -477,7 +480,7 @@ public class ShadowHandlerTest {
     assertThat(m4.what).isEqualTo(1);
     assertThat(m4.arg1).isEqualTo(2);
     assertThat(m4.arg2).isEqualTo(3);
-    assertThat(m4.obj).isEqualTo((Object) "foo");
+    assertThat(m4.obj).isEqualTo("foo");
   }
 
   @Test
@@ -507,7 +510,7 @@ public class ShadowHandlerTest {
     Handler h =
         new Handler(Looper.myLooper()) {
           @Override
-          public void handleMessage(Message msg) {
+          public void handleMessage(@Nonnull Message msg) {
             assertFalse(hasMessages(0));
           }
         };
@@ -515,8 +518,20 @@ public class ShadowHandlerTest {
     h.sendMessageAtFrontOfQueue(h.obtainMessage());
   }
 
+  @Test
+  public void runToEndOfTasks_shouldRunAllTasks() {
+    HandlerThread handlerThread = new HandlerThread("name");
+    handlerThread.start();
+    Handler handler = new Handler(handlerThread.getLooper());
+    handler.postDelayed(new Say("one"), 2000);
+    Shadows.shadowOf(handler.getLooper()).runToEndOfTasks();
+    handler.post(new Say("two"));
+    Shadows.shadowOf(handler.getLooper()).runToEndOfTasks();
+    assertThat(transcript).containsExactly("one", "two");
+  }
+
   private class Say implements Runnable {
-    private String event;
+    private final String event;
 
     public Say(String event) {
       this.event = event;

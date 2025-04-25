@@ -14,6 +14,7 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -36,10 +37,10 @@ public class ShadowLog {
   private static final int EXTRA_LOG_LENGTH = "l/: \n".length();
 
   private static final Map<String, Queue<LogItem>> logsByTag =
-      Collections.synchronizedMap(new HashMap<String, Queue<LogItem>>());
+      Collections.synchronizedMap(new HashMap<>());
   private static final Queue<LogItem> logs = new ConcurrentLinkedQueue<>();
   private static final Map<String, Integer> tagToLevel =
-      Collections.synchronizedMap(new HashMap<String, Integer>());
+      Collections.synchronizedMap(new HashMap<>());
 
   /**
    * Whether calling {@link Log#wtf} will throw {@link TerribleFailure}. This is analogous to
@@ -227,7 +228,7 @@ public class ShadowLog {
       PrintStream ps, String timeString, int level, String tag, String msg, Throwable throwable) {
 
     String outputString;
-    if (timeString != null && timeString.length() > 0) {
+    if (timeString != null && !timeString.isEmpty()) {
       outputString = timeString + " " + levelToChar(level) + "/" + tag + ": " + msg;
     } else {
       outputString = levelToChar(level) + "/" + tag + ": " + msg;
@@ -286,14 +287,7 @@ public class ShadowLog {
         try {
           final PrintStream file = new PrintStream(new FileOutputStream(logging), true);
           stream = file;
-          Runtime.getRuntime()
-              .addShutdownHook(
-                  new Thread() {
-                    @Override
-                    public void run() {
-                      file.close();
-                    }
-                  });
+          Runtime.getRuntime().addShutdownHook(new Thread(file::close));
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -337,10 +331,10 @@ public class ShadowLog {
 
       LogItem log = (LogItem) o;
       return type == log.type
-          && !(timeString != null ? !timeString.equals(log.timeString) : log.timeString != null)
-          && !(msg != null ? !msg.equals(log.msg) : log.msg != null)
-          && !(tag != null ? !tag.equals(log.tag) : log.tag != null)
-          && !(throwable != null ? !throwable.equals(log.throwable) : log.throwable != null);
+          && Objects.equals(timeString, log.timeString)
+          && Objects.equals(msg, log.msg)
+          && Objects.equals(tag, log.tag)
+          && Objects.equals(throwable, log.throwable);
     }
 
     @Override

@@ -21,13 +21,14 @@ import android.view.accessibility.AccessibilityManager.AccessibilityStateChangeL
 import android.view.accessibility.AccessibilityManager.TouchExplorationStateChangeListener;
 import android.view.accessibility.IAccessibilityManager;
 import android.view.accessibility.IAccessibilityManager.WindowTransformationSpec;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.HiddenApi;
@@ -138,8 +139,8 @@ public class ShadowAccessibilityManager {
   }
 
   public void setAccessibilityServiceList(List<ServiceInfo> accessibilityServiceList) {
-    Preconditions.checkNotNull(accessibilityServiceList);
-    this.accessibilityServiceList = new ArrayList<>(accessibilityServiceList);
+    Objects.requireNonNull(accessibilityServiceList);
+    ShadowAccessibilityManager.accessibilityServiceList = new ArrayList<>(accessibilityServiceList);
   }
 
   @Nullable
@@ -151,8 +152,9 @@ public class ShadowAccessibilityManager {
 
   public void setEnabledAccessibilityServiceList(
       List<AccessibilityServiceInfo> enabledAccessibilityServiceList) {
-    Preconditions.checkNotNull(enabledAccessibilityServiceList);
-    this.enabledAccessibilityServiceList = new ArrayList<>(enabledAccessibilityServiceList);
+    Objects.requireNonNull(enabledAccessibilityServiceList);
+    ShadowAccessibilityManager.enabledAccessibilityServiceList =
+        new ArrayList<>(enabledAccessibilityServiceList);
   }
 
   @Implementation
@@ -162,8 +164,9 @@ public class ShadowAccessibilityManager {
 
   public void setInstalledAccessibilityServiceList(
       List<AccessibilityServiceInfo> installedAccessibilityServiceList) {
-    Preconditions.checkNotNull(installedAccessibilityServiceList);
-    this.installedAccessibilityServiceList = new ArrayList<>(installedAccessibilityServiceList);
+    Objects.requireNonNull(installedAccessibilityServiceList);
+    ShadowAccessibilityManager.installedAccessibilityServiceList =
+        new ArrayList<>(installedAccessibilityServiceList);
   }
 
   @Implementation
@@ -187,7 +190,7 @@ public class ShadowAccessibilityManager {
   }
 
   public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
+    ShadowAccessibilityManager.enabled = enabled;
     ReflectionHelpers.setField(realAccessibilityManager, "mIsEnabled", enabled);
     for (AccessibilityStateChangeListener l : onAccessibilityStateChangeListeners.keySet()) {
       if (l != null) {
@@ -202,8 +205,8 @@ public class ShadowAccessibilityManager {
   }
 
   public void setTouchExplorationEnabled(boolean touchExplorationEnabled) {
-    this.touchExplorationEnabled = touchExplorationEnabled;
-    List<TouchExplorationStateChangeListener> listeners = new ArrayList<>();
+    ShadowAccessibilityManager.touchExplorationEnabled = touchExplorationEnabled;
+    List<TouchExplorationStateChangeListener> listeners;
     if (getApiLevel() >= O) {
       listeners =
           new ArrayList<>(
@@ -270,14 +273,12 @@ public class ShadowAccessibilityManager {
     }
 
     @Override
-    public void handleMessage(Message message) {
-      switch (message.what) {
-        case DO_SET_STATE:
-          ReflectionHelpers.callInstanceMethod(
-              accessibilityManager, "setState", ClassParameter.from(int.class, message.arg1));
-          return;
-        default:
-          Log.w("AccessibilityManager", "Unknown message type: " + message.what);
+    public void handleMessage(@Nonnull Message message) {
+      if (message.what == DO_SET_STATE) {
+        ReflectionHelpers.callInstanceMethod(
+            accessibilityManager, "setState", ClassParameter.from(int.class, message.arg1));
+      } else {
+        Log.w("AccessibilityManager", "Unknown message type: " + message.what);
       }
     }
   }

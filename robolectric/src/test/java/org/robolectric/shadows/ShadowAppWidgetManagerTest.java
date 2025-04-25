@@ -24,6 +24,7 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources.NotFoundException;
@@ -58,6 +59,14 @@ public class ShadowAppWidgetManagerTest {
     context = ApplicationProvider.getApplicationContext();
     appWidgetManager = AppWidgetManager.getInstance(context);
     shadowAppWidgetManager = shadowOf(appWidgetManager);
+  }
+
+  @Test
+  public void getInstance_shouldReturnSameInstance() {
+    assertNotNull(appWidgetManager);
+    assertSame(appWidgetManager, AppWidgetManager.getInstance(context));
+    assertSame(appWidgetManager, AppWidgetManager.getInstance(new ContextWrapper(context)));
+    assertSame(appWidgetManager, context.getSystemService(Context.APPWIDGET_SERVICE));
   }
 
   @Test
@@ -332,7 +341,7 @@ public class ShadowAppWidgetManagerTest {
   }
 
   @Test
-  public void updateAppWidget_landscapeAndPortrait_doesntReapplyDifferntViews() {
+  public void updateAppWidget_landscapeAndPortrait_doesntReapplyDifferentViews() {
     ComponentName provider = new ComponentName(context, SpanishTestAppWidgetProvider.class);
     appWidgetManager.bindAppWidgetIdIfAllowed(789, provider);
 

@@ -10,8 +10,8 @@ import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static com.google.common.base.Verify.verifyNotNull;
 
+import android.annotation.RequiresApi;
 import android.annotation.SystemApi;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
@@ -134,7 +134,7 @@ public class ShadowTelecomManager {
   }
 
   public void setCallRequestMode(CallRequestMode callRequestMode) {
-    this.callRequestMode = callRequestMode;
+    ShadowTelecomManager.callRequestMode = callRequestMode;
   }
 
   /**
@@ -152,7 +152,7 @@ public class ShadowTelecomManager {
 
   /** Sets the result of {@link TelecomManager#isOutgoingCallPermitted(PhoneAccountHandle)}. */
   public void setIsOutgoingCallPermitted(boolean isOutgoingCallPermitted) {
-    this.isOutgoingCallPermitted = isOutgoingCallPermitted;
+    ShadowTelecomManager.isOutgoingCallPermitted = isOutgoingCallPermitted;
   }
 
   /**
@@ -352,13 +352,13 @@ public class ShadowTelecomManager {
   @Implementation(minSdk = M)
   @HiddenApi
   public boolean setDefaultDialer(String packageName) {
-    this.defaultDialerPackageName = packageName;
+    defaultDialerPackageName = packageName;
     return true;
   }
 
   /** Set returned value of {@link #getDefaultDialerPackage()}. */
   public void setDefaultDialerPackage(String packageName) {
-    this.defaultDialerPackageName = packageName;
+    defaultDialerPackageName = packageName;
   }
 
   @Implementation(minSdk = M)
@@ -369,7 +369,7 @@ public class ShadowTelecomManager {
 
   /** Set returned value of {@link #getSystemDialerPackage()}. */
   public void setSystemDialerPackage(String packageName) {
-    this.systemDefaultDialerPackageName = packageName;
+    systemDefaultDialerPackageName = packageName;
   }
 
   public void setVoicemailNumber(PhoneAccountHandle accountHandle, String number) {
@@ -398,7 +398,7 @@ public class ShadowTelecomManager {
 
   /** Sets the return value for {@link TelecomManager#isInCall}. */
   public void setIsInCall(boolean isInCall) {
-    this.isInCall = isInCall;
+    ShadowTelecomManager.isInCall = isInCall;
   }
 
   /**
@@ -418,8 +418,8 @@ public class ShadowTelecomManager {
    * TelecomManager#isInCall}.
    */
   public void setIsInEmergencyCall(boolean isInEmergencyCall) {
-    this.isInEmergencyCall = isInEmergencyCall;
-    this.isInCall = isInEmergencyCall;
+    ShadowTelecomManager.isInEmergencyCall = isInEmergencyCall;
+    isInCall = isInEmergencyCall;
   }
 
   /**
@@ -527,7 +527,7 @@ public class ShadowTelecomManager {
    * <p>Specifically, this method sets up the relevant {@link ConnectionService} and returns the
    * result of {@link ConnectionService#onCreateIncomingConnection}.
    */
-  @TargetApi(M)
+  @RequiresApi(M)
   @Nullable
   public Connection allowIncomingCall(IncomingCallRecord call) {
     if (call.isHandled) {
@@ -547,7 +547,7 @@ public class ShadowTelecomManager {
    * <p>Specifically, this method sets up the relevant {@link ConnectionService} and calls {@link
    * ConnectionService#onCreateIncomingConnectionFailed}.
    */
-  @TargetApi(O)
+  @RequiresApi(O)
   public void denyIncomingCall(IncomingCallRecord call) {
     if (call.isHandled) {
       throw new IllegalStateException("Call has already been allowed or denied.");
@@ -606,7 +606,7 @@ public class ShadowTelecomManager {
    * <p>Specifically, this method sets up the relevant {@link ConnectionService} and returns the
    * result of {@link ConnectionService#onCreateOutgoingConnection}.
    */
-  @TargetApi(M)
+  @RequiresApi(M)
   @Nullable
   public Connection allowOutgoingCall(OutgoingCallRecord call) {
     if (call.isHandled) {
@@ -626,7 +626,7 @@ public class ShadowTelecomManager {
    * <p>Specifically, this method sets up the relevant {@link ConnectionService} and calls {@link
    * ConnectionService#onCreateOutgoingConnectionFailed}.
    */
-  @TargetApi(O)
+  @RequiresApi(O)
   public void denyOutgoingCall(OutgoingCallRecord call) {
     if (call.isHandled) {
       throw new IllegalStateException("Call has already been allowed or denied.");
@@ -704,7 +704,7 @@ public class ShadowTelecomManager {
   }
 
   public void setHandleMmiValue(boolean handleMmiValue) {
-    this.handleMmiValue = handleMmiValue;
+    ShadowTelecomManager.handleMmiValue = handleMmiValue;
   }
 
   @Implementation
@@ -742,7 +742,7 @@ public class ShadowTelecomManager {
    */
   @Implementation(minSdk = N)
   protected Intent createManageBlockedNumbersIntent() {
-    return this.manageBlockNumbersIntent;
+    return manageBlockNumbersIntent;
   }
 
   /**
@@ -750,12 +750,12 @@ public class ShadowTelecomManager {
    * ShadowTelecomManager#createManageBlockedNumbersIntent()}
    */
   public void setManageBlockNumbersIntent(Intent intent) {
-    this.manageBlockNumbersIntent = intent;
+    manageBlockNumbersIntent = intent;
   }
 
   @Implementation(maxSdk = LOLLIPOP_MR1)
   public void setSimCallManager(PhoneAccountHandle simCallManager) {
-    this.simCallManager = simCallManager;
+    ShadowTelecomManager.simCallManager = simCallManager;
   }
 
   /**
@@ -796,7 +796,7 @@ public class ShadowTelecomManager {
 
   @Implementation(minSdk = O)
   protected boolean isOutgoingCallPermitted(PhoneAccountHandle phoneAccountHandle) {
-    return this.isOutgoingCallPermitted;
+    return isOutgoingCallPermitted;
   }
 
   /**
@@ -812,7 +812,7 @@ public class ShadowTelecomManager {
     protected boolean isRinging = true;
 
     /**
-     * @deprecated Use {@link extras} instead.
+     * @deprecated Use {@link #extras} instead.
      */
     @Deprecated public final Bundle bundle;
 
@@ -826,12 +826,12 @@ public class ShadowTelecomManager {
   }
 
   /**
-   * When set to false methods requiring {@link android.Manifest.permission.READ_PHONE_STATE}
+   * When set to false methods requiring {@link android.Manifest.permission#READ_PHONE_STATE}
    * permission will throw a {@link SecurityException}. By default it's set to true for backwards
    * compatibility.
    */
   public void setReadPhoneStatePermission(boolean readPhoneStatePermission) {
-    this.readPhoneStatePermission = readPhoneStatePermission;
+    ShadowTelecomManager.readPhoneStatePermission = readPhoneStatePermission;
   }
 
   private void checkReadPhoneStatePermission() {
@@ -841,12 +841,12 @@ public class ShadowTelecomManager {
   }
 
   /**
-   * When set to false methods requiring {@link android.Manifest.permission.CALL_PHONE} permission
+   * When set to false methods requiring {@link android.Manifest.permission#CALL_PHONE} permission
    * will throw a {@link SecurityException}. By default it's set to true for backwards
    * compatibility.
    */
   public void setCallPhonePermission(boolean callPhonePermission) {
-    this.callPhonePermission = callPhonePermission;
+    ShadowTelecomManager.callPhonePermission = callPhonePermission;
   }
 
   private void checkCallPhonePermission() {

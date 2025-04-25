@@ -873,15 +873,13 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_fromManifest() throws Exception {
+  public void getGroupOfPlatformPermission_fromManifest() {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
         "org.robolectric.some_permission",
         context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isNull();
@@ -889,7 +887,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_fromExtraPermissions() throws Exception {
+  public void getGroupOfPlatformPermission_fromExtraPermissions() {
     String permissionName = "some_other_permission";
     String permissionGroupName = "some_other_permission_group";
     PermissionInfo permissionInfo = new PermissionInfo();
@@ -899,11 +897,7 @@ public class ShadowPackageManagerTest {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
-        permissionName,
-        context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        permissionName, context.getMainExecutor(), (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isNull();
@@ -911,7 +905,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_fromExtraPermissionsPlatformPrefix() throws Exception {
+  public void getGroupOfPlatformPermission_fromExtraPermissionsPlatformPrefix() {
     String permissionName = "android.permission.some_other_permission";
     String permissionGroupName = "some_other_permission_group";
     PermissionInfo permissionInfo = new PermissionInfo();
@@ -921,11 +915,7 @@ public class ShadowPackageManagerTest {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
-        permissionName,
-        context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        permissionName, context.getMainExecutor(), (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isEqualTo(permissionGroupName);
@@ -933,15 +923,11 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_unknown() throws Exception {
+  public void getGroupOfPlatformPermission_unknown() {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
-        "unknown_permission",
-        context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        "unknown_permission", context.getMainExecutor(), (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isNull();
@@ -949,15 +935,11 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_fromPlatform() throws Exception {
+  public void getGroupOfPlatformPermission_fromPlatform() {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
-        READ_CONTACTS,
-        context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        READ_CONTACTS, context.getMainExecutor(), (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isEqualTo(permission_group.CONTACTS);
@@ -965,7 +947,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getGroupOfPlatformPermission_overriddenPlatformPermission() throws Exception {
+  public void getGroupOfPlatformPermission_overriddenPlatformPermission() {
     PermissionInfo permissionInfo = new PermissionInfo();
     permissionInfo.name = READ_CONTACTS;
     permissionInfo.group = permission_group.CALENDAR;
@@ -973,11 +955,7 @@ public class ShadowPackageManagerTest {
     String[] permissionGroupArg = new String[1];
 
     packageManager.getGroupOfPlatformPermission(
-        READ_CONTACTS,
-        context.getMainExecutor(),
-        (group) -> {
-          permissionGroupArg[0] = group;
-        });
+        READ_CONTACTS, context.getMainExecutor(), (group) -> permissionGroupArg[0] = group);
     shadowMainLooper().idle();
 
     assertThat(permissionGroupArg[0]).isEqualTo(permission_group.CALENDAR);
@@ -985,15 +963,11 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getPlatformPermissionsForGroup_fromManifest() throws Exception {
+  public void getPlatformPermissionsForGroup_fromManifest() {
     List<List<String>> permissionsArg = new ArrayList<>();
 
     packageManager.getPlatformPermissionsForGroup(
-        "my_permission_group",
-        context.getMainExecutor(),
-        (permissions) -> {
-          permissionsArg.add(permissions);
-        });
+        "my_permission_group", context.getMainExecutor(), permissionsArg::add);
     shadowMainLooper().idle();
 
     assertThat(permissionsArg).hasSize(1);
@@ -1002,7 +976,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getPlatformPermissionsForGroup_fromExtraPermissions() throws Exception {
+  public void getPlatformPermissionsForGroup_fromExtraPermissions() {
     String permissionName1 = "some_other_permission";
     String permissionName2 = "android.permission.my_calendar_permission";
     String permissionGroupName = permission_group.CALENDAR;
@@ -1017,11 +991,7 @@ public class ShadowPackageManagerTest {
     List<List<String>> permissionsArg = new ArrayList<>();
 
     packageManager.getPlatformPermissionsForGroup(
-        permissionGroupName,
-        context.getMainExecutor(),
-        (permissions) -> {
-          permissionsArg.add(permissions);
-        });
+        permissionGroupName, context.getMainExecutor(), permissionsArg::add);
     shadowMainLooper().idle();
 
     assertThat(permissionsArg).hasSize(1);
@@ -1031,15 +1001,11 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getPlatformPermissionsForGroup_unknown() throws Exception {
+  public void getPlatformPermissionsForGroup_unknown() {
     List<List<String>> permissionsArg = new ArrayList<>();
 
     packageManager.getPlatformPermissionsForGroup(
-        "unknown_permission_group",
-        context.getMainExecutor(),
-        (permissions) -> {
-          permissionsArg.add(permissions);
-        });
+        "unknown_permission_group", context.getMainExecutor(), permissionsArg::add);
     shadowMainLooper().idle();
 
     assertThat(permissionsArg).hasSize(1);
@@ -1048,15 +1014,11 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getPlatformPermissionsForGroup_fromPlatform() throws Exception {
+  public void getPlatformPermissionsForGroup_fromPlatform() {
     List<List<String>> permissionsArg = new ArrayList<>();
 
     packageManager.getPlatformPermissionsForGroup(
-        permission_group.CALENDAR,
-        context.getMainExecutor(),
-        (permissions) -> {
-          permissionsArg.add(permissions);
-        });
+        permission_group.CALENDAR, context.getMainExecutor(), permissionsArg::add);
     shadowMainLooper().idle();
 
     assertThat(permissionsArg).hasSize(1);
@@ -1065,7 +1027,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getPlatformPermissionsForGroup_overriddenPlatformPermission() throws Exception {
+  public void getPlatformPermissionsForGroup_overriddenPlatformPermission() {
     PermissionInfo permissionInfo = new PermissionInfo();
     permissionInfo.name = READ_CONTACTS;
     permissionInfo.group = permission_group.CALENDAR;
@@ -1073,11 +1035,7 @@ public class ShadowPackageManagerTest {
     List<List<String>> permissionsArg = new ArrayList<>();
 
     packageManager.getPlatformPermissionsForGroup(
-        permission_group.CALENDAR,
-        context.getMainExecutor(),
-        (permissions) -> {
-          permissionsArg.add(permissions);
-        });
+        permission_group.CALENDAR, context.getMainExecutor(), permissionsArg::add);
     shadowMainLooper().idle();
 
     assertThat(permissionsArg).hasSize(1);
@@ -1704,7 +1662,7 @@ public class ShadowPackageManagerTest {
   }
 
   @Test
-  public void addIntentFilterForComponent() throws Exception {
+  public void addIntentFilterForComponent() {
     ComponentName testComponent = new ComponentName("package", "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
     intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
@@ -1780,7 +1738,7 @@ public class ShadowPackageManagerTest {
   }
 
   @Test
-  public void resolveExplicitIntent_sameApp() throws Exception {
+  public void resolveExplicitIntent_sameApp() {
     ComponentName testComponent = new ComponentName(RuntimeEnvironment.getApplication(), "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
 
@@ -1794,7 +1752,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = TIRAMISU)
-  public void resolveExplicitIntent_filterMatch() throws Exception {
+  public void resolveExplicitIntent_filterMatch() {
     ComponentName testComponent = new ComponentName("some.other.package", "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
 
@@ -1809,7 +1767,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = TIRAMISU)
-  public void resolveExplicitIntent_noFilterMatch() throws Exception {
+  public void resolveExplicitIntent_noFilterMatch() {
     ComponentName testComponent = new ComponentName("some.other.package", "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
 
@@ -1821,7 +1779,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(maxSdk = S)
-  public void resolveExplicitIntent_noFilterMatch_belowT() throws Exception {
+  public void resolveExplicitIntent_noFilterMatch_belowT() {
     ComponentName testComponent = new ComponentName("some.other.package", "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
 
@@ -1833,7 +1791,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = TIRAMISU)
-  public void resolveExplicitIntent_noFilterMatch_targetBelowT() throws Exception {
+  public void resolveExplicitIntent_noFilterMatch_targetBelowT() {
     PackageInfo testPackage =
         PackageInfoBuilder.newBuilder().setPackageName("some.other.package").build();
     testPackage.applicationInfo.targetSdkVersion = S;
@@ -1849,7 +1807,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = TIRAMISU)
-  public void resolveExplicitIntent_noAction() throws Exception {
+  public void resolveExplicitIntent_noAction() {
     ComponentName testComponent = new ComponentName("some.other.package", "name");
     IntentFilter intentFilter = new IntentFilter("ACTION");
 
@@ -2256,7 +2214,7 @@ public class ShadowPackageManagerTest {
     ActivityInfo activityInfoWithFilters =
         findActivity(packageInfo.activities, ActivityWithFilters.class.getName());
     assertThat(activityInfoWithFilters.packageName).isEqualTo("org.robolectric");
-    assertThat(activityInfoWithFilters.exported).isEqualTo(true);
+    assertThat(activityInfoWithFilters.exported).isTrue();
     assertThat(activityInfoWithFilters.permission).isEqualTo("com.foo.MY_PERMISSION");
   }
 
@@ -2586,9 +2544,9 @@ public class ShadowPackageManagerTest {
     int filterCount = packageManager.getPreferredActivities(filters, activities, null);
 
     assertThat(filterCount).isEqualTo(1);
-    assertThat(activities.size()).isEqualTo(1);
+    assertThat(activities).hasSize(1);
     assertThat(activities.get(0).getPackageName()).isEqualTo(packageName);
-    assertThat(filters.size()).isEqualTo(1);
+    assertThat(filters).hasSize(1);
 
     filterCount = packageManager.getPreferredActivities(filters, activities, "other");
 
@@ -2688,8 +2646,8 @@ public class ShadowPackageManagerTest {
     assertThat(meta.getString("org.robolectric.metaName1")).isEqualTo("metaValue1");
     assertThat(meta.getString("org.robolectric.metaName2")).isEqualTo("metaValue2");
 
-    assertThat(meta.getBoolean("org.robolectric.metaFalseLiteral")).isEqualTo(false);
-    assertThat(meta.getBoolean("org.robolectric.metaTrueLiteral")).isEqualTo(true);
+    assertThat(meta.getBoolean("org.robolectric.metaFalseLiteral")).isFalse();
+    assertThat(meta.getBoolean("org.robolectric.metaTrueLiteral")).isTrue();
 
     assertThat(meta.getInt("org.robolectric.metaInt")).isEqualTo(123);
     assertThat(meta.getFloat("org.robolectric.metaFloat")).isEqualTo(1.23f);
@@ -2940,7 +2898,7 @@ public class ShadowPackageManagerTest {
   public void getPackagesForUid() {
     assertThat(packageManager.getPackagesForUid(10)).isNull();
 
-    shadowOf(packageManager).setPackagesForUid(10, new String[] {"a_name"});
+    shadowOf(packageManager).setPackagesForUid(10, "a_name");
 
     assertThat(packageManager.getPackagesForUid(10)).asList().containsExactly("a_name");
   }
@@ -2948,7 +2906,7 @@ public class ShadowPackageManagerTest {
   @Test
   @Config(minSdk = N)
   public void getPackageUid() throws NameNotFoundException {
-    shadowOf(packageManager).setPackagesForUid(10, new String[] {"a_name"});
+    shadowOf(packageManager).setPackagesForUid(10, "a_name");
     assertThat(packageManager.getPackageUid("a_name", 0)).isEqualTo(10);
   }
 
@@ -2966,7 +2924,7 @@ public class ShadowPackageManagerTest {
   @Test
   @Config(minSdk = TIRAMISU)
   public void getPackageUid_sdkT() throws NameNotFoundException {
-    shadowOf(packageManager).setPackagesForUid(10, new String[] {"a_name"});
+    shadowOf(packageManager).setPackagesForUid(10, "a_name");
     assertThat(packageManager.getPackageUid("a_name", PackageInfoFlags.of(0))).isEqualTo(10);
   }
 
@@ -2983,7 +2941,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   public void getPackagesForUid_shouldReturnSetPackageName() {
-    shadowOf(packageManager).setPackagesForUid(10, new String[] {"a_name"});
+    shadowOf(packageManager).setPackagesForUid(10, "a_name");
     assertThat(packageManager.getPackagesForUid(10)).asList().containsExactly("a_name");
   }
 
@@ -3408,7 +3366,7 @@ public class ShadowPackageManagerTest {
   @Test
   public void getPermissionInfo_notFound() {
     try {
-      packageManager.getPermissionInfo("non_existant_permission", 0);
+      packageManager.getPermissionInfo("non_existent_permission", 0);
       fail("should have thrown NameNotFoundException");
     } catch (NameNotFoundException e) {
       // expected
@@ -3626,7 +3584,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = VERSION_CODES.R)
-  public void getInstallerSourceInfo_notExists_throwsException() throws Exception {
+  public void getInstallerSourceInfo_notExists_throwsException() {
     assertThrows(
         NameNotFoundException.class,
         () -> packageManager.getInstallSourceInfo("nonExistTarget.package"));
@@ -3972,7 +3930,7 @@ public class ShadowPackageManagerTest {
 
     shadowOf(packageManager).doPendingUninstallCallbacks();
 
-    assertThat(shadowOf(packageManager).getDeletedPackages()).hasSize(0);
+    assertThat(shadowOf(packageManager).getDeletedPackages()).isEmpty();
     verify(mockObserver)
         .packageDeleted(packageInfo.packageName, PackageManager.DELETE_FAILED_INTERNAL_ERROR);
   }
@@ -3980,7 +3938,7 @@ public class ShadowPackageManagerTest {
   private static class ActivityWithFilters extends Activity {}
 
   @Test
-  public void getIntentFiltersForComponent() throws Exception {
+  public void getIntentFiltersForComponent() {
     List<IntentFilter> intentFilters =
         shadowOf(packageManager)
             .getIntentFiltersForActivity(new ComponentName(context, ActivityWithFilters.class));
@@ -4122,7 +4080,7 @@ public class ShadowPackageManagerTest {
         /* suspended= */ true,
         /* appExtras= */ null,
         /* launcherExtras= */ null,
-        /* dialogMessage= */ (String) null);
+        /* dialogMessage= */ null);
     assertThat(packageManager.isPackageSuspended(TEST_PACKAGE_NAME)).isTrue();
   }
 
@@ -4150,13 +4108,13 @@ public class ShadowPackageManagerTest {
         /* suspended= */ true,
         /* appExtras= */ null,
         /* launcherExtras= */ null,
-        /* dialogMessage= */ (String) null);
+        /* dialogMessage= */ null);
     setPackagesSuspended(
         new String[] {TEST_PACKAGE_NAME},
         /* suspended= */ false,
         /* appExtras= */ null,
         /* launcherExtras= */ null,
-        /* dialogMessage= */ (String) null);
+        /* dialogMessage= */ null);
     assertThat(packageManager.isPackageSuspended(TEST_PACKAGE_NAME)).isFalse();
   }
 
@@ -4193,7 +4151,7 @@ public class ShadowPackageManagerTest {
           /* suspended= */ true,
           /* appExtras= */ null,
           /* launcherExtras= */ null,
-          /* dialogMessage= */ (String) null);
+          /* dialogMessage= */ null);
       fail("Should have thrown UnsupportedOperationException");
     } catch (UnsupportedOperationException expected) {
     }
@@ -4254,7 +4212,7 @@ public class ShadowPackageManagerTest {
           /* suspended= */ true,
           /* appExtras= */ null,
           /* launcherExtras= */ null,
-          /* dialogMessage= */ (String) null);
+          /* dialogMessage= */ null);
       fail("Should have thrown UnsupportedOperationException");
     } catch (UnsupportedOperationException expected) {
     }
@@ -4324,7 +4282,7 @@ public class ShadowPackageManagerTest {
                 /* suspended= */ true,
                 /* appExtras= */ null,
                 /* launcherExtras= */ null,
-                /* dialogMessage= */ (String) null))
+                /* dialogMessage= */ null))
         .asList()
         .containsExactly("com.nonexistent.package", "android", context.getPackageName());
 
@@ -4449,7 +4407,7 @@ public class ShadowPackageManagerTest {
         /* suspended= */ false,
         /* appExtras= */ null,
         /* launcherExtras= */ null,
-        /* dialogMessage= */ (String) null);
+        /* dialogMessage= */ null);
 
     assertThat(
             setPackagesSuspended(
@@ -4463,7 +4421,7 @@ public class ShadowPackageManagerTest {
                 /* suspended= */ false,
                 /* appExtras= */ null,
                 /* launcherExtras= */ null,
-                /* dialogMessage= */ (String) null))
+                /* dialogMessage= */ null))
         .asList()
         .containsExactly("com.nonexistent.package", "android", context.getPackageName());
 
@@ -5001,7 +4959,7 @@ public class ShadowPackageManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void getProperty_component() throws NameNotFoundException {
+  public void getProperty_component() {
     final ComponentName componentName =
         new ComponentName(RuntimeEnvironment.getApplication().getPackageName(), "mycomponentname");
     assertThrows(

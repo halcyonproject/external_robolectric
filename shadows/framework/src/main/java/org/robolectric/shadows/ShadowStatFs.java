@@ -9,7 +9,7 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
 
 /**
- * Robolectic doesn't provide actual filesystem stats; rather, it provides the ability to specify
+ * Robolectric doesn't provide actual filesystem stats; rather, it provides the ability to specify
  * stats values in advance.
  *
  * @see #registerStats(File, int, int, int)
@@ -18,7 +18,7 @@ import org.robolectric.annotation.Resetter;
 public class ShadowStatFs {
   public static final int BLOCK_SIZE = 4096;
   private static final Stats DEFAULT_STATS = new Stats(0, 0, 0);
-  private static TreeMap<String, Stats> stats = new TreeMap<>();
+  private static final TreeMap<String, Stats> stats = new TreeMap<>();
   private Stats stat;
 
   @Implementation

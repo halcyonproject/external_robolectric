@@ -3,7 +3,7 @@ package org.robolectric.shadows;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 
-import android.annotation.TargetApi;
+import android.annotation.RequiresApi;
 import android.content.ComponentName;
 import android.os.ParcelFileDescriptor;
 import android.view.contentcapture.ContentCaptureCondition;
@@ -14,6 +14,7 @@ import android.view.contentcapture.DataShareRequest;
 import android.view.contentcapture.DataShareWriteAdapter;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -33,7 +34,8 @@ public class ShadowContentCaptureManager {
    * Configures the set of {@link ContentCaptureCondition} that will be returned when calling {@link
    * #getContentCaptureConditions()}.
    */
-  public void setContentCaptureConditions(Set<ContentCaptureCondition> contentCaptureConditions) {
+  public void setContentCaptureConditions(
+      @Nonnull Set<ContentCaptureCondition> contentCaptureConditions) {
     this.contentCaptureConditions = contentCaptureConditions;
   }
 
@@ -41,7 +43,7 @@ public class ShadowContentCaptureManager {
    * Configures the {@link ComponentName} that will be returned when calling {@link
    * #getServiceComponentName()}.
    */
-  public void setServiceComponentName(ComponentName serviceComponentName) {
+  public void setServiceComponentName(@Nonnull ComponentName serviceComponentName) {
     this.serviceComponentName = serviceComponentName;
   }
 
@@ -54,7 +56,7 @@ public class ShadowContentCaptureManager {
    * Configures {@link DataShareError} to be raised on calls to {@link #shareData(DataShareRequest,
    * Executor, DataShareWriteAdapter)}.
    */
-  @TargetApi(R)
+  @RequiresApi(R)
   public void setDataShareErrorCode(@DataShareError int dataShareErrorCode) {
     this.dataShareErrorCode = dataShareErrorCode;
   }
@@ -63,7 +65,7 @@ public class ShadowContentCaptureManager {
    * Configures whether or not to raise request rejection on calls to {@link
    * #shareData(DataShareRequest, Executor, DataShareWriteAdapter)}.
    */
-  @TargetApi(R)
+  @RequiresApi(R)
   public void setShouldRejectRequest(boolean shouldRejectRequest) {
     this.shouldRejectRequest = shouldRejectRequest;
   }
@@ -73,16 +75,18 @@ public class ShadowContentCaptureManager {
    * DataShareWriteAdapter#onWrite(ParcelFileDescriptor)} will receive on calls to {@link
    * #shareData(DataShareRequest, Executor, DataShareWriteAdapter)}.
    */
-  @TargetApi(R)
+  @RequiresApi(R)
   public void setShareDataParcelFileDescriptor(ParcelFileDescriptor parcelFileDescriptor) {
     this.parcelFileDescriptor = parcelFileDescriptor;
   }
 
+  @Nullable
   @Implementation
   protected Set<ContentCaptureCondition> getContentCaptureConditions() {
     return contentCaptureConditions;
   }
 
+  @Nullable
   @Implementation
   protected ComponentName getServiceComponentName() {
     return serviceComponentName;

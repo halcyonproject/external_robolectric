@@ -15,6 +15,7 @@ import android.os.Parcel;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction;
+import android.view.accessibility.AccessibilityNodeInfo.CollectionInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -105,7 +106,7 @@ public class ShadowAccessibilityNodeInfoTest {
     node = AccessibilityNodeInfo.obtain();
     node.setClickable(false);
     shadow = shadowOf(node);
-    assertThat(node.isClickable()).isEqualTo(false);
+    assertThat(node.isClickable()).isFalse();
     node.setText("Test");
     node.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
     node.setTextSelection(0, 1);
@@ -121,7 +122,7 @@ public class ShadowAccessibilityNodeInfoTest {
     node.addAction(AccessibilityNodeInfo.ACTION_PASTE);
     assertThat(node.getActions()).isEqualTo(AccessibilityNodeInfo.ACTION_PASTE);
     node.setClickable(true);
-    assertThat(node.isClickable()).isEqualTo(true);
+    assertThat(node.isClickable()).isTrue();
     node.setClickable(false);
     node.removeAction(AccessibilityNodeInfo.ACTION_PASTE);
     node.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
@@ -138,12 +139,12 @@ public class ShadowAccessibilityNodeInfoTest {
         (action, arguments) -> action == AccessibilityNodeInfo.ACTION_CLICK);
 
     boolean clickResult = node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-    assertThat(clickResult).isEqualTo(true);
-    assertThat(shadow.getPerformedActions().isEmpty()).isEqualTo(false);
+    assertThat(clickResult).isTrue();
+    assertThat(shadow.getPerformedActions().isEmpty()).isFalse();
     assertThat(shadow.getPerformedActions().get(0)).isEqualTo(AccessibilityNodeInfo.ACTION_CLICK);
     boolean longClickResult = node.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
-    assertThat(longClickResult).isEqualTo(false);
-    assertThat(shadow.getPerformedActions().size()).isEqualTo(2);
+    assertThat(longClickResult).isFalse();
+    assertThat(shadow.getPerformedActions()).hasSize(2);
     assertThat(shadow.getPerformedActions().get(1))
         .isEqualTo(AccessibilityNodeInfo.ACTION_LONG_CLICK);
   }
@@ -314,5 +315,30 @@ public class ShadowAccessibilityNodeInfoTest {
     assertThat(node.isSealed()).isTrue();
     AccessibilityNodeInfo node2 = AccessibilityNodeInfo.obtain(node);
     assertThat(node2.isSealed()).isTrue();
+  }
+
+  @Test
+  public void obtainCollectionInfo_doesNotCrash() {
+    // See https://github.com/robolectric/robolectric/issues/3384
+    CollectionInfo collectionInfo = CollectionInfo.obtain(12, 0, false);
+
+    assertThat(collectionInfo).isNotNull();
+    assertThat(collectionInfo.getSelectionMode()).isEqualTo(CollectionInfo.SELECTION_MODE_NONE);
+    assertThat(collectionInfo.getRowCount()).isEqualTo(12);
+    assertThat(collectionInfo.getColumnCount()).isEqualTo(0);
+    assertThat(collectionInfo.isHierarchical()).isFalse();
+  }
+
+  @Test
+  public void obtainCollectionInfo_withSelectionMode_doesNotCrash() {
+    // See https://github.com/robolectric/robolectric/issues/3384
+    CollectionInfo collectionInfo =
+        CollectionInfo.obtain(12, 0, false, CollectionInfo.SELECTION_MODE_MULTIPLE);
+
+    assertThat(collectionInfo).isNotNull();
+    assertThat(collectionInfo.getSelectionMode()).isEqualTo(CollectionInfo.SELECTION_MODE_MULTIPLE);
+    assertThat(collectionInfo.getRowCount()).isEqualTo(12);
+    assertThat(collectionInfo.getColumnCount()).isEqualTo(0);
+    assertThat(collectionInfo.isHierarchical()).isFalse();
   }
 }

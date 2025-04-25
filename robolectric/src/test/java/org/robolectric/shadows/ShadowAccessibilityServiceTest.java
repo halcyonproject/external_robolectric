@@ -44,7 +44,7 @@ public class ShadowAccessibilityServiceTest {
   @Test
   public void shouldRecordPerformedAction() {
     service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
-    assertThat(shadow.getGlobalActionsPerformed().size()).isEqualTo(1);
+    assertThat(shadow.getGlobalActionsPerformed()).hasSize(1);
     assertThat(shadow.getGlobalActionsPerformed().get(0)).isEqualTo(1);
   }
 
@@ -225,13 +225,13 @@ public class ShadowAccessibilityServiceTest {
 
   @Test
   @Config(minSdk = R)
-  public void getWindowsforDefaultDisplay_returnEmptyList() {
+  public void getWindowsForDefaultDisplay_returnEmptyList() {
     assertThat(service.getWindowsOnAllDisplays().get(Display.DEFAULT_DISPLAY)).isEmpty();
   }
 
   @Test
   @Config(minSdk = R)
-  public void getWindowsforNonDefaultDisplay_returnNullList() {
+  public void getWindowsForNonDefaultDisplay_returnNullList() {
     assertThat(service.getWindowsOnAllDisplays().get(Display.DEFAULT_DISPLAY + 1)).isNull();
   }
 

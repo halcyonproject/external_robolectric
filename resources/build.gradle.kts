@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
   api(project(":utils"))
-  api(project(":annotations"))
   api(project(":pluginapi"))
 
   api(libs.auto.value.annotations)
@@ -14,8 +13,8 @@ dependencies {
 
   testImplementation(libs.junit4)
   testImplementation(libs.truth)
-  testImplementation(libs.compile.testing)
   testImplementation(libs.mockito)
+  testImplementation(libs.mockito.subclass)
 
   annotationProcessor(libs.auto.value)
 }

@@ -124,10 +124,10 @@ public class ShadowSubscriptionManager {
   }
 
   /**
-   * Cache of phone IDs used by {@link getPhoneId}. Managed by {@link putPhoneId} and {@link
-   * removePhoneId}.
+   * Cache of phone IDs used by {@link #getPhoneId}. Managed by {@link #putPhoneId} and {@link
+   * #removePhoneId}.
    */
-  private static Map<Integer, Integer> phoneIds = new HashMap<>();
+  private static final Map<Integer, Integer> phoneIds = new HashMap<>();
 
   /**
    * Cache of {@link SubscriptionInfo} used by {@link #getActiveSubscriptionInfoList}. Managed by
@@ -149,15 +149,15 @@ public class ShadowSubscriptionManager {
 
   /**
    * List of listeners to be notified if the list of {@link SubscriptionInfo} changes. Managed by
-   * {@link #addOnSubscriptionsChangedListener} and {@link removeOnSubscriptionsChangedListener}.
+   * {@link #addOnSubscriptionsChangedListener} and {@link #removeOnSubscriptionsChangedListener}.
    */
-  private List<OnSubscriptionsChangedListener> listeners = new ArrayList<>();
+  private final List<OnSubscriptionsChangedListener> listeners = new ArrayList<>();
 
   /**
    * Cache of subscription ids used by {@link #isNetworkRoaming}. Managed by {@link
    * #setNetworkRoamingStatus} and {@link #clearNetworkRoamingStatus}.
    */
-  private Set<Integer> roamingSimSubscriptionIds = new HashSet<>();
+  private final Set<Integer> roamingSimSubscriptionIds = new HashSet<>();
 
   /**
    * Returns the active list of {@link SubscriptionInfo} that were set via {@link
@@ -277,7 +277,7 @@ public class ShadowSubscriptionManager {
    * SubscriptionManager#canManageSubscription(SubscriptionInfo)}. They may be active, or
    * installed-but-inactive. This is generally intended to be called by carrier apps that directly
    * manage their own eSIM profiles on the device in concert with {@link
-   * android.telephony.EuiccManager}.
+   * android.telephony.euicc.EuiccManager}.
    *
    * @param list - The subscription info list, can be null.
    */
@@ -371,7 +371,7 @@ public class ShadowSubscriptionManager {
   }
 
   /**
-   * Check if a listener exists in the {@link ShadowSubscriptionManager.listeners}.
+   * Check if a listener exists in the {@link ShadowSubscriptionManager#listeners}.
    *
    * @param listener The listener to check.
    * @return boolean True if the listener already added, otherwise false.
@@ -433,13 +433,13 @@ public class ShadowSubscriptionManager {
     return roamingSimSubscriptionIds.contains(simSubscriptionId);
   }
 
-  /** Adds a subscription ID-phone ID mapping to the map used by {@link getPhoneId}. */
+  /** Adds a subscription ID-phone ID mapping to the map used by {@link #getPhoneId}. */
   public static void putPhoneId(int subId, int phoneId) {
     phoneIds.put(subId, phoneId);
   }
 
   /**
-   * Removes a subscription ID-phone ID mapping from the map used by {@link getPhoneId}.
+   * Removes a subscription ID-phone ID mapping from the map used by {@link #getPhoneId}.
    *
    * @return the previous phone ID associated with the subscription ID, or null if there was no
    *     mapping for the subscription ID
@@ -450,15 +450,15 @@ public class ShadowSubscriptionManager {
 
   /**
    * Removes all mappings between subscription IDs and phone IDs from the map used by {@link
-   * getPhoneId}.
+   * #getPhoneId}.
    */
   public static void clearPhoneIds() {
     phoneIds.clear();
   }
 
   /**
-   * Uses the map of subscription IDs to phone IDs managed by {@link putPhoneId} and {@link
-   * removePhoneId} to return the phone ID for a given subscription ID.
+   * Uses the map of subscription IDs to phone IDs managed by {@link #putPhoneId} and {@link
+   * #removePhoneId} to return the phone ID for a given subscription ID.
    */
   @Implementation(minSdk = LOLLIPOP_MR1, maxSdk = P)
   @HiddenApi
@@ -523,12 +523,12 @@ public class ShadowSubscriptionManager {
   }
 
   /**
-   * When set to false methods requiring {@link android.Manifest.permission.READ_PHONE_STATE}
+   * When set to false methods requiring {@link android.Manifest.permission#READ_PHONE_STATE}
    * permission will throw a {@link SecurityException}. By default it's set to true for backwards
    * compatibility.
    */
   public void setReadPhoneStatePermission(boolean readPhoneStatePermission) {
-    this.readPhoneStatePermission = readPhoneStatePermission;
+    ShadowSubscriptionManager.readPhoneStatePermission = readPhoneStatePermission;
   }
 
   private void checkReadPhoneStatePermission() {
@@ -538,12 +538,12 @@ public class ShadowSubscriptionManager {
   }
 
   /**
-   * When set to false methods requiring {@link android.Manifest.permission.READ_PHONE_NUMBERS}
+   * When set to false methods requiring {@link android.Manifest.permission#READ_PHONE_NUMBERS}
    * permission will throw a {@link SecurityException}. By default it's set to true for backwards
    * compatibility.
    */
   public void setReadPhoneNumbersPermission(boolean readPhoneNumbersPermission) {
-    this.readPhoneNumbersPermission = readPhoneNumbersPermission;
+    ShadowSubscriptionManager.readPhoneNumbersPermission = readPhoneNumbersPermission;
   }
 
   private void checkReadPhoneNumbersPermission() {

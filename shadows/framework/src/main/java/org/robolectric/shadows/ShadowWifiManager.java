@@ -31,7 +31,6 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.ArraySet;
 import android.util.Pair;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,6 +41,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -81,7 +81,7 @@ public class ShadowWifiManager {
   private boolean isWpa3SaeH2eSupported = false;
   private boolean isWpa3SaePublicKeySupported = false;
   private boolean isWpa3SuiteBSupported = false;
-  private AtomicInteger activeLockCount = new AtomicInteger(0);
+  private final AtomicInteger activeLockCount = new AtomicInteger(0);
   private final BitSet readOnlyNetworkIds = new BitSet();
   private final ConcurrentHashMap<WifiManager.OnWifiUsabilityStatsListener, Executor>
       wifiUsabilityStatsListeners = new ConcurrentHashMap<>();
@@ -119,7 +119,7 @@ public class ShadowWifiManager {
 
   @Implementation(minSdk = Q)
   protected int addNetworkSuggestions(List<WifiNetworkSuggestion> networkSuggestions) {
-    Preconditions.checkNotNull(networkSuggestions);
+    Objects.requireNonNull(networkSuggestions);
     if (addNetworkSuggestionsResult == WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
       lastAddedSuggestions = ImmutableList.copyOf(networkSuggestions);
     }
@@ -280,11 +280,7 @@ public class ShadowWifiManager {
 
   @Implementation
   protected List<WifiConfiguration> getConfiguredNetworks() {
-    final ArrayList<WifiConfiguration> wifiConfigurations = new ArrayList<>();
-    for (WifiConfiguration wifiConfiguration : networkIdToConfiguredNetworks.values()) {
-      wifiConfigurations.add(wifiConfiguration);
-    }
-    return wifiConfigurations;
+    return new ArrayList<>(networkIdToConfiguredNetworks.values());
   }
 
   @Implementation
@@ -527,7 +523,7 @@ public class ShadowWifiManager {
   }
 
   /**
-   * Prevents a networkId from being updated using the {@link updateNetwork(WifiConfiguration)}
+   * Prevents a networkId from being updated using the {@link #updateNetwork(WifiConfiguration)}
    * method. This is to simulate the case where a separate application creates a network, and the
    * Android security model prevents your application from updating it.
    */
@@ -701,6 +697,7 @@ public class ShadowWifiManager {
     Set<Map.Entry<WifiManager.OnWifiUsabilityStatsListener, Executor>> toNotify = new ArraySet<>();
     toNotify.addAll(wifiUsabilityStatsListeners.entrySet());
     for (Map.Entry<WifiManager.OnWifiUsabilityStatsListener, Executor> entry : toNotify) {
+      //noinspection Convert2Lambda
       entry
           .getValue()
           .execute(

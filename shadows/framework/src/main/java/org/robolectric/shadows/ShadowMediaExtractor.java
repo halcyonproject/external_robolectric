@@ -38,7 +38,7 @@ import org.robolectric.shadows.util.DataSource;
  *       last call to {@link #readSampleData(ByteBuffer, int)}).
  *   <li>{@link MediaExtractor#getSampleTime()} and {@link MediaExtractor#getSampleSize()} are
  *       unimplemented.
- *   <li>{@link MediaExtractor#seekTo()} is unimplemented.
+ *   <li>{@link MediaExtractor#seekTo(long, int)} is unimplemented.
  * </ul>
  */
 @Implements(MediaExtractor.class)
@@ -69,7 +69,7 @@ public class ShadowMediaExtractor {
     TrackInfo trackInfo = new TrackInfo();
     trackInfo.format = format;
     trackInfo.sampleData = sampleData;
-    tracksMap.putIfAbsent(dataSource, new ArrayList<TrackInfo>());
+    tracksMap.putIfAbsent(dataSource, new ArrayList<>());
     List<TrackInfo> tracks = tracksMap.get(dataSource);
     tracks.add(trackInfo);
   }

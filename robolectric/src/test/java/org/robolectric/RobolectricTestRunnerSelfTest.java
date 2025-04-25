@@ -81,7 +81,7 @@ public class RobolectricTestRunnerSelfTest {
   }
 
   @Test
-  public void hamcrestMatchersDontBlowUpDuringLinking() throws Exception {
+  public void hamcrestMatchersDontBlowUpDuringLinking() {
     org.hamcrest.MatcherAssert.assertThat(true, CoreMatchers.is(true));
   }
 
@@ -102,8 +102,7 @@ public class RobolectricTestRunnerSelfTest {
 
     @Override
     public void onTerminate() {
-      onTerminateCalledFromMain =
-          Boolean.valueOf(Looper.getMainLooper().getThread() == Thread.currentThread());
+      onTerminateCalledFromMain = Looper.getMainLooper().getThread() == Thread.currentThread();
     }
   }
 }

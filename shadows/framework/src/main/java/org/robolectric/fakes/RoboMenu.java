@@ -15,8 +15,8 @@ import org.robolectric.RuntimeEnvironment;
 
 /** Robolectric implementation of {@link android.view.Menu}. */
 public class RoboMenu implements Menu {
-  private List<MenuItem> menuItems = new ArrayList<>();
-  private Context context;
+  private final List<MenuItem> menuItems = new ArrayList<>();
+  private final Context context;
 
   public RoboMenu() {
     this(RuntimeEnvironment.getApplication());
@@ -203,13 +203,7 @@ public class RoboMenu implements Menu {
 
     @Override
     public int compare(MenuItem a, MenuItem b) {
-      if (a.getOrder() == b.getOrder()) {
-        return 0;
-      } else if (a.getOrder() > b.getOrder()) {
-        return 1;
-      } else {
-        return -1;
-      }
+      return Integer.compare(a.getOrder(), b.getOrder());
     }
   }
 }

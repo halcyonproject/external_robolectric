@@ -14,9 +14,9 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.SoftThreadLocal;
 
 /**
- * The {@link Choreographer} shadow for {@link LooperMode.Mode.PAUSED}.
+ * The {@link Choreographer} shadow for {@link LooperMode.Mode#PAUSED}.
  *
- * <p>In {@link LooperMode.Mode.PAUSED} mode, Robolectric maintains its own concept of the current
+ * <p>In {@link LooperMode.Mode#PAUSED} mode, Robolectric maintains its own concept of the current
  * time from the Choreographer's point of view, aimed at making animations work correctly. Time
  * starts out at 0 and advances by {@code frameInterval} every time {@link
  * Choreographer#getFrameTimeNanos()} is called.
@@ -30,7 +30,7 @@ public class ShadowLegacyChoreographer extends ShadowChoreographer {
   private static long FRAME_INTERVAL = Duration.ofMillis(10).toNanos();
   private static final Thread MAIN_THREAD = Thread.currentThread();
   private static SoftThreadLocal<Choreographer> instance = makeThreadLocal();
-  private Handler handler = new Handler(Looper.myLooper());
+  private final Handler handler = new Handler(Looper.myLooper());
   private static volatile int postCallbackDelayMillis = 0;
   private static volatile int postFrameCallbackDelayMillis = 0;
 
@@ -133,12 +133,7 @@ public class ShadowLegacyChoreographer extends ShadowChoreographer {
   @Implementation
   protected void postFrameCallbackDelayed(final FrameCallback callback, long delayMillis) {
     handler.postAtTime(
-        new Runnable() {
-          @Override
-          public void run() {
-            callback.doFrame(getFrameTimeNanos());
-          }
-        },
+        () -> callback.doFrame(getFrameTimeNanos()),
         callback,
         SystemClock.uptimeMillis() + delayMillis);
   }

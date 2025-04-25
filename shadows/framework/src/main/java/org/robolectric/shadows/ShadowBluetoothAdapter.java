@@ -92,9 +92,9 @@ public class ShadowBluetoothAdapter {
   private static boolean isBluetoothSupported = true;
 
   private static final Map<String, BluetoothDevice> deviceCache = new HashMap<>();
-  private Set<BluetoothDevice> bondedDevices = new HashSet<BluetoothDevice>();
+  private Set<BluetoothDevice> bondedDevices = new HashSet<>();
   private List<BluetoothDevice> mostRecentlyConnectedDevices = new ArrayList<>();
-  private Set<LeScanCallback> leScanCallbacks = new HashSet<LeScanCallback>();
+  private final Set<LeScanCallback> leScanCallbacks = new HashSet<>();
   private boolean isDiscovering;
   private String address;
   private int state;
@@ -395,14 +395,14 @@ public class ShadowBluetoothAdapter {
   @Implementation(maxSdk = Q)
   protected boolean setScanMode(int scanMode, int discoverableTimeout) {
     setDiscoverableTimeout(discoverableTimeout);
-    return (boolean) setScanMode(scanMode);
+    return setScanMode(scanMode);
   }
 
   @Implementation(minSdk = R, maxSdk = S_V2)
   protected boolean setScanMode(int scanMode, long durationMillis) {
     int durationSeconds = Math.toIntExact(durationMillis / 1000);
     setDiscoverableTimeout(durationSeconds);
-    return (boolean) setScanMode(scanMode);
+    return setScanMode(scanMode);
   }
 
   @Implementation
@@ -478,7 +478,7 @@ public class ShadowBluetoothAdapter {
 
   /**
    * Returns the connection state for the given Bluetooth {@code profile}, defaulting to {@link
-   * BluetoothProfile.STATE_DISCONNECTED} if the profile's connection state was never set.
+   * BluetoothProfile#STATE_DISCONNECTED} if the profile's connection state was never set.
    *
    * <p>Set a Bluetooth profile's connection state via {@link #setProfileConnectionState(int, int)}.
    */
@@ -499,10 +499,7 @@ public class ShadowBluetoothAdapter {
     this.state = state;
   }
 
-  /**
-   * @deprecated Use {@link BluetoothAdapter#enable()} or {@link BluetoothAdapter#disable()}.
-   */
-  @Deprecated
+  /** Sets the enabled state of the adapter. */
   public void setEnabled(boolean enabled) {
     if (enabled) {
       enable();
@@ -512,14 +509,14 @@ public class ShadowBluetoothAdapter {
   }
 
   /**
-   * Sets the value for {@link isBleScanAlwaysAvailable}. If true, {@link getLeState} will always
+   * Sets the value for {@link #isBleScanAlwaysAvailable}. If true, {@link #getLeState} will always
    * return true.
    */
   public void setBleScanAlwaysAvailable(boolean alwaysAvailable) {
     isBleScanAlwaysAvailable = alwaysAvailable;
   }
 
-  /** Sets the value for {@link isMultipleAdvertisementSupported}. */
+  /** Sets the value for {@link #isMultipleAdvertisementSupported}. */
   public void setIsMultipleAdvertisementSupported(boolean supported) {
     isMultipleAdvertisementSupported = supported;
   }
@@ -557,14 +554,14 @@ public class ShadowBluetoothAdapter {
   }
 
   /**
-   * Overrides behavior of {@link getProfileProxy} if {@link ShadowBluetoothAdapter#setProfileProxy}
-   * has been previously called.
+   * Overrides behavior of {@link #getProfileProxy} if {@link
+   * ShadowBluetoothAdapter#setProfileProxy} has been previously called.
    *
-   * <p>If active (non-null) proxy has been set by {@link setProfileProxy} for the given {@code
-   * profile}, {@link getProfileProxy} will immediately call {@code onServiceConnected} of the given
-   * BluetoothProfile.ServiceListener {@code listener}.
+   * <p>If active (non-null) proxy has been set by {@link #setProfileProxy} for the given {@code
+   * profile}, {@link #getProfileProxy} will immediately call {@code onServiceConnected} of the
+   * given BluetoothProfile.ServiceListener {@code listener}.
    *
-   * @return 'true' if a proxy object has been set by {@link setProfileProxy} for the given
+   * @return 'true' if a proxy object has been set by {@link #setProfileProxy} for the given
    *     BluetoothProfile {@code profile}
    */
   @Implementation
@@ -592,7 +589,7 @@ public class ShadowBluetoothAdapter {
   }
 
   /**
-   * Overrides behavior of {@link closeProfileProxy} if {@link
+   * Overrides behavior of {@link #closeProfileProxy} if {@link
    * ShadowBluetoothAdapter#setProfileProxy} has been previously called.
    *
    * <p>If the given non-null BluetoothProfile {@code proxy} was previously set for the given {@code

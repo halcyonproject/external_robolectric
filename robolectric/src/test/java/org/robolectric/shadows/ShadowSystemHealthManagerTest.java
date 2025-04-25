@@ -35,7 +35,6 @@ public final class ShadowSystemHealthManagerTest {
       HealthStatsBuilder.newBuilder().setDataType("other_uid_2_stats").build();
 
   private SystemHealthManager systemHealthManager;
-  private ShadowSystemHealthManager shadowSystemHealthManager;
 
   @Before
   public void setUp() {
@@ -43,22 +42,22 @@ public final class ShadowSystemHealthManagerTest {
         (SystemHealthManager)
             ApplicationProvider.getApplicationContext()
                 .getSystemService(Context.SYSTEM_HEALTH_SERVICE);
-    shadowSystemHealthManager = Shadow.extract(systemHealthManager);
 
+    ShadowSystemHealthManager shadowSystemHealthManager = Shadow.extract(systemHealthManager);
     shadowSystemHealthManager.addHealthStats(MY_UID_HEALTH_STATS);
     shadowSystemHealthManager.addHealthStatsForUid(OTHER_UID_1, OTHER_UID_1_HEALTH_STATS);
     shadowSystemHealthManager.addHealthStatsForUid(OTHER_UID_2, OTHER_UID_2_HEALTH_STATS);
   }
 
   @Test
-  public void snapshotForMyUid_expectedResult() throws Exception {
+  public void snapshotForMyUid_expectedResult() {
     HealthStats stats = systemHealthManager.takeMyUidSnapshot();
 
     assertThat(stats).isEqualTo(MY_UID_HEALTH_STATS);
   }
 
   @Test
-  public void snapshotForOtherUids_expectedResult() throws Exception {
+  public void snapshotForOtherUids_expectedResult() {
     HealthStats stats1 = systemHealthManager.takeUidSnapshot(OTHER_UID_1);
     HealthStats stats2 = systemHealthManager.takeUidSnapshot(OTHER_UID_2);
 
@@ -67,7 +66,7 @@ public final class ShadowSystemHealthManagerTest {
   }
 
   @Test
-  public void snapshotForAllUids_expectedResult() throws Exception {
+  public void snapshotForAllUids_expectedResult() {
     int[] uids = {OTHER_UID_1, MY_UID, OTHER_UID_2};
 
     HealthStats[] stats = systemHealthManager.takeUidSnapshots(uids);

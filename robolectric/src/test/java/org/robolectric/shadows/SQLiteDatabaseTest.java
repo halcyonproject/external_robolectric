@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class SQLiteDatabaseTest {
   private SQLiteDatabase database;
-  private List<SQLiteDatabase> openDatabases = new ArrayList<>();
+  private final List<SQLiteDatabase> openDatabases = new ArrayList<>();
   private static final String ANY_VALID_SQL = "SELECT 1";
   private File databasePath;
 
@@ -785,7 +785,7 @@ public class SQLiteDatabaseTest {
   }
 
   @Test
-  public void testCreateAndDropTable() throws Exception {
+  public void testCreateAndDropTable() {
     SQLiteDatabase db = openOrCreateDatabase("db1");
     db.execSQL("CREATE TABLE foo(id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT);");
     Cursor c = db.query("FOO", null, null, null, null, null, null);
@@ -880,18 +880,17 @@ public class SQLiteDatabaseTest {
     final CountDownLatch sync = new CountDownLatch(1);
     final Throwable[] error = {null};
 
-    new Thread() {
-      @Override
-      public void run() {
-        try (Cursor c = executeQuery("select * from table_name")) {
-        } catch (Throwable e) {
-          e.printStackTrace();
-          error[0] = e;
-        } finally {
-          sync.countDown();
-        }
-      }
-    }.start();
+    new Thread(
+            () -> {
+              try (Cursor c = executeQuery("select * from table_name")) {
+              } catch (Throwable e) {
+                e.printStackTrace();
+                error[0] = e;
+              } finally {
+                sync.countDown();
+              }
+            })
+        .start();
 
     try {
       sync.await();

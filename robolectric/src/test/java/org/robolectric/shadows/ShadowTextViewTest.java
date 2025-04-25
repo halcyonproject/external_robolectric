@@ -369,7 +369,7 @@ public class ShadowTextViewTest {
 
   @Test
   public void
-      testSetCompountDrawablesWithIntrinsicBounds_int_shouldCreateDrawablesWithResourceIds() {
+      testSetCompoundDrawablesWithIntrinsicBounds_int_shouldCreateDrawablesWithResourceIds() {
     textView.setCompoundDrawablesWithIntrinsicBounds(
         R.drawable.an_image,
         R.drawable.an_other_image,
@@ -389,7 +389,7 @@ public class ShadowTextViewTest {
   }
 
   @Test
-  public void testSetCompountDrawablesWithIntrinsicBounds_int_shouldNotCreateDrawablesForZero() {
+  public void testSetCompoundDrawablesWithIntrinsicBounds_int_shouldNotCreateDrawablesForZero() {
     textView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
 
     assertNull(textView.getCompoundDrawables()[0]);
@@ -530,9 +530,10 @@ public class ShadowTextViewTest {
   }
 
   private void assertEachTextWatcherEventWasInvoked(MockTextWatcher mockTextWatcher) {
-    assertTrue(
+    assertEquals(
         "Expected each TextWatcher event to" + " have" + " been" + " invoked" + " once",
-        mockTextWatcher.methodsCalled.size() == 3);
+        3,
+        mockTextWatcher.methodsCalled.size());
 
     assertThat(mockTextWatcher.methodsCalled.get(0)).isEqualTo("beforeTextChanged");
     assertThat(mockTextWatcher.methodsCalled.get(1)).isEqualTo("onTextChanged");

@@ -11,11 +11,14 @@ import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.ForType;
 
 /**
- * The shadow {@link AsyncTaskLoader} for {@link LooperMode.Mode.PAUSED}.
+ * The shadow {@link AsyncTaskLoader} for {@link LooperMode.Mode#PAUSED}.
  *
- * <p>In {@link LooperMode.Mode.PAUSED} mode, Robolectric just uses the real AsyncTaskLoader for
+ * <p>In {@link LooperMode.Mode#PAUSED} mode, Robolectric just uses the real AsyncTaskLoader for
  * now.
+ *
+ * @deprecated {@link AsyncTaskLoader} is deprecated in the Android SDK.
  */
+@Deprecated
 @Implements(
     value = AsyncTaskLoader.class,
     shadowPicker = ShadowAsyncTaskLoader.Picker.class,

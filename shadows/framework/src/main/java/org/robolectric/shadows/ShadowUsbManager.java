@@ -9,7 +9,7 @@ import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
 import static org.robolectric.util.ReflectionHelpers.callConstructor;
 import static org.robolectric.util.ReflectionHelpers.getStaticField;
 
-import android.annotation.TargetApi;
+import android.annotation.RequiresApi;
 import android.content.Intent;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbDevice;
@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
@@ -174,7 +175,7 @@ public class ShadowUsbManager {
 
   /** Sets the currently attached Usb accessory returned in #getAccessoryList. */
   public void setAttachedUsbAccessory(UsbAccessory usbAccessory) {
-    this.attachedUsbAccessory = usbAccessory;
+    attachedUsbAccessory = usbAccessory;
   }
 
   /**
@@ -182,8 +183,8 @@ public class ShadowUsbManager {
    * already exists, updates the USB device with new permission value.
    */
   public void addOrUpdateUsbDevice(UsbDevice usbDevice, boolean hasPermission) {
-    Preconditions.checkNotNull(usbDevice);
-    Preconditions.checkNotNull(usbDevice.getDeviceName());
+    Objects.requireNonNull(usbDevice);
+    Objects.requireNonNull(usbDevice.getDeviceName());
     usbDevices.put(usbDevice.getDeviceName(), usbDevice);
     if (hasPermission) {
       grantPermission(usbDevice);
@@ -194,7 +195,7 @@ public class ShadowUsbManager {
 
   /** Removes a USB device from available USB devices map. */
   public void removeUsbDevice(UsbDevice usbDevice) {
-    Preconditions.checkNotNull(usbDevice);
+    Objects.requireNonNull(usbDevice);
     usbDevices.remove(usbDevice.getDeviceName());
     revokePermission(usbDevice, RuntimeEnvironment.getApplication().getPackageName());
   }
@@ -202,7 +203,7 @@ public class ShadowUsbManager {
   @Implementation(minSdk = M, maxSdk = P)
   @HiddenApi
   protected @ClassName("android.hardware.usb.UsbPort[]") Object getPorts() {
-    return usbPortStatuses.keySet().toArray(new UsbPort[usbPortStatuses.size()]);
+    return usbPortStatuses.keySet().toArray(new UsbPort[0]);
   }
 
   @Implementation(minSdk = Q, methodName = "getPorts")
@@ -246,7 +247,7 @@ public class ShadowUsbManager {
   }
 
   /** Adds a USB port with given ID and {@link UsbPortStatus} parameters to UsbManager for Q+. */
-  @TargetApi(Q)
+  @RequiresApi(Q)
   public void addPort(
       String portId,
       int statusCurrentMode,

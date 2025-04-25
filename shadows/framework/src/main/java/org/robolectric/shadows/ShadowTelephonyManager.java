@@ -55,7 +55,6 @@ import android.telephony.emergency.EmergencyNumber;
 import android.text.TextUtils;
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -67,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,7 +143,7 @@ public class ShadowTelephonyManager {
   private String voiceMailAlphaTag;
   private static volatile int phoneCount = 1;
   private static volatile int activeModemCount = 1;
-  private static volatile Map<Integer, TelephonyManager> subscriptionIdsToTelephonyManagers =
+  private static final Map<Integer, TelephonyManager> subscriptionIdsToTelephonyManagers =
       Collections.synchronizedMap(new LinkedHashMap<>());
   private PersistableBundle carrierConfig;
   private ServiceState serviceState;
@@ -185,6 +185,7 @@ public class ShadowTelephonyManager {
   private static volatile boolean isDataRoamingEnabled;
   private /*CarrierRestrictionRules*/ Object carrierRestrictionRules;
   private final AtomicInteger modemRebootCount = new AtomicInteger();
+  private String iccAuthentication;
 
   /**
    * Should be {@link TelephonyManager.BootstrapAuthenticationCallback} but this object was
@@ -781,7 +782,7 @@ public class ShadowTelephonyManager {
   }
 
   /**
-   * Sets the value to be returned by calls to {@link getVoiceNetworkType}. This <b>should</b>
+   * Sets the value to be returned by calls to {@link #getVoiceNetworkType}. This <b>should</b>
    * correspond to one of the {@code NETWORK_TYPE_*} constants defined on {@link TelephonyManager},
    * but this is not enforced.
    */
@@ -840,16 +841,16 @@ public class ShadowTelephonyManager {
   }
 
   /**
-   * Sets the value to be returned by calls to {@link requestCellInfoUpdate}. Note that it does not
-   * set the value to be returned by calls to {@link getAllCellInfo}; for that, see {@link
-   * setAllCellInfo}.
+   * Sets the value to be returned by calls to {@link #requestCellInfoUpdate}. Note that it does not
+   * set the value to be returned by calls to {@link #getAllCellInfo}; for that, see {@link
+   * #setAllCellInfo}.
    */
   public void setCallbackCellInfos(List<CellInfo> callbackCellInfos) {
     ShadowTelephonyManager.callbackCellInfos = callbackCellInfos;
   }
 
   /**
-   * Sets the values to be returned by a presumed error condition in {@link requestCellInfoUpdate}.
+   * Sets the values to be returned by a presumed error condition in {@link #requestCellInfoUpdate}.
    * These values will persist until cleared: to clear, set (0, null) using this method.
    */
   public void setRequestCellInfoUpdateErrorValues(int errorCode, Throwable detail) {
@@ -946,12 +947,9 @@ public class ShadowTelephonyManager {
   protected Iterable<PhoneStateListener> getListenersForFlags(int flags) {
     return Iterables.filter(
         ImmutableSet.copyOf(phoneStateRegistrations.keySet()),
-        new Predicate<PhoneStateListener>() {
-          @Override
-          public boolean apply(PhoneStateListener input) {
-            // only select PhoneStateListeners with matching flags
-            return (phoneStateRegistrations.get(input) & flags) != 0;
-          }
+        input -> {
+          // only select PhoneStateListeners with matching flags
+          return (phoneStateRegistrations.get(input) & flags) != 0;
         });
   }
 
@@ -1560,7 +1558,7 @@ public class ShadowTelephonyManager {
    * @throws NullPointerException if telephonyDisplayInfo is null.
    */
   public void setTelephonyDisplayInfo(Object telephonyDisplayInfo) {
-    Preconditions.checkNotNull(telephonyDisplayInfo);
+    Objects.requireNonNull(telephonyDisplayInfo);
     this.telephonyDisplayInfo = telephonyDisplayInfo;
 
     for (PhoneStateListener listener :
@@ -1711,5 +1709,14 @@ public class ShadowTelephonyManager {
 
   public int getModemRebootCount() {
     return modemRebootCount.get();
+  }
+
+  @Implementation(minSdk = N)
+  protected String getIccAuthentication(int appType, int authType, String data) {
+    return iccAuthentication;
+  }
+
+  public void setIccAuthentication(String iccAuthentication) {
+    this.iccAuthentication = iccAuthentication;
   }
 }

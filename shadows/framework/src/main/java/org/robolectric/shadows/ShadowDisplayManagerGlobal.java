@@ -170,7 +170,7 @@ public class ShadowDisplayManagerGlobal {
     private final TreeMap<Integer, DisplayInfo> displayInfos = new TreeMap<>();
     private final Map<Integer, SystemUi> systemUis = new HashMap<>();
     private int nextDisplayId = 0;
-    private final List<IDisplayManagerCallback> callbacks = new ArrayList<>();
+    private final List<IDisplayManagerCallback> callbacks = new CopyOnWriteArrayList<>();
     private final Map<IVirtualDisplayCallback, Integer> virtualDisplayIds = new HashMap<>();
 
     // @Override
@@ -359,7 +359,7 @@ public class ShadowDisplayManagerGlobal {
   }
 
   /**
-   * Returns the current display saturation level; {@link android.os.Build.VERSION_CODES.P} only.
+   * Returns the current display saturation level; {@link android.os.Build.VERSION_CODES#P} only.
    */
   float getSaturationLevel() {
     return saturationLevel;
@@ -372,7 +372,7 @@ public class ShadowDisplayManagerGlobal {
       int userId,
       String packageName) {
     BrightnessConfiguration config = (BrightnessConfiguration) configObject;
-    brightnessConfiguration.put((int) userId, config);
+    brightnessConfiguration.put(userId, config);
   }
 
   @Implementation(minSdk = P)

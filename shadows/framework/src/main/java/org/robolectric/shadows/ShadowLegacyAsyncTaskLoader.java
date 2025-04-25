@@ -10,12 +10,17 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.RealObject;
 
-/** The shadow {@link AsyncTaskLoader} for {@link LooperMode.Mode.LEGACY}. */
+/**
+ * The shadow {@link AsyncTaskLoader} for {@link LooperMode.Mode#LEGACY}.
+ *
+ * @deprecated {@link AsyncTaskLoader} is deprecated in the Android SDK.
+ */
+@Deprecated
 @Implements(
     value = AsyncTaskLoader.class,
     shadowPicker = ShadowAsyncTaskLoader.Picker.class,
     isInAndroidSdk = false)
-public class ShadowLegacyAsyncTaskLoader<D> extends ShadowAsyncTaskLoader {
+public class ShadowLegacyAsyncTaskLoader<D> extends ShadowAsyncTaskLoader<D> {
   @RealObject private AsyncTaskLoader<D> realObject;
   private BackgroundWorker worker;
 
@@ -34,13 +39,7 @@ public class ShadowLegacyAsyncTaskLoader<D> extends ShadowAsyncTaskLoader {
               final D result = get();
               ShadowApplication.getInstance()
                   .getForegroundThreadScheduler()
-                  .post(
-                      new Runnable() {
-                        @Override
-                        public void run() {
-                          realObject.deliverResult(result);
-                        }
-                      });
+                  .post(() -> realObject.deliverResult(result));
             } catch (InterruptedException e) {
               // Ignore
             } catch (ExecutionException e) {

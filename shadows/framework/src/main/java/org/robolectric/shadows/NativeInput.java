@@ -51,7 +51,7 @@ public class NativeInput {
   /*
    * Maximum number of pointers supported per motion event.
    * Smallest number of pointers is 1.
-   * (We want at least 10 but some touch controllers obstensibly configured for 10 pointers
+   * (We want at least 10 but some touch controllers ostensibly configured for 10 pointers
    * will occasionally emit 11.  There is not much harm making this ant bigger.)
    */
   private static final int MAX_POINTERS = 16;
@@ -89,7 +89,7 @@ public class NativeInput {
     }
 
     // Values of axes that are stored in this structure
-    private float[] values = new float[MAX_AXES];
+    private final float[] values = new float[MAX_AXES];
 
     public void clear() {
       bits.clear();
@@ -188,8 +188,8 @@ public class NativeInput {
     public void copyFrom(PointerCoords other) {
       bits = new NativeBitSet64(other.bits);
       int count = bits.count();
-      for (int i = 0; i < count; i++) {
-        values[i] = other.values[i];
+      if (count >= 0) {
+        System.arraycopy(other.values, 0, values, 0, count);
       }
     }
 
@@ -653,23 +653,21 @@ public class NativeInput {
           resolveActionForSplitMotionEvent(
               getAction(), getFlags(), pp, splitPointerPropertiesArray);
 
-      android.view.MotionEvent newEvent =
-          android.view.MotionEvent.obtain(
-              getDownTime(),
-              getEventTime(),
-              splitAction,
-              splitPointerProperties.size(),
-              splitPointerPropertiesArray,
-              splitPointerCoordsArray,
-              getMetaState(),
-              getButtonState(),
-              getXPrecision(),
-              getYPrecision(),
-              getDeviceId(),
-              getEdgeFlags(),
-              getSource(),
-              getFlags());
-      return newEvent;
+      return android.view.MotionEvent.obtain(
+          getDownTime(),
+          getEventTime(),
+          splitAction,
+          splitPointerProperties.size(),
+          splitPointerPropertiesArray,
+          splitPointerCoordsArray,
+          getMetaState(),
+          getButtonState(),
+          getXPrecision(),
+          getYPrecision(),
+          getDeviceId(),
+          getEdgeFlags(),
+          getSource(),
+          getFlags());
     }
 
     public int findPointerIndex(int pointerId) {

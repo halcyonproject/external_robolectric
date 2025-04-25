@@ -522,7 +522,7 @@ public class ShadowParcel {
    *
    * <ul>
    *   <li>Continuing to read past the end returns zeros/nulls.
-   *   <li>{@link setDataCapacity} never decreases buffer size.
+   *   <li>{@link Parcel#setDataCapacity} never decreases buffer size.
    *   <li>It is possible to partially or completely overwrite byte ranges in the buffer.
    *   <li>Zero bytes can be exchanged between primitive data types and empty array/string.
    * </ul>
@@ -1140,7 +1140,7 @@ public class ShadowParcel {
     // Java version of FileDescriptor instead of the Android version.
     int fd = ReflectionHelpers.getField(val, "fd");
     NATIVE_BYTE_BUFFER_REGISTRY.getNativeObject(nativePtr).writeInt(fd);
-    return (long) nativeDataPosition(nativePtr);
+    return nativeDataPosition(nativePtr);
   }
 
   @Implementation(minSdk = M)

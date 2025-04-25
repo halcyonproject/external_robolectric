@@ -8,6 +8,7 @@ import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
@@ -270,6 +271,34 @@ public class ShadowUserManagerTest {
   }
 
   @Test
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
+  public void isAdminUser_nonAdminUser_returnsFalse() {
+    UserHandle nonAdminHandle =
+        shadowOf(userManager).addUser(TEST_USER_HANDLE, "", ShadowUserManager.FLAG_FULL);
+
+    setUserIdInContext(nonAdminHandle.getIdentifier());
+    assertThat(userManager.isAdminUser()).isFalse();
+  }
+
+  @Test
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
+  public void isAdminUser_firstUser_returnsTrue() {
+    assertThat(userManager.isAdminUser()).isTrue();
+  }
+
+  @Test
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
+  public void isAdminUser_secondaryAdminUser_returnsTrue() {
+    UserHandle secondaryAdminHandle =
+        shadowOf(userManager)
+            .addUser(
+                TEST_USER_HANDLE, "", ShadowUserManager.FLAG_ADMIN | ShadowUserManager.FLAG_FULL);
+
+    setUserIdInContext(secondaryAdminHandle.getIdentifier());
+    assertThat(userManager.isAdminUser()).isTrue();
+  }
+
+  @Test
   public void enforcePermissionChecks() {
     shadowOf(userManager).enforcePermissionChecks(true);
 
@@ -347,12 +376,12 @@ public class ShadowUserManagerTest {
   @Test
   @Config(minSdk = R)
   public void getUserHandles() {
-    assertThat(shadowOf(userManager).getUserHandles(/* excludeDying= */ true).size()).isEqualTo(1);
+    assertThat(shadowOf(userManager).getUserHandles(/* excludeDying= */ true)).hasSize(1);
     shadowOf(userManager).getUserHandles(/* excludeDying= */ true).get(0);
     assertThat(UserHandle.myUserId()).isEqualTo(UserHandle.USER_SYSTEM);
 
     UserHandle expectedUserHandle = shadowOf(userManager).addUser(10, "secondary_user", 0);
-    assertThat(shadowOf(userManager).getUserHandles(/* excludeDying= */ true).size()).isEqualTo(2);
+    assertThat(shadowOf(userManager).getUserHandles(/* excludeDying= */ true)).hasSize(2);
     assertThat(shadowOf(userManager).getUserHandles(/* excludeDying= */ true).get(1))
         .isEqualTo(expectedUserHandle);
   }

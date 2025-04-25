@@ -43,7 +43,7 @@ public class ShadowBluetoothDeviceTest {
   private final Application application = ApplicationProvider.getApplicationContext();
 
   @Test
-  public void canCreateBluetoothDeviceViaNewInstance() throws Exception {
+  public void canCreateBluetoothDeviceViaNewInstance() {
     // This test passes as long as no Exception is thrown. It tests if the constructor can be
     // executed without throwing an Exception when getService() is called inside.
     BluetoothDevice bluetoothDevice = ShadowBluetoothDevice.newInstance(MOCK_MAC_ADDRESS);
@@ -51,7 +51,7 @@ public class ShadowBluetoothDeviceTest {
   }
 
   @Test
-  public void canSetAndGetUuids() throws Exception {
+  public void canSetAndGetUuids() {
     shadowOf(application).grantPermissions(BLUETOOTH_CONNECT);
     BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(MOCK_MAC_ADDRESS);
     ParcelUuid[] uuids =
@@ -91,6 +91,17 @@ public class ShadowBluetoothDeviceTest {
 
     shadowOf(device).setCreatedBond(true);
     assertThat(device.createBond()).isTrue();
+  }
+
+  @Test
+  public void canSetAndGetCreatedBondLe() {
+    shadowOf(application).grantPermissions(BLUETOOTH_CONNECT);
+    BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(MOCK_MAC_ADDRESS);
+
+    assertThat(device.createBond(BluetoothDevice.TRANSPORT_LE)).isFalse();
+
+    shadowOf(device).setCreatedBond(true);
+    assertThat(device.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue();
   }
 
   @Test
@@ -282,6 +293,7 @@ public class ShadowBluetoothDeviceTest {
         implements ShadowBluetoothDevice.BluetoothGattConnectionInterceptor {
       @Nullable private BluetoothGatt interceptedGatt = null;
 
+      @Nullable
       public BluetoothGatt getInterceptedGatt() {
         return interceptedGatt;
       }
@@ -444,6 +456,17 @@ public class ShadowBluetoothDeviceTest {
     shadowDevice.setShouldThrowSecurityExceptions(true);
 
     assertThrows(SecurityException.class, device::createBond);
+  }
+
+  @Test
+  @Config(minSdk = VERSION_CODES.S)
+  public void createBondLe_noBluetoothConnectPermission_throwsException() {
+    shadowOf(application).denyPermissions(BLUETOOTH_CONNECT);
+    BluetoothDevice device = ShadowBluetoothDevice.newInstance(MOCK_MAC_ADDRESS);
+    ShadowBluetoothDevice shadowDevice = shadowOf(device);
+    shadowDevice.setShouldThrowSecurityExceptions(true);
+
+    assertThrows(SecurityException.class, () -> device.createBond(BluetoothDevice.TRANSPORT_LE));
   }
 
   @Test

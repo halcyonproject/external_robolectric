@@ -28,6 +28,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +36,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.R;
 import org.robolectric.Robolectric;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.annotation.GraphicsMode.Mode;
 
@@ -70,7 +70,7 @@ public class ShadowViewGroupTest {
     child3.addView(child3a);
     child3.addView(child3b);
 
-    defaultLineSeparator = System.getProperty("line.separator");
+    defaultLineSeparator = System.lineSeparator();
     System.setProperty("line.separator", "\n");
   }
 
@@ -162,7 +162,7 @@ public class ShadowViewGroupTest {
   }
 
   @Test
-  public void shouldfindViewWithTagFromCorrectViewGroup() {
+  public void shouldFindViewWithTagFromCorrectViewGroup() {
     root.removeAllViews();
     child1.setTag("tag1");
     child2.setTag("tag2");
@@ -185,7 +185,6 @@ public class ShadowViewGroupTest {
   }
 
   @Test
-  @Config(minSdk = 17) // TODO: mysteriously fails on github CI on API 16
   public void hasFocus_shouldReturnTrueIfAnyChildHasFocus() {
     ContainerActivity containerActivity = Robolectric.setupActivity(ContainerActivity.class);
     makeFocusable(
@@ -540,7 +539,7 @@ public class ShadowViewGroupTest {
     }
 
     @Override
-    public void draw(Canvas canvas) {
+    public void draw(@Nonnull Canvas canvas) {
       super.draw(canvas);
       wasDrawn = true;
     }

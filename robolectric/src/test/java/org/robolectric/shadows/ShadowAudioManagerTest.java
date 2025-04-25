@@ -101,12 +101,12 @@ public class ShadowAudioManagerTest {
   public void requestAudioFocus2_shouldRecordArgumentsOfMostRecentCall() {
     assertThat(shadowOf(audioManager).getLastAudioFocusRequest()).isNull();
 
-    AudioAttributes atts =
+    AudioAttributes attrs =
         new AudioAttributes.Builder().setLegacyStreamType(AudioManager.STREAM_MUSIC).build();
     android.media.AudioFocusRequest request =
         new android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setOnAudioFocusChangeListener(listener)
-            .setAudioAttributes(atts)
+            .setAudioAttributes(attrs)
             .build();
 
     audioManager.requestAudioFocus(request);
@@ -1642,7 +1642,7 @@ public class ShadowAudioManagerTest {
   @Test
   @Config(minSdk = S)
   public void
-      onCommunicationDeviceChangedListener_oneOfSeveralListenerRemoved_onlyRegisterdGetCalls()
+      onCommunicationDeviceChangedListener_oneOfSeveralListenerRemoved_onlyRegisteredGetCalls()
           throws Exception {
     AudioManager.OnCommunicationDeviceChangedListener mockListener1 =
         mock(AudioManager.OnCommunicationDeviceChangedListener.class);
@@ -1661,8 +1661,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_callWithNullAudioDeviceInfo_receiveNull()
-      throws Exception {
+  public void onCommunicationDeviceChangedListener_callWithNullAudioDeviceInfo_receiveNull() {
     AudioManager.OnCommunicationDeviceChangedListener mockListener =
         mock(AudioManager.OnCommunicationDeviceChangedListener.class);
 
@@ -1674,8 +1673,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_removeBeforeAddingListener_throwsException()
-      throws Exception {
+  public void onCommunicationDeviceChangedListener_removeBeforeAddingListener_throwsException() {
     AudioManager.OnCommunicationDeviceChangedListener mockListener =
         mock(AudioManager.OnCommunicationDeviceChangedListener.class);
 
@@ -1686,7 +1684,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_addSameTwice_throwsException() throws Exception {
+  public void onCommunicationDeviceChangedListener_addSameTwice_throwsException() {
     AudioManager.OnCommunicationDeviceChangedListener mockListener =
         mock(AudioManager.OnCommunicationDeviceChangedListener.class);
 
@@ -1698,8 +1696,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_addNullListener_throwsException()
-      throws Exception {
+  public void onCommunicationDeviceChangedListener_addNullListener_throwsException() {
     Assert.assertThrows(
         NullPointerException.class,
         () -> audioManager.addOnCommunicationDeviceChangedListener(directExecutor(), null));
@@ -1707,8 +1704,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_addNullExecutor_throwsException()
-      throws Exception {
+  public void onCommunicationDeviceChangedListener_addNullExecutor_throwsException() {
     AudioManager.OnCommunicationDeviceChangedListener mockListener =
         mock(AudioManager.OnCommunicationDeviceChangedListener.class);
 
@@ -1719,7 +1715,7 @@ public class ShadowAudioManagerTest {
 
   @Test
   @Config(minSdk = S)
-  public void onCommunicationDeviceChangedListener_removeNull_throwsException() throws Exception {
+  public void onCommunicationDeviceChangedListener_removeNull_throwsException() {
     Assert.assertThrows(
         NullPointerException.class,
         () -> audioManager.removeOnCommunicationDeviceChangedListener(null));
@@ -1740,7 +1736,7 @@ public class ShadowAudioManagerTest {
   }
 
   private static class LocalOnModeChangedListener implements OnModeChangedListener {
-    private List<Integer> modes = new ArrayList<>();
+    private final List<Integer> modes = new ArrayList<>();
 
     @Override
     public void onModeChanged(int mode) {

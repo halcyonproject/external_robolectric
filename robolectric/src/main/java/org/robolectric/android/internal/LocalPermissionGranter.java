@@ -1,10 +1,11 @@
 package org.robolectric.android.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import android.app.Application;
 import androidx.test.internal.platform.content.PermissionGranter;
 import androidx.test.platform.app.InstrumentationRegistry;
+import javax.annotation.Nonnull;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowApplication;
 
@@ -15,13 +16,13 @@ public class LocalPermissionGranter implements PermissionGranter {
   private String[] permissions;
 
   @Override
-  public void addPermissions(String... permissions) {
+  public void addPermissions(@Nonnull String... permissions) {
     this.permissions = permissions;
   }
 
   @Override
   public void requestPermissions() {
-    checkNotNull(permissions);
+    requireNonNull(permissions);
     Application application =
         (Application) InstrumentationRegistry.getInstrumentation().getTargetContext();
     ShadowApplication shadowApplication = Shadow.extract(application);

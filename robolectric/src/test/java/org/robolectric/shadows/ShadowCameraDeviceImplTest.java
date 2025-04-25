@@ -31,6 +31,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.util.ArrayList;
 import java.util.Collections;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,8 +79,7 @@ public final class ShadowCameraDeviceImplTest {
 
   @Test
   @Config(sdk = VERSION_CODES.P)
-  public void createCaptureRequest_throwsIllegalStateExceptionAfterClose()
-      throws CameraAccessException {
+  public void createCaptureRequest_throwsIllegalStateExceptionAfterClose() {
     cameraDevice.close();
 
     IllegalStateException thrown =
@@ -114,8 +114,7 @@ public final class ShadowCameraDeviceImplTest {
 
   @Test
   @Config(sdk = VERSION_CODES.P)
-  public void createCaptureSession_throwsIllegalStateExceptionAfterClose()
-      throws CameraAccessException {
+  public void createCaptureSession_throwsIllegalStateExceptionAfterClose() {
     cameraDevice.close();
 
     IllegalStateException thrown =
@@ -131,8 +130,7 @@ public final class ShadowCameraDeviceImplTest {
 
   @Test
   @Config(sdk = VERSION_CODES.P)
-  public void createCaptureSession_configuration_throwsIllegalStateExceptionAfterClose()
-      throws CameraAccessException {
+  public void createCaptureSession_configuration_throwsIllegalStateExceptionAfterClose() {
     cameraDevice.close();
 
     SessionConfiguration configuration =
@@ -195,7 +193,7 @@ public final class ShadowCameraDeviceImplTest {
     }
 
     @Override
-    public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+    public void onConfigured(@Nonnull CameraCaptureSession cameraCaptureSession) {
       captureSession = cameraCaptureSession;
       assertThat(captureSession.getDevice().getId()).isEqualTo(CAMERA_ID_0);
 
@@ -203,7 +201,9 @@ public final class ShadowCameraDeviceImplTest {
           new CaptureCallback() {
             @Override
             public void onCaptureCompleted(
-                CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {}
+                @Nonnull CameraCaptureSession session,
+                @Nonnull CaptureRequest request,
+                @Nonnull TotalCaptureResult result) {}
           };
 
       try {
@@ -238,7 +238,7 @@ public final class ShadowCameraDeviceImplTest {
     }
 
     @Override
-    public void onConfigureFailed(final CameraCaptureSession cameraCaptureSession) {
+    public void onConfigureFailed(@Nonnull final CameraCaptureSession cameraCaptureSession) {
       fail();
     }
   }

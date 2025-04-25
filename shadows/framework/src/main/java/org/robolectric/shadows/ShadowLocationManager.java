@@ -55,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
@@ -275,10 +276,7 @@ public class ShadowLocationManager {
       if (criteria.isBearingRequired() && !hasBearingSupport()) {
         return false;
       }
-      if (!criteria.isCostAllowed() && hasMonetaryCost) {
-        return false;
-      }
-      return true;
+      return criteria.isCostAllowed() || !hasMonetaryCost;
     }
   }
 
@@ -1309,8 +1307,8 @@ public class ShadowLocationManager {
   }
 
   /**
-   * A convenience function equivalent to invoking {@link #simulateLocation(String, Location)} with
-   * the provider of the given location.
+   * A convenience function equivalent to invoking {@link #simulateLocation(Location)} with the
+   * provider of the given location.
    */
   public void simulateLocation(Location location) {
     simulateLocation(location.getProvider(), location);
@@ -2257,10 +2255,10 @@ public class ShadowLocationManager {
     public void onStatusChanged(String provider, int status, Bundle extras) {}
 
     @Override
-    public void onProviderEnabled(String provider) {}
+    public void onProviderEnabled(@Nonnull String provider) {}
 
     @Override
-    public void onProviderDisabled(String provider) {
+    public void onProviderDisabled(@Nonnull String provider) {
       onLocationChanged((Location) null);
     }
 
@@ -2396,7 +2394,7 @@ public class ShadowLocationManager {
     }
 
     @Override
-    public void execute(Runnable command) {
+    public void execute(@Nonnull Runnable command) {
       if (!handler.post(command)) {
         throw new RejectedExecutionException(handler + " is shutting down");
       }

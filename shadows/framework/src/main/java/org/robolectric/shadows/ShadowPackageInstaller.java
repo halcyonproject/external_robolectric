@@ -57,9 +57,9 @@ public class ShadowPackageInstaller {
   // According to the documentation, the session ID is always non-zero:
   // https://developer.android.com/reference/android/content/pm/PackageInstaller#createSession(android.content.pm.PackageInstaller.SessionParams)
   private int nextSessionId = 1;
-  private Map<Integer, PackageInstaller.SessionInfo> sessionInfos = new HashMap<>();
-  private Map<Integer, PackageInstaller.Session> sessions = new HashMap<>();
-  private Set<CallbackInfo> callbackInfos = Collections.synchronizedSet(new HashSet<>());
+  private final Map<Integer, PackageInstaller.SessionInfo> sessionInfos = new HashMap<>();
+  private final Map<Integer, PackageInstaller.Session> sessions = new HashMap<>();
+  private final Set<CallbackInfo> callbackInfos = Collections.synchronizedSet(new HashSet<>());
   private final Map<String, UninstalledPackage> uninstalledPackages = new HashMap<>();
 
   private static class CallbackInfo {
@@ -161,13 +161,7 @@ public class ShadowPackageInstaller {
     sessionInfo.appIcon = appIcon;
 
     for (final CallbackInfo callbackInfo : new ArrayList<>(callbackInfos)) {
-      callbackInfo.handler.post(
-          new Runnable() {
-            @Override
-            public void run() {
-              callbackInfo.callback.onBadgingChanged(sessionId);
-            }
-          });
+      callbackInfo.handler.post(() -> callbackInfo.callback.onBadgingChanged(sessionId));
     }
   }
 
@@ -180,13 +174,7 @@ public class ShadowPackageInstaller {
     sessionInfo.appLabel = appLabel;
 
     for (final CallbackInfo callbackInfo : new ArrayList<>(callbackInfos)) {
-      callbackInfo.handler.post(
-          new Runnable() {
-            @Override
-            public void run() {
-              callbackInfo.callback.onBadgingChanged(sessionId);
-            }
-          });
+      callbackInfo.handler.post(() -> callbackInfo.callback.onBadgingChanged(sessionId));
     }
   }
 

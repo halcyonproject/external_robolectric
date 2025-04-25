@@ -1,7 +1,6 @@
 package org.robolectric.shadows;
 
 import static android.media.AudioTrack.ERROR_DEAD_OBJECT;
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O_MR1;
@@ -11,7 +10,7 @@ import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.robolectric.shadow.api.Shadow.directlyOn;
 
 import android.annotation.RequiresApi;
@@ -132,8 +131,8 @@ public class ShadowAudioTrack {
    */
   public static void addDirectPlaybackSupport(
       @Nonnull AudioFormat format, @Nonnull AudioAttributes attr) {
-    checkNotNull(format);
-    checkNotNull(attr);
+    requireNonNull(format);
+    requireNonNull(attr);
     checkArgument(!isPcm(format.getEncoding()));
 
     directSupportedFormats.put(
@@ -439,20 +438,19 @@ public class ShadowAudioTrack {
 
   @Implementation(minSdk = M)
   public void setPlaybackParams(@Nonnull PlaybackParams params) {
-    playbackParams = checkNotNull(params, "Illegal null params");
+    playbackParams = requireNonNull(params, "Illegal null params");
   }
 
   /**
    * Sets the estimated latency of this {@link AudioTrack} that will be returned by {@code
    * AudioTrack.getLatency()}, in milliseconds.
    */
-  @RequiresApi(LOLLIPOP)
   public void setLatency(int latencyMs) {
     this.latencyMs = latencyMs;
   }
 
   /** Returns the estimated latency of this {@link AudioTrack}, in milliseconds. */
-  @Implementation(minSdk = LOLLIPOP)
+  @Implementation
   protected int native_get_latency() {
     return latencyMs;
   }

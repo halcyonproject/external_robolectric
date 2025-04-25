@@ -1,9 +1,9 @@
 package org.robolectric.shadows;
 
 import static android.os.Build.VERSION_CODES.TIRAMISU;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
-import android.annotation.TargetApi;
+import android.annotation.RequiresApi;
 import android.app.PendingIntent;
 import android.app.PendingIntent.CanceledException;
 import android.app.usage.BroadcastResponseStats;
@@ -66,7 +66,7 @@ public class ShadowUsageStatsManager {
    * Keys {@link UsageStats} objects by intervalType (e.g. {@link
    * UsageStatsManager#INTERVAL_WEEKLY}).
    */
-  private static SetMultimap<Integer, UsageStats> usageStatsByIntervalType =
+  private static final SetMultimap<Integer, UsageStats> usageStatsByIntervalType =
       Multimaps.synchronizedSetMultimap(HashMultimap.create());
 
   private static final Map<String, Integer> appStandbyBuckets = Maps.newConcurrentMap();
@@ -111,7 +111,7 @@ public class ShadowUsageStatsManager {
 
   /**
    * Usage session observer registered via {@link
-   * UsageStatsManager#registerUsageSessionObserver(int, String[], long, TimeUnit, long, TimeUnit,
+   * UsageStatsManager#registerUsageSessionObserver(int, String[], Duration, Duration,
    * PendingIntent, PendingIntent)}.
    */
   @AutoValue
@@ -173,9 +173,9 @@ public class ShadowUsageStatsManager {
         @Nonnull PendingIntent callbackIntent) {
       this.observerId = observerId;
       this.packageNames = ImmutableList.copyOf(packageNames);
-      this.timeLimit = checkNotNull(timeLimit);
-      this.timeUsed = checkNotNull(timeUsed);
-      this.callbackIntent = checkNotNull(callbackIntent);
+      this.timeLimit = requireNonNull(timeLimit);
+      this.timeUsed = requireNonNull(timeUsed);
+      this.callbackIntent = requireNonNull(callbackIntent);
     }
 
     public int getObserverId() {
@@ -384,7 +384,7 @@ public class ShadowUsageStatsManager {
   /**
    * Returns the current standby bucket of the specified app that is set by {@code
    * setAppStandbyBucket}. If the standby bucket value has never been set, return {@link
-   * UsageStatsManager.STANDBY_BUCKET_ACTIVE}.
+   * UsageStatsManager#STANDBY_BUCKET_ACTIVE}.
    */
   @Implementation(minSdk = Build.VERSION_CODES.P)
   @HiddenApi
@@ -582,7 +582,7 @@ public class ShadowUsageStatsManager {
   /**
    * Returns the current app's standby bucket that is set by {@code setCurrentAppStandbyBucket}. If
    * the standby bucket value has never been set, return {@link
-   * UsageStatsManager.STANDBY_BUCKET_ACTIVE}.
+   * UsageStatsManager#STANDBY_BUCKET_ACTIVE}.
    */
   @Implementation(minSdk = Build.VERSION_CODES.P)
   @StandbyBuckets
@@ -603,7 +603,7 @@ public class ShadowUsageStatsManager {
   }
 
   /** Sets what app usage observers will consider the source of usage for an activity. */
-  @TargetApi(Build.VERSION_CODES.Q)
+  @RequiresApi(Build.VERSION_CODES.Q)
   public void setUsageSource(@UsageSource int usageSource) {
     currentUsageSource = usageSource;
   }
@@ -650,7 +650,7 @@ public class ShadowUsageStatsManager {
     idToResponseStats.keySet().removeIf(id -> id == idToRemove || idToRemove == 0);
   }
 
-  @TargetApi(Build.VERSION_CODES.TIRAMISU)
+  @RequiresApi(Build.VERSION_CODES.TIRAMISU)
   public void addBroadcastResponseStats(Object /*BroadcastResponseStats*/ statsObject) {
     BroadcastResponseStats stats = (BroadcastResponseStats) statsObject;
     Map<Long, Object /*BroadcastResponseStats*/> idToStats =
@@ -679,7 +679,7 @@ public class ShadowUsageStatsManager {
    * of the Android API.
    */
   public static class UsageStatsBuilder {
-    private UsageStats usageStats = new UsageStats();
+    private final UsageStats usageStats = new UsageStats();
 
     // Use {@link #newBuilder} to construct builders.
     private UsageStatsBuilder() {}
@@ -723,7 +723,7 @@ public class ShadowUsageStatsManager {
    * API.
    */
   public static class EventBuilder {
-    private Event event = new Event();
+    private final Event event = new Event();
 
     private EventBuilder() {}
 
@@ -779,32 +779,32 @@ public class ShadowUsageStatsManager {
       return this;
     }
 
-    @TargetApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.Q)
     public EventBuilder setInstanceId(int instanceId) {
       event.mInstanceId = instanceId;
       return this;
     }
 
-    @TargetApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.Q)
     public EventBuilder setTaskRootPackage(String taskRootPackage) {
       event.mTaskRootPackage = taskRootPackage;
       return this;
     }
 
-    @TargetApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.Q)
     public EventBuilder setTaskRootClass(String taskRootClass) {
       event.mTaskRootClass = taskRootClass;
       return this;
     }
 
-    @TargetApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.P)
     public EventBuilder setAppStandbyBucket(int bucket) {
       event.mBucketAndReason &= 0xFFFF;
       event.mBucketAndReason |= bucket << 16;
       return this;
     }
 
-    @TargetApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public EventBuilder setExtras(PersistableBundle extras) {
       event.mExtras = extras;
       return this;

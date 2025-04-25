@@ -159,6 +159,7 @@ public class ShadowVMRuntime {
   }
 
   /** Returns the instruction set of the current runtime. */
+  @Nullable
   @Implementation
   protected static String getCurrentInstructionSet() {
     return currentInstructionSet;

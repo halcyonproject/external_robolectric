@@ -183,17 +183,6 @@ public class ShadowMap {
     return invalidated.keySet();
   }
 
-  /**
-   * @deprecated do not use
-   */
-  @Deprecated
-  public static String convertToShadowName(String className) {
-    String shadowClassName =
-        "org.robolectric.shadows.Shadow" + className.substring(className.lastIndexOf(".") + 1);
-    shadowClassName = shadowClassName.replaceAll("\\$", "\\$Shadow");
-    return shadowClassName;
-  }
-
   public Builder newBuilder() {
     return new Builder(this);
   }
@@ -205,9 +194,7 @@ public class ShadowMap {
 
     ShadowMap shadowMap = (ShadowMap) o;
 
-    if (!overriddenShadows.equals(shadowMap.overriddenShadows)) return false;
-
-    return true;
+    return overriddenShadows.equals(shadowMap.overriddenShadows);
   }
 
   @Override

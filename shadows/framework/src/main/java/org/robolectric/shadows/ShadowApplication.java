@@ -7,8 +7,6 @@ import android.app.ActivityThread;
 import android.app.AlertDialog;
 import android.app.Application;
 import android.app.Dialog;
-import android.appwidget.AppWidgetManager;
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -19,15 +17,12 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.widget.ListPopupWindow;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.RealObject;
@@ -42,13 +37,13 @@ import org.robolectric.util.reflector.Reflector;
 public class ShadowApplication extends ShadowContextWrapper {
   @RealObject private Application realApplication;
 
-  private List<android.widget.Toast> shownToasts = new ArrayList<>();
+  private final List<android.widget.Toast> shownToasts = new ArrayList<>();
   private ShadowPopupMenu latestPopupMenu;
   private PopupWindow latestPopupWindow;
   private ListPopupWindow latestListPopupWindow;
 
   /**
-   * @deprecated Use {@code shadowOf({@link ApplicationProvider#getApplicationContext()})} instead.
+   * @deprecated Use {@code shadowOf(ApplicationProvider#getApplicationContext())} instead.
    */
   @Deprecated
   public static ShadowApplication getInstance() {
@@ -59,7 +54,10 @@ public class ShadowApplication extends ShadowContextWrapper {
    * Runs any background tasks previously queued by {@link android.os.AsyncTask#execute(Object[])}.
    *
    * <p>Note: calling this method does not pause or un-pause the scheduler.
+   *
+   * @deprecated This is only for LEGACY Looper mode. Use PAUSED Looper mode instead.
    */
+  @Deprecated
   public static void runBackgroundTasks() {
     getInstance().getBackgroundThreadScheduler().advanceBy(0);
   }
@@ -197,14 +195,6 @@ public class ShadowApplication extends ShadowContextWrapper {
   }
 
   /**
-   * @deprecated Please use {@link Context#getSystemService(Context.APPWIDGET_SERVICE)} intstead.
-   */
-  @Deprecated
-  public AppWidgetManager getAppWidgetManager() {
-    return (AppWidgetManager) realApplication.getSystemService(Context.APPWIDGET_SERVICE);
-  }
-
-  /**
    * @deprecated Use {@link ShadowAlertDialog#getLatestAlertDialog()} instead.
    */
   @Deprecated
@@ -222,14 +212,6 @@ public class ShadowApplication extends ShadowContextWrapper {
     return dialog == null ? null : Shadow.extract(dialog);
   }
 
-  /**
-   * @deprecated Use {@link BluetoothAdapter#getDefaultAdapter()} ()} instead.
-   */
-  @Deprecated
-  public BluetoothAdapter getBluetoothAdapter() {
-    return BluetoothAdapter.getDefaultAdapter();
-  }
-
   public void declareActionUnbindable(String action) {
     getShadowInstrumentation().declareActionUnbindable(action);
   }
@@ -240,43 +222,6 @@ public class ShadowApplication extends ShadowContextWrapper {
    */
   public void declareComponentUnbindable(ComponentName component) {
     getShadowInstrumentation().declareComponentUnbindable(component);
-  }
-
-  /**
-   * @deprecated use ShadowPowerManager.getLatestWakeLock
-   */
-  @Deprecated
-  public PowerManager.WakeLock getLatestWakeLock() {
-    return ShadowPowerManager.getLatestWakeLock();
-  }
-
-  /**
-   * @deprecated use PowerManager APIs instead
-   */
-  @Deprecated
-  public void addWakeLock(PowerManager.WakeLock wl) {
-    ShadowPowerManager.addWakeLock(wl);
-  }
-
-  /**
-   * @deprecated use ShadowPowerManager.clearWakeLocks
-   */
-  @Deprecated
-  public void clearWakeLocks() {
-    ShadowPowerManager.clearWakeLocks();
-  }
-
-  private final Map<String, Object> singletons = new HashMap<>();
-
-  public <T> T getSingleton(Class<T> clazz, Provider<T> provider) {
-    synchronized (singletons) {
-      //noinspection unchecked
-      T item = (T) singletons.get(clazz.getName());
-      if (item == null) {
-        singletons.put(clazz.getName(), item = provider.get());
-      }
-      return item;
-    }
   }
 
   /**
@@ -375,7 +320,7 @@ public class ShadowApplication extends ShadowContextWrapper {
 
   /**
    * @deprecated Do not depend on this method to override services as it will be removed in a future
-   *     update. The preferered method is use the shadow of the corresponding service.
+   *     update. The preferred method is use the shadow of the corresponding service.
    */
   @Deprecated
   public void setSystemService(String key, Object service) {

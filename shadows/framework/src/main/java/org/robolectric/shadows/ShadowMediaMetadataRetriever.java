@@ -104,7 +104,7 @@ public class ShadowMediaMetadataRetriever {
 
   public static void addMetadata(DataSource ds, int keyCode, String value) {
     if (!metadata.containsKey(ds)) {
-      metadata.put(ds, new HashMap<Integer, String>());
+      metadata.put(ds, new HashMap<>());
     }
     metadata.get(ds).put(keyCode, value);
   }
@@ -126,7 +126,7 @@ public class ShadowMediaMetadataRetriever {
 
   public static void addFrame(DataSource ds, long time, Bitmap bitmap) {
     if (!frames.containsKey(ds)) {
-      frames.put(ds, new HashMap<Long, Bitmap>());
+      frames.put(ds, new HashMap<>());
     }
     frames.get(ds).put(time, bitmap);
   }
@@ -134,7 +134,7 @@ public class ShadowMediaMetadataRetriever {
   public static void addScaledFrame(
       DataSource ds, long time, int dstWidth, int dstHeight, Bitmap bitmap) {
     if (!scaledFrames.containsKey(ds)) {
-      scaledFrames.put(ds, new HashMap<String, Bitmap>());
+      scaledFrames.put(ds, new HashMap<>());
     }
     scaledFrames.get(ds).put(getScaledFrameKey(time, dstWidth, dstHeight), bitmap);
   }

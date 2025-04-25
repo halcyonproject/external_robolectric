@@ -36,12 +36,11 @@ public class PackagePropertiesLoader {
       buf.append(packageName.replace('.', '/'));
       buf.append('/');
     }
-    String propsFile = buf.toString() + propFileName + ".properties";
+    String propsFile = buf + propFileName + ".properties";
     return cache.computeIfAbsent(
         propsFile,
         s -> {
-          final String resourceName = propsFile;
-          try (InputStream resourceAsStream = getResourceAsStream(resourceName)) {
+          try (InputStream resourceAsStream = getResourceAsStream(propsFile)) {
             if (resourceAsStream == null) {
               return null;
             }

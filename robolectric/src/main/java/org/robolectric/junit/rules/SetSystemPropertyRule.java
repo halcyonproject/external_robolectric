@@ -1,8 +1,8 @@
 package org.robolectric.junit.rules;
 
-import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -18,11 +18,19 @@ public class SetSystemPropertyRule implements TestRule {
   public SetSystemPropertyRule() {}
 
   public void set(String key, String value) {
-    Preconditions.checkNotNull(key);
+    Objects.requireNonNull(key);
     if (!originalProperties.containsKey(key)) {
       originalProperties.put(key, System.getProperty(key));
     }
     System.setProperty(key, value);
+  }
+
+  public void clear(String key) {
+    Objects.requireNonNull(key);
+    if (!originalProperties.containsKey(key)) {
+      originalProperties.put(key, System.getProperty(key));
+    }
+    System.clearProperty(key);
   }
 
   @Override

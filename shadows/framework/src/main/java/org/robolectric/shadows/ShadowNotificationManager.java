@@ -26,6 +26,7 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,9 +103,7 @@ public class ShadowNotificationManager {
   @Implementation
   protected void cancel(String tag, int id) {
     Key key = new Key(tag, id);
-    if (notifications.containsKey(key)) {
-      notifications.remove(key);
-    }
+    notifications.remove(key);
   }
 
   @Implementation
@@ -127,7 +126,7 @@ public class ShadowNotificationManager {
   }
 
   public void setImportance(int importance) {
-    this.importance = importance;
+    ShadowNotificationManager.importance = importance;
   }
 
   @Implementation(minSdk = M)
@@ -199,20 +198,19 @@ public class ShadowNotificationManager {
     if (deletedNotificationChannels.containsKey(id)) {
       notificationChannels.put(id, deletedNotificationChannels.remove(id));
     }
-    NotificationChannel existingChannel = (NotificationChannel) notificationChannels.get(id);
+    NotificationChannel existingChannel = notificationChannels.get(id);
     // Per documentation, recreating a channel can change name and description, lower importance or
     // set a group if no group set. Other settings remain unchanged. See
     // https://developer.android.com/reference/android/app/NotificationManager#createNotificationChannel%28android.app.NotificationChannel@29
     // for more info.
     if (existingChannel != null) {
-      NotificationChannel newChannel = (NotificationChannel) channel;
-      existingChannel.setName(newChannel.getName());
-      existingChannel.setDescription(newChannel.getDescription());
-      if (newChannel.getImportance() < existingChannel.getImportance()) {
-        existingChannel.setImportance(newChannel.getImportance());
+      existingChannel.setName(channel.getName());
+      existingChannel.setDescription(channel.getDescription());
+      if (channel.getImportance() < existingChannel.getImportance()) {
+        existingChannel.setImportance(channel.getImportance());
       }
       if (Strings.isNullOrEmpty(existingChannel.getGroup())) {
-        existingChannel.setGroup(newChannel.getGroup());
+        existingChannel.setGroup(channel.getGroup());
       }
       return;
     }
@@ -357,7 +355,7 @@ public class ShadowNotificationManager {
 
   @Implementation(minSdk = N)
   protected AutomaticZenRule getAutomaticZenRule(String id) {
-    Preconditions.checkNotNull(id);
+    Objects.requireNonNull(id);
     enforcePolicyAccess();
 
     return automaticZenRules.get(id);
@@ -367,22 +365,18 @@ public class ShadowNotificationManager {
   protected Map<String, AutomaticZenRule> getAutomaticZenRules() {
     enforcePolicyAccess();
 
-    ImmutableMap.Builder<String, AutomaticZenRule> rules = new ImmutableMap.Builder();
-    for (Map.Entry<String, AutomaticZenRule> entry : automaticZenRules.entrySet()) {
-      rules.put(entry.getKey(), copyAutomaticZenRule(entry.getValue()));
-    }
-    return rules.build();
+    return ImmutableMap.copyOf(automaticZenRules);
   }
 
   @Implementation(minSdk = N)
   protected String addAutomaticZenRule(AutomaticZenRule automaticZenRule) {
-    Preconditions.checkNotNull(automaticZenRule);
-    Preconditions.checkNotNull(automaticZenRule.getName());
+    Objects.requireNonNull(automaticZenRule);
+    Objects.requireNonNull(automaticZenRule.getName());
     Preconditions.checkState(
         automaticZenRule.getOwner() != null || automaticZenRule.getConfigurationActivity() != null,
         "owner/configurationActivity cannot be null at the same time");
 
-    Preconditions.checkNotNull(automaticZenRule.getConditionId());
+    Objects.requireNonNull(automaticZenRule.getConditionId());
     enforcePolicyAccess();
 
     String id = UUID.randomUUID().toString().replace("-", "");
@@ -393,12 +387,12 @@ public class ShadowNotificationManager {
   @Implementation(minSdk = N)
   protected boolean updateAutomaticZenRule(String id, AutomaticZenRule automaticZenRule) {
     // NotificationManagerService doesn't check that id is non-null.
-    Preconditions.checkNotNull(automaticZenRule);
-    Preconditions.checkNotNull(automaticZenRule.getName());
+    Objects.requireNonNull(automaticZenRule);
+    Objects.requireNonNull(automaticZenRule.getName());
     Preconditions.checkState(
         automaticZenRule.getOwner() != null || automaticZenRule.getConfigurationActivity() != null,
         "owner/configurationActivity cannot be null at the same time");
-    Preconditions.checkNotNull(automaticZenRule.getConditionId());
+    Objects.requireNonNull(automaticZenRule.getConditionId());
     enforcePolicyAccess();
 
     // ZenModeHelper throws slightly cryptic exceptions.
@@ -414,7 +408,7 @@ public class ShadowNotificationManager {
 
   @Implementation(minSdk = N)
   protected boolean removeAutomaticZenRule(String id) {
-    Preconditions.checkNotNull(id);
+    Objects.requireNonNull(id);
     enforcePolicyAccess();
     return automaticZenRules.remove(id) != null;
   }
@@ -466,7 +460,7 @@ public class ShadowNotificationManager {
    * the default behavior.
    */
   public void setEnforceMaxNotificationLimit(boolean enforceMaxNotificationLimit) {
-    this.enforceMaxNotificationLimit = enforceMaxNotificationLimit;
+    ShadowNotificationManager.enforceMaxNotificationLimit = enforceMaxNotificationLimit;
   }
 
   /**
@@ -550,8 +544,7 @@ public class ShadowNotificationManager {
     public boolean equals(Object o) {
       if (!(o instanceof Key)) return false;
       Key other = (Key) o;
-      return (this.tag == null ? other.tag == null : this.tag.equals(other.tag))
-          && this.id == other.id;
+      return Objects.equals(this.tag, other.tag) && this.id == other.id;
     }
   }
 

@@ -4,6 +4,7 @@ import static com.google.common.io.Resources.toByteArray;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Application;
@@ -134,8 +135,8 @@ public class ShadowBitmapFactoryTest {
   }
 
   @Test
-  public void decodeBytes_shouldSetDescriptionAndCreatedFrom() throws Exception {
-    byte[] yummyBites = "Hi!".getBytes("UTF-8");
+  public void decodeBytes_shouldSetDescriptionAndCreatedFrom() {
+    byte[] yummyBites = "Hi!".getBytes(UTF_8);
     Bitmap bitmap = BitmapFactory.decodeByteArray(yummyBites, 100, 100);
     ShadowBitmap shadowBitmap = shadowOf(bitmap);
     assertEquals("Bitmap for 3 bytes 100..100", shadowBitmap.getDescription());
@@ -145,8 +146,8 @@ public class ShadowBitmapFactoryTest {
   }
 
   @Test
-  public void decodeBytes_shouldSetDescriptionAndCreatedFromWithOptions() throws Exception {
-    byte[] yummyBites = "Hi!".getBytes("UTF-8");
+  public void decodeBytes_shouldSetDescriptionAndCreatedFromWithOptions() {
+    byte[] yummyBites = "Hi!".getBytes(UTF_8);
     BitmapFactory.Options options = new BitmapFactory.Options();
     Bitmap bitmap = BitmapFactory.decodeByteArray(yummyBites, 100, 100, options);
     ShadowBitmap shadowBitmap = shadowOf(bitmap);
@@ -183,7 +184,7 @@ public class ShadowBitmapFactoryTest {
     options.inSampleSize = 100;
     Bitmap bitmap =
         BitmapFactory.decodeResource(context.getResources(), R.drawable.an_image, options);
-    assertEquals(true, shadowOf(bitmap).getDescription().contains("inSampleSize=100"));
+    assertTrue(shadowOf(bitmap).getDescription().contains("inSampleSize=100"));
   }
 
   @Test
@@ -195,7 +196,7 @@ public class ShadowBitmapFactoryTest {
     Bitmap bitmap =
         BitmapFactory.decodeResourceStream(
             context.getResources(), null, inputStream, null, options);
-    assertEquals(true, shadowOf(bitmap).getDescription().contains("inSampleSize=100"));
+    assertTrue(shadowOf(bitmap).getDescription().contains("inSampleSize=100"));
   }
 
   @Test
@@ -528,7 +529,7 @@ public class ShadowBitmapFactoryTest {
     InputStream inputStream = com.google.common.io.Resources.getResource(imagePath).openStream();
     File tempFile = Files.createTempFile("ShadowBitmapFactoryTest", null).toFile();
     tempFile.deleteOnExit();
-    ByteStreams.copy(inputStream, new FileOutputStream(tempFile));
+    ByteStreams.copy(inputStream, Files.newOutputStream(tempFile.toPath()));
     return tempFile;
   }
 

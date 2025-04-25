@@ -5,6 +5,7 @@ import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,14 +41,13 @@ public final class ShadowMediaControllerTest {
 
   private MediaController mediaController;
   private ShadowMediaController shadowMediaController;
-  private final String testPackageName = "FOO";
 
   @Before
   public void setUp() {
     Context context = ApplicationProvider.getApplicationContext();
     ISessionController binder = mock(ISessionController.class);
 
-    MediaSession.Token token = null;
+    MediaSession.Token token;
     if (RuntimeEnvironment.getApiLevel() <= Q) {
       token =
           ReflectionHelpers.callConstructor(
@@ -65,6 +65,7 @@ public final class ShadowMediaControllerTest {
 
   @Test
   public void setPackageName() {
+    String testPackageName = "FOO";
     shadowMediaController.setPackageName(testPackageName);
     assertEquals(testPackageName, mediaController.getPackageName());
   }
@@ -139,7 +140,7 @@ public final class ShadowMediaControllerTest {
     Bundle extras = new Bundle();
     extras.putBoolean(extraKey, true);
     shadowMediaController.setExtras(extras);
-    assertEquals(true, mediaController.getExtras().getBoolean(extraKey, false));
+    assertTrue(mediaController.getExtras().getBoolean(extraKey, false));
   }
 
   @Test

@@ -9,6 +9,7 @@ import android.util.ArrayMap;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.primitives.Ints;
 import java.util.HashSet;
+import javax.annotation.Nonnull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
@@ -151,7 +152,7 @@ public class HealthStatsBuilderTest {
     assertThat(Ints.asList(reversedSetAsSortedArray)).isInStrictOrder();
   }
 
-  private final void compareTimers(TimerStat timer1, TimerStat timer2) {
+  private void compareTimers(TimerStat timer1, TimerStat timer2) {
     assertThat(timer1.getCount()).isEqualTo(timer2.getCount());
     assertThat(timer1.getTime()).isEqualTo(timer2.getTime());
   }
@@ -162,6 +163,7 @@ public class HealthStatsBuilderTest {
       super(c);
     }
 
+    @Nonnull
     @Override
     public Object[] toArray() {
       Object[] forward = super.toArray();
