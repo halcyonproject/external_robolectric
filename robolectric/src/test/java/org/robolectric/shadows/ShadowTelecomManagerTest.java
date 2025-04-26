@@ -20,7 +20,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -78,7 +77,7 @@ public class ShadowTelecomManagerTest {
   @Test
   public void registerAndUnRegister() {
     assertThat(shadowOf(telecomService).getAllPhoneAccountsCount()).isEqualTo(0);
-    assertThat(shadowOf(telecomService).getAllPhoneAccounts()).hasSize(0);
+    assertThat(shadowOf(telecomService).getAllPhoneAccounts()).isEmpty();
 
     PhoneAccountHandle handler = createHandle("id");
     PhoneAccount phoneAccount = PhoneAccount.builder(handler, "main_account").build();
@@ -94,13 +93,13 @@ public class ShadowTelecomManagerTest {
     telecomService.unregisterPhoneAccount(handler);
 
     assertThat(shadowOf(telecomService).getAllPhoneAccountsCount()).isEqualTo(0);
-    assertThat(shadowOf(telecomService).getAllPhoneAccounts()).hasSize(0);
-    assertThat(telecomService.getAllPhoneAccountHandles()).hasSize(0);
+    assertThat(shadowOf(telecomService).getAllPhoneAccounts()).isEmpty();
+    assertThat(telecomService.getAllPhoneAccountHandles()).isEmpty();
   }
 
   @Test
   @Config(minSdk = UPSIDE_DOWN_CAKE)
-  public void registerWithTransactionalCapabilites_addsSelfManagedCapability() {
+  public void registerWithTransactionalCapabilities_addsSelfManagedCapability() {
     PhoneAccountHandle handle = createHandle("id");
     PhoneAccount phoneAccount =
         PhoneAccount.builder(handle, "main_account")
@@ -299,7 +298,7 @@ public class ShadowTelecomManagerTest {
     verifyNoMoreInteractions(connectionServiceListener);
 
     List<ConnectionRequest> values = requestCaptor.getAllValues();
-    assertThat(values.size()).isEqualTo(2);
+    assertThat(values).hasSize(2);
     ConnectionRequest request1 = values.get(0);
     ConnectionRequest request2 = values.get(1);
     assertThat(request1.getAddress()).isEqualTo(address1);
@@ -590,8 +589,7 @@ public class ShadowTelecomManagerTest {
 
   @Config(minSdk = R)
   @Test
-  public void createLaunchEmergencyDialerIntent_whenPackageAvailable_shouldContainPackage()
-      throws NameNotFoundException {
+  public void createLaunchEmergencyDialerIntent_whenPackageAvailable_shouldContainPackage() {
     ComponentName componentName = new ComponentName("com.android.phone", "EmergencyDialer");
     shadowOf(context.getPackageManager()).addActivityIfNotPresent(componentName);
 

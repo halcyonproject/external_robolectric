@@ -1,11 +1,13 @@
 package android.app;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
 import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.annotation.SuppressLint;
 import android.app.admin.DeviceAdminReceiver;
 import android.app.admin.DevicePolicyManager;
 import android.app.role.RoleManager;
@@ -19,10 +21,13 @@ import android.appwidget.AppWidgetProvider;
 import android.appwidget.AppWidgetProviderInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.CrossProfileApps;
 import android.content.pm.LauncherApps;
 import android.hardware.Sensor;
@@ -61,6 +66,7 @@ import com.google.common.truth.Truth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,6 +77,7 @@ import org.robolectric.util.ReflectionHelpers;
 @RunWith(AndroidJUnit4.class)
 public class ContextTest {
   private static final int APP_WIDGET_HOST_ID = 1;
+  private Application application;
 
   @Rule
   public GrantPermissionRule mRuntimePermissionRule =
@@ -85,11 +92,15 @@ public class ContextTest {
           Manifest.permission.WRITE_EXTERNAL_STORAGE,
           Manifest.permission.READ_EXTERNAL_STORAGE);
 
+  @Before
+  public void setUp() {
+    application = ApplicationProvider.getApplicationContext();
+  }
+
   @Test
   public void audioManager_applicationInstance_isNotSameAsActivityInstance() {
     AudioManager applicationAudioManager =
-        (AudioManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -117,8 +128,7 @@ public class ContextTest {
   @Test
   public void audioManager_instance_changesAffectEachOther() {
     AudioManager applicationAudioManager =
-        (AudioManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -139,8 +149,7 @@ public class ContextTest {
   @Test
   public void accountManager_applicationInstance_isNotSameAsActivityInstance() {
     AccountManager applicationAccountManager =
-        (AccountManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ACCOUNT_SERVICE);
+        (AccountManager) application.getSystemService(Context.ACCOUNT_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -168,8 +177,7 @@ public class ContextTest {
   @Test
   public void accountManager_instance_retrievesSameAccounts() {
     AccountManager applicationAccountManager =
-        (AccountManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ACCOUNT_SERVICE);
+        (AccountManager) application.getSystemService(Context.ACCOUNT_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -189,8 +197,7 @@ public class ContextTest {
   @Test
   public void batteryManager_applicationInstance_isNotSameAsActivityInstance() {
     BatteryManager applicationBatteryManager =
-        (BatteryManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.BATTERY_SERVICE);
+        (BatteryManager) application.getSystemService(Context.BATTERY_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -218,8 +225,7 @@ public class ContextTest {
   @Test
   public void alarmManager_applicationInstance_isNotSameAsActivityInstance() {
     AlarmManager applicationAlarmManager =
-        (AlarmManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        (AlarmManager) application.getSystemService(Context.ALARM_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -247,8 +253,7 @@ public class ContextTest {
   @Test
   public void alarmManager_instance_retrievesSameAlarmClockInfo() {
     AlarmManager applicationAlarmManager =
-        (AlarmManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        (AlarmManager) application.getSystemService(Context.ALARM_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -268,8 +273,7 @@ public class ContextTest {
   @Test
   public void clipboardManager_applicationInstance_isNotSameAsActivityInstance() {
     ClipboardManager applicationClipboardManager =
-        (ClipboardManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        (ClipboardManager) application.getSystemService(Context.CLIPBOARD_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -297,8 +301,7 @@ public class ContextTest {
   @Test
   public void clipboardManager_instance_retrievesSamePrimaryClip() {
     ClipboardManager applicationClipboardManager =
-        (ClipboardManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        (ClipboardManager) application.getSystemService(Context.CLIPBOARD_SERVICE);
     ClipData clipData = ClipData.newPlainText("label", "text");
     applicationClipboardManager.setPrimaryClip(clipData);
 
@@ -319,8 +322,7 @@ public class ContextTest {
   @Test
   public void keyguardManager_applicationInstance_isNotSameAsActivityInstance() {
     KeyguardManager applicationKeyguardManager =
-        (KeyguardManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
+        (KeyguardManager) application.getSystemService(Context.KEYGUARD_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -348,8 +350,7 @@ public class ContextTest {
   @Test
   public void keyguardManager_isKeyguardLocked_retrievesSameState() {
     KeyguardManager applicationKeyguardManager =
-        (KeyguardManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
+        (KeyguardManager) application.getSystemService(Context.KEYGUARD_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -367,9 +368,7 @@ public class ContextTest {
   @Test
   public void devicePolicyManager_applicationInstance_isNotSameAsActivityInstance() {
     DevicePolicyManager applicationDpm =
-        (DevicePolicyManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.DEVICE_POLICY_SERVICE);
+        (DevicePolicyManager) application.getSystemService(Context.DEVICE_POLICY_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -397,11 +396,8 @@ public class ContextTest {
   @Test
   public void devicePolicyManager_instance_retrievesSameAdminStatus() {
     DevicePolicyManager applicationDpm =
-        (DevicePolicyManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.DEVICE_POLICY_SERVICE);
-    ComponentName testAdminComponent =
-        new ComponentName(ApplicationProvider.getApplicationContext(), DeviceAdminReceiver.class);
+        (DevicePolicyManager) application.getSystemService(Context.DEVICE_POLICY_SERVICE);
+    ComponentName testAdminComponent = new ComponentName(application, DeviceAdminReceiver.class);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -419,7 +415,7 @@ public class ContextTest {
   @Test
   public void autofillManager_applicationInstance_isNotSameAsActivityInstance() {
     AutofillManager applicationAutofillManager =
-        ApplicationProvider.getApplicationContext().getSystemService(AutofillManager.class);
+        application.getSystemService(AutofillManager.class);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -447,7 +443,7 @@ public class ContextTest {
   @Test
   public void autofillManager_instance_retrievesSameAutofillService() {
     AutofillManager applicationAutofillManager =
-        ApplicationProvider.getApplicationContext().getSystemService(AutofillManager.class);
+        application.getSystemService(AutofillManager.class);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -469,8 +465,7 @@ public class ContextTest {
   @Test
   public void downloadManager_applicationInstance_isNotSameAsActivityInstance() {
     DownloadManager applicationDownloadManager =
-        (DownloadManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
+        (DownloadManager) application.getSystemService(Context.DOWNLOAD_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -499,8 +494,7 @@ public class ContextTest {
   public void downloadManager_instance_retrievesSameMimeTypeForDownloadedFile() {
     final long testId = 1L;
     DownloadManager applicationDownloadManager =
-        (DownloadManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
+        (DownloadManager) application.getSystemService(Context.DOWNLOAD_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -519,9 +513,7 @@ public class ContextTest {
   @Test
   public void fingerprintManager_applicationInstance_isNotSameAsActivityInstance() {
     FingerprintManager applicationFingerprintManager =
-        (FingerprintManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.FINGERPRINT_SERVICE);
+        (FingerprintManager) application.getSystemService(Context.FINGERPRINT_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -551,9 +543,7 @@ public class ContextTest {
   @Test
   public void fingerprintManager_instance_hasConsistentFingerprintState() {
     FingerprintManager applicationFingerprintManager =
-        (FingerprintManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.FINGERPRINT_SERVICE);
+        (FingerprintManager) application.getSystemService(Context.FINGERPRINT_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -582,8 +572,7 @@ public class ContextTest {
   @Test
   public void activityManager_applicationInstance_isNotSameAsActivityInstance() {
     ActivityManager applicationActivityManager =
-        (ActivityManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -612,8 +601,7 @@ public class ContextTest {
   @Test
   public void activityManager_instance_retrievesConsistentLowRamDeviceStatus() {
     ActivityManager applicationActivityManager =
-        (ActivityManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -632,8 +620,7 @@ public class ContextTest {
   @Test
   public void cameraManager_applicationInstance_isNotSameAsActivityInstance() {
     CameraManager applicationCameraManager =
-        (CameraManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.CAMERA_SERVICE);
+        (CameraManager) application.getSystemService(Context.CAMERA_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -661,8 +648,7 @@ public class ContextTest {
   @Test
   public void appWidgetManager_applicationInstance_isNotSameAsActivityInstance() {
     AppWidgetManager applicationAppWidgetManager =
-        (AppWidgetManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.APPWIDGET_SERVICE);
+        (AppWidgetManager) application.getSystemService(Context.APPWIDGET_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -689,23 +675,22 @@ public class ContextTest {
 
   @Test
   public void appWidgetManager_instance_retrievesSameAppWidgets() {
-    Context context = ApplicationProvider.getApplicationContext();
-    AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+    AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(application);
 
-    ComponentName providerComponent = new ComponentName(context, TestAppWidgetProvider.class);
+    ComponentName providerComponent = new ComponentName(application, TestAppWidgetProvider.class);
     AppWidgetProviderInfo appWidgetProviderInfo = new AppWidgetProviderInfo();
     appWidgetProviderInfo.provider = providerComponent;
     appWidgetProviderInfo.updatePeriodMillis = 0;
     appWidgetProviderInfo.initialLayout = android.R.layout.simple_list_item_1;
 
-    AppWidgetHost appWidgetHost = new AppWidgetHost(context, APP_WIDGET_HOST_ID);
+    AppWidgetHost appWidgetHost = new AppWidgetHost(application, APP_WIDGET_HOST_ID);
 
     int appWidgetId = appWidgetHost.allocateAppWidgetId();
     appWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, providerComponent);
 
     appWidgetManager.updateAppWidget(
         appWidgetId,
-        new RemoteViews(context.getPackageName(), android.R.layout.simple_list_item_1));
+        new RemoteViews(application.getPackageName(), android.R.layout.simple_list_item_1));
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -726,8 +711,7 @@ public class ContextTest {
   @Test
   public void biometricManager_applicationInstance_isNotSameAsActivityInstance() {
     BiometricManager applicationBiometricManager =
-        (BiometricManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.BIOMETRIC_SERVICE);
+        (BiometricManager) application.getSystemService(Context.BIOMETRIC_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -756,8 +740,7 @@ public class ContextTest {
   @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
   public void biometricManager_instance_retrievesSameAuthenticationResult_withAuthenticators() {
     BiometricManager applicationBiometricManager =
-        (BiometricManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.BIOMETRIC_SERVICE);
+        (BiometricManager) application.getSystemService(Context.BIOMETRIC_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -777,8 +760,7 @@ public class ContextTest {
   @Test
   public void bluetoothManager_applicationInstance_isNotSameAsActivityInstance() {
     BluetoothManager applicationBluetoothManager =
-        (BluetoothManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE);
+        (BluetoothManager) application.getSystemService(Context.BLUETOOTH_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -808,8 +790,7 @@ public class ContextTest {
   @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.Q)
   public void bluetoothManager_instance_retrievesSameAdapter() {
     BluetoothManager applicationBluetoothManager =
-        (BluetoothManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE);
+        (BluetoothManager) application.getSystemService(Context.BLUETOOTH_SERVICE);
 
     BluetoothAdapter applicationAdapter = applicationBluetoothManager.getAdapter();
 
@@ -829,8 +810,7 @@ public class ContextTest {
   @Test
   public void appOpsManager_applicationInstance_isNotSameAsActivityInstance() {
     AppOpsManager applicationAppOpsManager =
-        (AppOpsManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.APP_OPS_SERVICE);
+        (AppOpsManager) application.getSystemService(Context.APP_OPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -858,8 +838,7 @@ public class ContextTest {
   @Test
   public void appOpsManager_instance_retrievesSameOps() {
     AppOpsManager applicationAppOpsManager =
-        (AppOpsManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.APP_OPS_SERVICE);
+        (AppOpsManager) application.getSystemService(Context.APP_OPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -882,8 +861,7 @@ public class ContextTest {
   @Test
   public void euiccManager_applicationInstance_isNotSameAsActivityInstance() {
     EuiccManager applicationEuiccManager =
-        (EuiccManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.EUICC_SERVICE);
+        (EuiccManager) application.getSystemService(Context.EUICC_SERVICE);
     assumeTrue(applicationEuiccManager != null);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -912,8 +890,7 @@ public class ContextTest {
   @Test
   public void euiccManager_instance_getsEid() {
     EuiccManager applicationEuiccManager =
-        (EuiccManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.EUICC_SERVICE);
+        (EuiccManager) application.getSystemService(Context.EUICC_SERVICE);
     assumeTrue(applicationEuiccManager != null);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -932,9 +909,7 @@ public class ContextTest {
   @Test
   public void crossProfileApps_applicationInstance_isNotSameAsActivityInstance() {
     CrossProfileApps applicationCrossProfileApps =
-        (CrossProfileApps)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.CROSS_PROFILE_APPS_SERVICE);
+        (CrossProfileApps) application.getSystemService(Context.CROSS_PROFILE_APPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -962,9 +937,7 @@ public class ContextTest {
   @Test
   public void crossProfileApps_instance_retrievesSameTargetUserProfiles() {
     CrossProfileApps applicationCrossProfileApps =
-        (CrossProfileApps)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.CROSS_PROFILE_APPS_SERVICE);
+        (CrossProfileApps) application.getSystemService(Context.CROSS_PROFILE_APPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -984,9 +957,7 @@ public class ContextTest {
   @Test
   public void launcherApps_applicationInstance_isNotSameAsActivityInstance() {
     LauncherApps applicationLauncherApps =
-        (LauncherApps)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.LAUNCHER_APPS_SERVICE);
+        (LauncherApps) application.getSystemService(Context.LAUNCHER_APPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1014,9 +985,7 @@ public class ContextTest {
   @Test
   public void launcherApps_instance_retrievesSameProfiles() {
     LauncherApps applicationLauncherApps =
-        (LauncherApps)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.LAUNCHER_APPS_SERVICE);
+        (LauncherApps) application.getSystemService(Context.LAUNCHER_APPS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1037,8 +1006,7 @@ public class ContextTest {
   @Test
   public void dropBoxManager_applicationInstance_isNotSameAsActivityInstance() {
     DropBoxManager applicationDropBoxManager =
-        (DropBoxManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.DROPBOX_SERVICE);
+        (DropBoxManager) application.getSystemService(Context.DROPBOX_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1067,8 +1035,7 @@ public class ContextTest {
   @Test
   public void dropBoxManager_instance_retrievesSameEntry_noPermissionRequired() {
     DropBoxManager applicationDropBoxManager =
-        (DropBoxManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.DROPBOX_SERVICE);
+        (DropBoxManager) application.getSystemService(Context.DROPBOX_SERVICE);
 
     String tag = "testTag";
     String data = "testData";
@@ -1091,9 +1058,7 @@ public class ContextTest {
   @Test
   public void mediaRouter_applicationInstance_isNotSameAsActivityInstance() {
     MediaRouter applicationMediaRouter =
-        (MediaRouter)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.MEDIA_ROUTER_SERVICE);
+        (MediaRouter) application.getSystemService(Context.MEDIA_ROUTER_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1121,9 +1086,7 @@ public class ContextTest {
   @Test
   public void mediaRouter_instance_retrievesSameDefaultRoute() {
     MediaRouter applicationMediaRouter =
-        (MediaRouter)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.MEDIA_ROUTER_SERVICE);
+        (MediaRouter) application.getSystemService(Context.MEDIA_ROUTER_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1142,9 +1105,7 @@ public class ContextTest {
   @Test
   public void captioningManager_applicationInstance_isNotSameAsActivityInstance() {
     CaptioningManager applicationCaptioningManager =
-        (CaptioningManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.CAPTIONING_SERVICE);
+        (CaptioningManager) application.getSystemService(Context.CAPTIONING_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1177,9 +1138,7 @@ public class ContextTest {
   @Test
   public void captioningManager_instance_retrievesSameValues() {
     CaptioningManager applicationCaptioningManager =
-        (CaptioningManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.CAPTIONING_SERVICE);
+        (CaptioningManager) application.getSystemService(Context.CAPTIONING_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1198,8 +1157,7 @@ public class ContextTest {
   @Test
   public void sensorManager_applicationInstance_isNotSameAsActivityInstance() {
     SensorManager applicationSensorManager =
-        (SensorManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
+        (SensorManager) application.getSystemService(Context.SENSOR_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1231,8 +1189,7 @@ public class ContextTest {
   @Test
   public void sensorManager_instance_retrievesSameValues() {
     SensorManager applicationSensorManager =
-        (SensorManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.SENSOR_SERVICE);
+        (SensorManager) application.getSystemService(Context.SENSOR_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1262,8 +1219,7 @@ public class ContextTest {
   @Test
   public void roleManager_applicationInstance_isNotSameAsActivityInstance() {
     RoleManager applicationRoleManager =
-        (RoleManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ROLE_SERVICE);
+        (RoleManager) application.getSystemService(Context.ROLE_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1291,8 +1247,7 @@ public class ContextTest {
   @Test
   public void roleManager_instance_retrievesSameRoles() {
     RoleManager applicationRoleManager =
-        (RoleManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.ROLE_SERVICE);
+        (RoleManager) application.getSystemService(Context.ROLE_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1309,8 +1264,7 @@ public class ContextTest {
 
   @Test
   public void sliceManager_applicationInstance_isNotSameAsActivityInstance() {
-    SliceManager applicationSliceManager =
-        ApplicationProvider.getApplicationContext().getSystemService(SliceManager.class);
+    SliceManager applicationSliceManager = application.getSystemService(SliceManager.class);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1336,8 +1290,7 @@ public class ContextTest {
   @Test
   public void usbManager_applicationInstance_isNotSameAsActivityInstance() {
     UsbManager applicationUsbManager =
-        (UsbManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        (UsbManager) application.getSystemService(Context.USB_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1365,8 +1318,7 @@ public class ContextTest {
   @Test
   public void usbManager_instance_retrievesSameUsbDevices() {
     UsbManager applicationUsbManager =
-        (UsbManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        (UsbManager) application.getSystemService(Context.USB_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1383,8 +1335,7 @@ public class ContextTest {
 
   @Test
   public void sliceManager_instance_retrievesSameSlice() {
-    SliceManager applicationSliceManager =
-        ApplicationProvider.getApplicationContext().getSystemService(SliceManager.class);
+    SliceManager applicationSliceManager = application.getSystemService(SliceManager.class);
     Uri testUri = Uri.parse("content://com.example.slice/test"); // Replace with a valid test URI
     Set<SliceSpec> testSpecs = new ArraySet<>();
 
@@ -1405,8 +1356,7 @@ public class ContextTest {
   @Test
   public void storageManager_applicationInstance_isNotSameAsActivityInstance() {
     StorageManager applicationStorageManager =
-        (StorageManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.STORAGE_SERVICE);
+        (StorageManager) application.getSystemService(Context.STORAGE_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1434,8 +1384,7 @@ public class ContextTest {
   @Test
   public void storageManager_instance_retrievesSameVolumes() {
     StorageManager applicationStorageManager =
-        (StorageManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.STORAGE_SERVICE);
+        (StorageManager) application.getSystemService(Context.STORAGE_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1453,9 +1402,7 @@ public class ContextTest {
   @Test
   public void usageStatsManager_applicationInstance_isNotSameAsActivityInstance() {
     UsageStatsManager applicationUsageStatsManager =
-        (UsageStatsManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.USAGE_STATS_SERVICE);
+        (UsageStatsManager) application.getSystemService(Context.USAGE_STATS_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1484,8 +1431,7 @@ public class ContextTest {
   @Test
   public void userManager_isUserAGoat_consistentAcrossContexts() {
     UserManager applicationUserManager =
-        (UserManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.USER_SERVICE);
+        (UserManager) application.getSystemService(Context.USER_SERVICE);
 
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
@@ -1504,9 +1450,7 @@ public class ContextTest {
   @Test
   public void subscriptionManager_applicationInstance_isNotSameAsActivityInstance() {
     SubscriptionManager applicationSubscriptionManager =
-        (SubscriptionManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        (SubscriptionManager) application.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1540,9 +1484,7 @@ public class ContextTest {
   public void subscriptionManager_instance_retrievesSameDefaultSubscriptionInfo() {
     int defaultSubscriptionId = SubscriptionManager.getDefaultSubscriptionId();
     SubscriptionManager applicationSubscriptionManager =
-        (SubscriptionManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        (SubscriptionManager) application.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1563,8 +1505,7 @@ public class ContextTest {
   @Test
   public void telephonyManager_applicationInstance_isNotSameAsActivityInstance() {
     TelephonyManager applicationTelephonyManager =
-        (TelephonyManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+        (TelephonyManager) application.getSystemService(Context.TELEPHONY_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1592,8 +1533,7 @@ public class ContextTest {
   @Test
   public void telephonyManager_instance_retrievesSamePhoneCount() {
     TelephonyManager applicationTelephonyManager =
-        (TelephonyManager)
-            ApplicationProvider.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+        (TelephonyManager) application.getSystemService(Context.TELEPHONY_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1611,9 +1551,7 @@ public class ContextTest {
   @Test
   public void systemHealthManager_applicationInstance_isNotSameAsActivityInstance() {
     SystemHealthManager applicationSystemHealthManager =
-        (SystemHealthManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.SYSTEM_HEALTH_SERVICE);
+        (SystemHealthManager) application.getSystemService(Context.SYSTEM_HEALTH_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1643,9 +1581,7 @@ public class ContextTest {
   @Test
   public void systemHealthManager_instance_retrievesSameUidSnapshot() {
     SystemHealthManager applicationSystemHealthManager =
-        (SystemHealthManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.SYSTEM_HEALTH_SERVICE);
+        (SystemHealthManager) application.getSystemService(Context.SYSTEM_HEALTH_SERVICE);
     try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
       scenario.onActivity(
           activity -> {
@@ -1666,6 +1602,69 @@ public class ContextTest {
               e.printStackTrace();
             }
           });
+    }
+  }
+
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
+  @Test
+  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withoutAnyExportedFlagsAndTargetSdkGreaterThan33_throwsSecurityException() {
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+
+    assertThrows(
+        SecurityException.class,
+        () -> application.registerReceiver(new TestBroadcastReceiver(), filter));
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void registerReceiver_withReceiverExportedFlagAndTargetSdkGreaterThan33_succeed() {
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    application.registerReceiver(new TestBroadcastReceiver(), filter, Context.RECEIVER_EXPORTED);
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void registerReceiver_withReceiverNotExportedFlagAndTargetSdkGreaterThan33_succeed() {
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    application.registerReceiver(
+        new TestBroadcastReceiver(), filter, Context.RECEIVER_NOT_EXPORTED);
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void
+      registerReceiver_withBothExportedFlagsAndTargetSdkGreaterThan33_throwsIllegalArgumentException() {
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            application.registerReceiver(
+                new TestBroadcastReceiver(),
+                filter,
+                Context.RECEIVER_EXPORTED | Context.RECEIVER_NOT_EXPORTED));
+  }
+
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
+  @Test
+  @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.TIRAMISU)
+  public void
+      registerReceiver_withoutAnyExportedFlagsAndTargetLessThan34_doesntThrowSecurityException() {
+    IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    application.registerReceiver(new TestBroadcastReceiver(), filter);
+  }
+
+  private static class TestBroadcastReceiver extends BroadcastReceiver {
+    public Context context;
+    public Intent intent;
+    public boolean isSticky;
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      this.context = context;
+      this.intent = intent;
+      this.isSticky = isInitialStickyBroadcast();
     }
   }
 

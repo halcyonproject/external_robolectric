@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
-import org.robolectric.RoboSettings;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -26,7 +25,7 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.Scheduler;
 
 /**
- * The shadow Looper implementation for {@link LooperMode.Mode.LEGACY}.
+ * The shadow Looper implementation for {@link LooperMode.Mode#LEGACY}.
  *
  * <p>Robolectric enqueues posted {@link Runnable}s to be run (on this thread) later. {@code
  * Runnable}s that are scheduled to run immediately can be triggered by calling {@link #idle()}.
@@ -43,8 +42,8 @@ public class ShadowLegacyLooper extends ShadowLooper {
   // is called. This also allows us to implement the useful getLooperForThread() method.
   // Note that the main looper is handled differently and is not put in this hash, because we need
   // to be able to "switch" the thread that the main looper is associated with.
-  private static Map<Thread, Looper> loopingLoopers =
-      Collections.synchronizedMap(new WeakHashMap<Thread, Looper>());
+  private static final Map<Thread, Looper> loopingLoopers =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   private static Looper mainLooper;
 
@@ -89,9 +88,7 @@ public class ShadowLegacyLooper extends ShadowLooper {
   /** Internal API to initialize background thread scheduler from AndroidTestEnvironment. */
   public static void internalInitializeBackgroundThreadScheduler() {
     backgroundScheduler =
-        RoboSettings.isUseGlobalScheduler()
-            ? RuntimeEnvironment.getMasterScheduler()
-            : new Scheduler();
+        useGlobalScheduler() ? RuntimeEnvironment.getMasterScheduler() : new Scheduler();
   }
 
   @Implementation
@@ -292,7 +289,7 @@ public class ShadowLegacyLooper extends ShadowLooper {
   @Override
   public void resetScheduler() {
     ShadowMessageQueue shadowMessageQueue = shadowOf(realObject.getQueue());
-    if (realObject == Looper.getMainLooper() || RoboSettings.isUseGlobalScheduler()) {
+    if (realObject == Looper.getMainLooper() || useGlobalScheduler()) {
       shadowMessageQueue.setScheduler(RuntimeEnvironment.getMasterScheduler());
     } else {
       shadowMessageQueue.setScheduler(new Scheduler());
@@ -336,5 +333,9 @@ public class ShadowLegacyLooper extends ShadowLooper {
 
   private static ShadowMessageQueue shadowOf(MessageQueue mq) {
     return Shadow.extract(mq);
+  }
+
+  private static boolean useGlobalScheduler() {
+    return Boolean.getBoolean("robolectric.scheduling.global");
   }
 }

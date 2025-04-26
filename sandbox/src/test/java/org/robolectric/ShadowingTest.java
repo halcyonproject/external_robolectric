@@ -27,7 +27,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {ShadowAccountManagerForTests.class})
-  public void testStaticMethodsAreDelegated() throws Exception {
+  public void testStaticMethodsAreDelegated() {
     Object arg = mock(Object.class);
     AccountManager.get(arg);
     assertThat(ShadowAccountManagerForTests.wasCalled).isTrue();
@@ -56,7 +56,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {ShadowClassWithProtectedMethod.class})
-  public void testProtectedMethodsAreDelegated() throws Exception {
+  public void testProtectedMethodsAreDelegated() {
     ClassWithProtectedMethod overlay = new ClassWithProtectedMethod();
     assertEquals("shadow name", overlay.getName());
   }
@@ -78,7 +78,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {ShadowPaintForTests.class})
-  public void testNativeMethodsAreDelegated() throws Exception {
+  public void testNativeMethodsAreDelegated() {
     Paint paint = new Paint();
     paint.setColor(1234);
 
@@ -130,7 +130,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {Pony.ShadowPony.class})
-  public void directlyOn_shouldCallThroughToOriginalMethodBody() throws Exception {
+  public void directlyOn_shouldCallThroughToOriginalMethodBody() {
     Pony pony = new Pony();
 
     assertEquals("Fake whinny! You're on my neck!", pony.ride("neck"));
@@ -143,7 +143,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {Pony.ShadowPony.class})
-  public void shouldCallRealForUnshadowedMethod() throws Exception {
+  public void shouldCallRealForUnshadowedMethod() {
     assertEquals("Off I saunter to the salon!", new Pony().saunter("the salon"));
   }
 
@@ -192,7 +192,7 @@ public class ShadowingTest {
 
   @Test
   @SandboxConfig(shadows = {ShadowApiImplementedClass.class})
-  public void withNonApiSubclassesWhichExtendApi_shouldStillBeInvoked() throws Exception {
+  public void withNonApiSubclassesWhichExtendApi_shouldStillBeInvoked() {
     assertEquals("did foo", new NonApiSubclass().doSomething("foo"));
   }
 

@@ -64,7 +64,7 @@ public class ShadowInputMethodManagerTest {
   }
 
   @Test
-  public void hideSoftInputFromWindow_shouldNotifiyResult_alreadyHidden() {
+  public void hideSoftInputFromWindow_shouldNotifyResult_alreadyHidden() {
     CapturingResultReceiver resultReceiver =
         new CapturingResultReceiver(new Handler(Looper.getMainLooper()));
     manager.hideSoftInputFromWindow(null, 0, resultReceiver);
@@ -142,13 +142,10 @@ public class ShadowInputMethodManagerTest {
     Bundle expectedBundle = new Bundle();
 
     ShadowInputMethodManager.PrivateCommandListener listener =
-        new ShadowInputMethodManager.PrivateCommandListener() {
-          @Override
-          public void onPrivateCommand(View view, String action, Bundle data) {
-            assertThat(view).isEqualTo(expectedView);
-            assertThat(action).isEqualTo(expectedAction);
-            assertThat(data).isEqualTo(expectedBundle);
-          }
+        (view, action, data) -> {
+          assertThat(view).isEqualTo(expectedView);
+          assertThat(action).isEqualTo(expectedAction);
+          assertThat(data).isEqualTo(expectedBundle);
         };
 
     shadow.setAppPrivateCommandListener(listener);

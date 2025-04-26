@@ -1,0 +1,56 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableDependencyDashboard",
+    "schedule:weekly"
+  ],
+  "ignoreDeps": [
+    "com.google.android.gms:play-services-auth",
+    "com.google.android.gms:play-services-base",
+    "com.google.android.gms:play-services-basement",
+    "org.apache.httpcomponents:httpclient",
+    "org.apache.httpcomponents:httpcore",
+    "org.robolectric:nativeruntime-dist-compat"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "packageRules": [
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": "github-actions"
+    },
+    {
+      "groupName": "Android Gradle Plugin",
+      "matchManagers": "gradle",
+      "matchPackageNames": [
+        "com.android.library",
+        "com.android.tools:common",
+        "com.android.tools.build:gradle*"
+      ]
+    },
+    {
+      "groupName": "AndroidX Test",
+      "matchManagers": "gradle",
+      "matchPackageNames": [
+        "androidx.test*"
+      ]
+    },
+    {
+      "groupName": "AndroidX",
+      "matchManagers": "gradle",
+      "matchPackageNames": [
+        "androidx.*"
+      ]
+    },
+    {
+      "enabled": false,
+      "matchCurrentVersion": "1.2.0",
+      "matchManagers": "gradle",
+      "matchPackageNames": [
+        "androidx.fragment:fragment"
+      ]
+    }
+  ]
+}

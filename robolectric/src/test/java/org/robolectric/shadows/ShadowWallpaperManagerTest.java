@@ -5,7 +5,7 @@ import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static com.google.common.truth.Truth.assertThat;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -116,11 +116,11 @@ public class ShadowWallpaperManagerTest {
 
   @Test
   public void hasResourceWallpaper_wallpaperResourceSet_returnsTrue() throws IOException {
-    int resid = 5;
-    manager.setResource(resid);
+    int resId = 5;
+    manager.setResource(resId);
 
     assertThat(manager.hasResourceWallpaper(1)).isFalse();
-    assertThat(manager.hasResourceWallpaper(resid)).isTrue();
+    assertThat(manager.hasResourceWallpaper(resId)).isTrue();
   }
 
   @Test
@@ -341,7 +341,7 @@ public class ShadowWallpaperManagerTest {
 
   @Test
   @Config(minSdk = N)
-  public void getWallpaperFile_flagSystem_nothingCached_shouldReturnNull() throws Exception {
+  public void getWallpaperFile_flagSystem_nothingCached_shouldReturnNull() {
     assertThat(manager.getWallpaperFile(WallpaperManager.FLAG_SYSTEM)).isNull();
   }
 
@@ -364,7 +364,7 @@ public class ShadowWallpaperManagerTest {
 
   @Test
   @Config(minSdk = N)
-  public void getWallpaperFile_flagLock_nothingCached_shouldReturnNull() throws Exception {
+  public void getWallpaperFile_flagLock_nothingCached_shouldReturnNull() {
     assertThat(manager.getWallpaperFile(WallpaperManager.FLAG_LOCK)).isNull();
   }
 
@@ -387,7 +387,7 @@ public class ShadowWallpaperManagerTest {
 
   @Test
   @Config(minSdk = N)
-  public void getWallpaperFile_unsupportedFlag_shouldReturnNull() throws Exception {
+  public void getWallpaperFile_unsupportedFlag_shouldReturnNull() {
     assertThat(manager.getWallpaperFile(UNSUPPORTED_FLAG)).isNull();
   }
 
@@ -540,8 +540,7 @@ public class ShadowWallpaperManagerTest {
   @Test
   @Config(minSdk = M)
   public void
-      setWallpaperComponent_liveWallpaperSet_shouldReturnLiveWallpaperComponentAndUnsetStaticWallpapers()
-          throws Exception {
+      setWallpaperComponent_liveWallpaperSet_shouldReturnLiveWallpaperComponentAndUnsetStaticWallpapers() {
     manager.setWallpaperComponent(TEST_WALLPAPER_SERVICE);
 
     assertThat(manager.getWallpaperInfo().getComponent()).isEqualTo(TEST_WALLPAPER_SERVICE);
@@ -551,7 +550,7 @@ public class ShadowWallpaperManagerTest {
 
   @Test
   @Config(minSdk = M)
-  public void getWallpaperInfo_noLiveWallpaperSet_shouldReturnNull() throws Exception {
+  public void getWallpaperInfo_noLiveWallpaperSet_shouldReturnNull() {
     assertThat(manager.getWallpaperInfo()).isNull();
   }
 

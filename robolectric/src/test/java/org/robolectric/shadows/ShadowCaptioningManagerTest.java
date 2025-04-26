@@ -18,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +33,7 @@ import org.robolectric.annotation.Config;
 @Config(minSdk = KITKAT)
 public final class ShadowCaptioningManagerTest {
 
-  private TestCaptioningChangeListener captioningChangeListener =
+  private final TestCaptioningChangeListener captioningChangeListener =
       new TestCaptioningChangeListener();
 
   private static final int ENABLED = 1;
@@ -40,8 +41,9 @@ public final class ShadowCaptioningManagerTest {
 
   private CaptioningManager captioningManager;
   private Context context;
+  private AutoCloseable mock;
 
-  public class TestCaptioningChangeListener extends CaptioningChangeListener {
+  public static class TestCaptioningChangeListener extends CaptioningChangeListener {
     public boolean isEnabled = false;
     @Nullable public CaptionStyle captionStyle = null;
     @Nullable public Locale locale = null;
@@ -82,12 +84,17 @@ public final class ShadowCaptioningManagerTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    mock = MockitoAnnotations.openMocks(this);
     captioningManager =
         (CaptioningManager)
             ApplicationProvider.getApplicationContext()
                 .getSystemService(Context.CAPTIONING_SERVICE);
     context = RuntimeEnvironment.getApplication();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mock.close();
   }
 
   @Test
@@ -200,7 +207,7 @@ public final class ShadowCaptioningManagerTest {
   public void setSystemAudioCaptioningEnabled_updatesValue() {
     captioningManager.setSystemAudioCaptioningEnabled(true);
 
-    assertThat(captioningManager.isSystemAudioCaptioningEnabled()).isEqualTo(true);
+    assertThat(captioningManager.isSystemAudioCaptioningEnabled()).isTrue();
   }
 
   @Test
@@ -209,7 +216,7 @@ public final class ShadowCaptioningManagerTest {
     captioningManager.setSystemAudioCaptioningEnabled(false);
 
     shadowOf(Looper.getMainLooper()).idle();
-    assertThat(captioningChangeListener.systemAudioCaptioningEnabled).isEqualTo(false);
+    assertThat(captioningChangeListener.systemAudioCaptioningEnabled).isFalse();
   }
 
   @Test
@@ -217,7 +224,7 @@ public final class ShadowCaptioningManagerTest {
   public void setSystemAudioCaptioningUiEnabled_updatesValue() {
     captioningManager.setSystemAudioCaptioningUiEnabled(true);
 
-    assertThat(captioningManager.isSystemAudioCaptioningUiEnabled()).isEqualTo(true);
+    assertThat(captioningManager.isSystemAudioCaptioningUiEnabled()).isTrue();
   }
 
   @Test
@@ -226,7 +233,7 @@ public final class ShadowCaptioningManagerTest {
     captioningManager.setSystemAudioCaptioningUiEnabled(false);
 
     shadowOf(Looper.getMainLooper()).idle();
-    assertThat(captioningChangeListener.systemAudioCaptioningUiEnabled).isEqualTo(false);
+    assertThat(captioningChangeListener.systemAudioCaptioningUiEnabled).isFalse();
   }
 
   @Test

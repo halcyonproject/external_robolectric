@@ -36,22 +36,22 @@ public class ParamsParserTest {
   }
 
   @Test
-  public void parseParams_shouldDoNothingForEmptyEntity() throws Exception {
+  public void parseParams_shouldDoNothingForEmptyEntity() {
     HttpPut put = new HttpPut("example.com");
     Map<String, String> params = ParamsParser.parseParams(put);
     assertThat(params).isEmpty();
   }
 
   @Test
-  public void parseParams_shouldParseParamsFromGetRequests() throws Exception {
+  public void parseParams_shouldParseParamsFromGetRequests() {
     HttpGet httpGet = new HttpGet("http://example.com/path?foo=bar");
     Map<String, String> parsed = ParamsParser.parseParams(httpGet);
-    assertThat(parsed.size()).isEqualTo(1);
+    assertThat(parsed).hasSize(1);
     assertThat(parsed.get("foo")).isEqualTo("bar");
   }
 
   @Test
-  public void parseParams_returnsNullForUnsupportedOperations() throws Exception {
+  public void parseParams_returnsNullForUnsupportedOperations() {
     HttpDelete httpDelete = new HttpDelete("http://example.com/deleteme");
     assertThat(ParamsParser.parseParams(httpDelete)).isEmpty();
   }

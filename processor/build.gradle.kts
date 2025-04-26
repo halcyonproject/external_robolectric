@@ -43,7 +43,6 @@ dependencies {
 
   compileOnly(libs.findbugs.jsr305)
   api(libs.asm)
-  api(libs.asm.commons)
   api(libs.asm.util)
   api(libs.guava)
   api(libs.gson)
@@ -54,9 +53,10 @@ dependencies {
     implementation(files(toolsJar))
   }
 
-  testImplementation(libs.javax.annotation.jsr250.api)
+  testImplementation(libs.javax.annotation.api)
   testImplementation(libs.junit4)
   testImplementation(libs.mockito)
+  testImplementation(libs.mockito.subclass)
   testImplementation(libs.compile.testing)
   testImplementation(libs.truth)
 }

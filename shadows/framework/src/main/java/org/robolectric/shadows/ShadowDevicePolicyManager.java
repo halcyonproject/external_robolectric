@@ -14,6 +14,7 @@ import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.S_V2;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.shadow.api.Shadow.invokeConstructor;
 import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
@@ -25,12 +26,10 @@ import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.app.ApplicationPackageManager;
 import android.app.KeyguardManager;
-import android.app.admin.DeviceAdminReceiver;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.DevicePolicyManager.NearbyStreamingPolicy;
 import android.app.admin.DevicePolicyManager.PasswordComplexity;
 import android.app.admin.DevicePolicyManager.UserProvisioningState;
-import android.app.admin.DevicePolicyState;
 import android.app.admin.IDevicePolicyManager;
 import android.app.admin.SystemUpdateInfo;
 import android.app.admin.SystemUpdatePolicy;
@@ -50,9 +49,10 @@ import android.os.PersistableBundle;
 import android.os.Process;
 import android.os.UserHandle;
 import android.text.TextUtils;
-import com.android.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -115,6 +115,8 @@ public class ShadowDevicePolicyManager {
   private static final Map<UserHandle, Account> finalizedWorkProfileProvisioningMap =
       new HashMap<>();
   private static final Map<Integer, Integer> userProvisioningStatesMap = new HashMap<>();
+  private static final Object lock = new Object();
+
   private static ComponentName deviceOwner;
   private static ComponentName profileOwner;
   private static CharSequence organizationName;
@@ -157,6 +159,10 @@ public class ShadowDevicePolicyManager {
   private static int nearbyAppStreamingPolicy =
       DevicePolicyManager.NEARBY_STREAMING_NOT_CONTROLLED_BY_POLICY;
   private static boolean isUsbDataSignalingEnabled = true;
+
+  @GuardedBy("ShadowDevicePolicyManager.lock")
+  private static boolean isMtePolicyEnforced = false;
+
   @Nullable private static String devicePolicyManagementRoleHolderPackage;
   private static List<UserHandle> policyManagedProfiles = new ArrayList<>();
   @Nullable private static PersistableBundle lastTransferOwnershipBundle;
@@ -219,6 +225,9 @@ public class ShadowDevicePolicyManager {
         DevicePolicyManager.NEARBY_STREAMING_NOT_CONTROLLED_BY_POLICY;
     nearbyAppStreamingPolicy = DevicePolicyManager.NEARBY_STREAMING_NOT_CONTROLLED_BY_POLICY;
     isUsbDataSignalingEnabled = true;
+    synchronized (ShadowDevicePolicyManager.lock) {
+      isMtePolicyEnforced = false;
+    }
     devicePolicyManagementRoleHolderPackage = null;
     finalizedWorkProfileProvisioningMap.clear();
     policyManagedProfiles = new ArrayList<>();
@@ -233,8 +242,8 @@ public class ShadowDevicePolicyManager {
       this.permission = permission;
     }
 
-    private String packageName;
-    private String permission;
+    private final String packageName;
+    private final String permission;
 
     @Override
     public boolean equals(Object o) {
@@ -275,7 +284,7 @@ public class ShadowDevicePolicyManager {
 
   private void init(Context context) {
     this.context = context;
-    this.applicationPackageManager =
+    applicationPackageManager =
         (ApplicationPackageManager) context.getApplicationContext().getPackageManager();
     organizationColor = DEFAULT_ORGANIZATION_COLOR;
     storageEncryptionStatus = DevicePolicyManager.ENCRYPTION_STATUS_UNSUPPORTED;
@@ -412,6 +421,20 @@ public class ShadowDevicePolicyManager {
   @Implementation(minSdk = S)
   protected boolean isUsbDataSignalingEnabled() {
     return isUsbDataSignalingEnabled;
+  }
+
+  /** Sets {@link DevicePolicyManager#isMtePolicyEnforced}. */
+  public static void setIsMtePolicyEnforced(boolean isEnabled) {
+    synchronized (ShadowDevicePolicyManager.lock) {
+      isMtePolicyEnforced = isEnabled;
+    }
+  }
+
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
+  protected static boolean isMtePolicyEnforced() {
+    synchronized (ShadowDevicePolicyManager.lock) {
+      return isMtePolicyEnforced;
+    }
   }
 
   /**
@@ -769,7 +792,7 @@ public class ShadowDevicePolicyManager {
     if (isAutoTimeZoneEnabled) {
       return false;
     }
-    this.timeZone = timeZone;
+    ShadowDevicePolicyManager.timeZone = timeZone;
     return true;
   }
 
@@ -861,7 +884,7 @@ public class ShadowDevicePolicyManager {
   @Implementation
   protected int setStorageEncryption(ComponentName admin, boolean encrypt) {
     enforceActiveAdmin(admin);
-    this.storageEncryptionRequested = encrypt;
+    storageEncryptionRequested = encrypt;
     return storageEncryptionStatus;
   }
 
@@ -1238,7 +1261,7 @@ public class ShadowDevicePolicyManager {
 
   /** Sets the password complexity. */
   public void setPasswordComplexity(@PasswordComplexity int passwordComplexity) {
-    this.passwordComplexity = passwordComplexity;
+    ShadowDevicePolicyManager.passwordComplexity = passwordComplexity;
   }
 
   @PasswordComplexity
@@ -1313,7 +1336,7 @@ public class ShadowDevicePolicyManager {
    */
   public boolean activateResetToken(ComponentName admin) {
     if (!passwordResetTokens.containsKey(admin)) {
-      throw new IllegalArgumentException("No token set for comopnent: " + admin);
+      throw new IllegalArgumentException("No token set for component: " + admin);
     }
     return componentsWithActivatedTokens.add(admin);
   }
@@ -1472,7 +1495,7 @@ public class ShadowDevicePolicyManager {
 
   @Implementation(minSdk = M)
   protected void setSystemUpdatePolicy(ComponentName admin, SystemUpdatePolicy policy) {
-    this.policy = policy;
+    ShadowDevicePolicyManager.policy = policy;
   }
 
   /**
@@ -1638,7 +1661,7 @@ public class ShadowDevicePolicyManager {
 
   /** Sets the value returned by {@link #getPolicyManagedProfiles(UserHandle)}. */
   public void setPolicyManagedProfiles(List<UserHandle> policyManagedProfiles) {
-    this.policyManagedProfiles = policyManagedProfiles;
+    ShadowDevicePolicyManager.policyManagedProfiles = policyManagedProfiles;
   }
 
   /**
@@ -1650,7 +1673,7 @@ public class ShadowDevicePolicyManager {
     return userProvisioningStatesMap.getOrDefault(userId, DevicePolicyManager.STATE_USER_UNMANAGED);
   }
 
-  /** Return a stub value set by {@link #setDevicePolicyState(DevicePolicyState policyState)} */
+  /** Return a stub value set by {@link #setDevicePolicyState(DevicePolicyState)} */
   @Implementation(minSdk = U.SDK_INT)
   protected @ClassName("android.app.admin.DevicePolicyState") Object getDevicePolicyState() {
     return devicePolicyState;

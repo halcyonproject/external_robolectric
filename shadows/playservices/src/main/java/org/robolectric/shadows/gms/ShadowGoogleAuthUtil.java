@@ -10,10 +10,10 @@ import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.auth.UserRecoverableNotifiedException;
-import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
@@ -23,7 +23,10 @@ import org.robolectric.annotation.Resetter;
  * GoogleAuthUtilImpl} implementation. Use {@link #provideImpl(GoogleAuthUtilImpl)} to set the
  * implementation instance. By default, a {@link GoogleAuthUtilImpl} is used in call redirection.
  * Use mocks or subclassing {@link GoogleAuthUtilImpl} to achieve desired behaviors.
+ *
+ * @deprecated This package is no longer maintained and will be removed in Robolectric 4.16.
  */
+@Deprecated
 @Implements(GoogleAuthUtil.class)
 public class ShadowGoogleAuthUtil {
 
@@ -34,7 +37,7 @@ public class ShadowGoogleAuthUtil {
   }
 
   public static synchronized void provideImpl(GoogleAuthUtilImpl impl) {
-    googleAuthUtilImpl = Preconditions.checkNotNull(impl);
+    googleAuthUtilImpl = Objects.requireNonNull(impl);
   }
 
   @Resetter
@@ -207,7 +210,7 @@ public class ShadowGoogleAuthUtil {
         String authority,
         Bundle syncBundle)
         throws IOException, UserRecoverableNotifiedException, GoogleAuthException {
-      if (authority == null || authority.length() == 0) {
+      if (authority == null || authority.isEmpty()) {
         throw new IllegalArgumentException("Authority cannot be empty.");
       }
       return "token";

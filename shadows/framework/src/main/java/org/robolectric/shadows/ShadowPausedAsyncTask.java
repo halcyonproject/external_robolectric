@@ -7,6 +7,7 @@ import com.google.common.annotations.Beta;
 import java.util.concurrent.Executor;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
@@ -14,17 +15,19 @@ import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 
 /**
- * A {@link AsyncTask} shadow for {@link LooperMode.Mode.PAUSED}
+ * A {@link AsyncTask} shadow for {@link LooperMode.Mode#PAUSED}
  *
- * <p>This is beta API, and will likely be renamed/removed in a future Robolectric release.
+ * @deprecated {@link AsyncTask} is deprecated in the Android SDK.
  */
+@Deprecated
 @Implements(
     value = AsyncTask.class,
     shadowPicker = ShadowAsyncTask.Picker.class,
     // TODO: turn off shadowOf generation. Figure out why this is needed
     isInAndroidSdk = false)
 @Beta
-public class ShadowPausedAsyncTask<Params, Progress, Result> extends ShadowAsyncTask {
+public class ShadowPausedAsyncTask<Params, Progress, Result>
+    extends ShadowAsyncTask<Params, Progress, Result> {
 
   private static Executor executorOverride = null;
 

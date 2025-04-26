@@ -28,11 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'adopt'
-          java-version: 17
+          java-version-file: .github/.java-version
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -52,11 +52,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'adopt'
-          java-version: 17
+          java-version-file: .github/.java-version
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -97,11 +97,11 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'adopt'
-          java-version: 17
+          java-version-file: .github/.java-version
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -172,15 +172,15 @@ jobs:
       SONATYPE_LOGIN: ${{ secrets.SONATYPE_LOGIN }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
     needs: unit-tests
-    if: github.ref == 'refs/heads/master'
+    if: github.repository == 'robolectric/robolectric' && github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'adopt'
-          java-version: 17
+          java-version-file: .github/.java-version
 
       - uses: gradle/actions/setup-gradle@v4
 

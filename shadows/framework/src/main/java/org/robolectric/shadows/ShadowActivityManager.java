@@ -240,8 +240,8 @@ public class ShadowActivityManager {
    * @param tasks List of running tasks.
    */
   public void setTasks(List<ActivityManager.RunningTaskInfo> tasks) {
-    this.tasks.clear();
-    this.tasks.addAll(tasks);
+    ShadowActivityManager.tasks.clear();
+    ShadowActivityManager.tasks.addAll(tasks);
   }
 
   /**
@@ -251,27 +251,27 @@ public class ShadowActivityManager {
    * @param appTasks List of app tasks.
    */
   public void setAppTasks(List<ActivityManager.AppTask> appTasks) {
-    this.appTasks.clear();
-    this.appTasks.addAll(appTasks);
+    ShadowActivityManager.appTasks.clear();
+    ShadowActivityManager.appTasks.addAll(appTasks);
   }
 
   /**
-   * Sets the values to be returned by {@link #getRecentTasks()}.
+   * Sets the values to be returned by {@link #getRecentTasks(int, int)}.
    *
-   * @see #getRecentTasks()
+   * @see #getRecentTasks(int, int)
    * @param recentTasks List of recent tasks.
    */
   public void setRecentTasks(List<ActivityManager.RecentTaskInfo> recentTasks) {
-    this.recentTasks.clear();
-    this.recentTasks.addAll(recentTasks);
+    ShadowActivityManager.recentTasks.clear();
+    ShadowActivityManager.recentTasks.addAll(recentTasks);
   }
 
   /**
    * @param services List of running services.
    */
   public void setServices(List<ActivityManager.RunningServiceInfo> services) {
-    this.services.clear();
-    this.services.addAll(services);
+    ShadowActivityManager.services.clear();
+    ShadowActivityManager.services.addAll(services);
   }
 
   /**
@@ -300,7 +300,7 @@ public class ShadowActivityManager {
    * @param memoryInfo Set the application's memory info.
    */
   public void setMemoryInfo(ActivityManager.MemoryInfo memoryInfo) {
-    this.memoryInfo = memoryInfo;
+    ShadowActivityManager.memoryInfo = memoryInfo;
   }
 
   @Implementation(minSdk = O)
@@ -325,7 +325,7 @@ public class ShadowActivityManager {
   protected void addOnUidImportanceListener(
       @ClassName("android.app.ActivityManager$OnUidImportanceListener") Object listener,
       int importanceCutpoint) {
-    importanceListeners.add(new ImportanceListener(listener, (Integer) importanceCutpoint));
+    importanceListeners.add(new ImportanceListener(listener, importanceCutpoint));
   }
 
   @Implementation(minSdk = O)
@@ -412,10 +412,8 @@ public class ShadowActivityManager {
   protected List</*android.app.ApplicationExitInfo*/ ?> getHistoricalProcessExitReasons(
       String packageName, int pid, int maxNum) {
     return appExitInfoList.stream()
-        .filter(
-            appExitInfo ->
-                (int) pid == 0 || ((ApplicationExitInfo) appExitInfo).getPid() == (int) pid)
-        .limit((int) maxNum == 0 ? appExitInfoList.size() : (int) maxNum)
+        .filter(appExitInfo -> pid == 0 || ((ApplicationExitInfo) appExitInfo).getPid() == pid)
+        .limit(maxNum == 0 ? appExitInfoList.size() : maxNum)
         .collect(toCollection(ArrayList::new));
   }
 

@@ -18,6 +18,7 @@ import android.speech.SpeechRecognizer;
 import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,7 +149,7 @@ public class ShadowSpeechRecognizerTest {
     speechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(
             ApplicationProvider.getApplicationContext(),
-            new ComponentName("org.robolectrc", "FakeComponent"));
+            new ComponentName("org.robolectric", "FakeComponent"));
     speechRecognizer.setRecognitionListener(listener);
     speechRecognizer.startListening(new Intent());
     shadowOf(getMainLooper()).idle();
@@ -272,7 +273,7 @@ public class ShadowSpeechRecognizerTest {
         new RecognitionSupport.Builder().addInstalledOnDeviceLanguage("en-US").build();
     speechRecognizer.checkRecognitionSupport(new Intent(), executor, supportCallback);
 
-    ((ShadowSpeechRecognizer) shadowOf(speechRecognizer)).triggerSupportResult(recognitionSupport);
+    shadowOf(speechRecognizer).triggerSupportResult(recognitionSupport);
     executor.runAll();
 
     assertThat(supportCallback.recognitionSupportReceived).isEqualTo(recognitionSupport);
@@ -285,7 +286,7 @@ public class ShadowSpeechRecognizerTest {
     TestRecognitionSupportCallback supportCallback = new TestRecognitionSupportCallback();
     speechRecognizer.checkRecognitionSupport(new Intent(), executor, supportCallback);
 
-    ((ShadowSpeechRecognizer) shadowOf(speechRecognizer)).triggerSupportError(1);
+    shadowOf(speechRecognizer).triggerSupportError(1);
     executor.runAll();
 
     assertThat(supportCallback.errorReceived).isEqualTo(1);
@@ -297,7 +298,7 @@ public class ShadowSpeechRecognizerTest {
     Intent modelDownloadIntent = new Intent();
     speechRecognizer.triggerModelDownload(modelDownloadIntent);
 
-    assertThat(((ShadowSpeechRecognizer) shadowOf(speechRecognizer)).getLatestModelDownloadIntent())
+    assertThat(shadowOf(speechRecognizer).getLatestModelDownloadIntent())
         .isSameInstanceAs(modelDownloadIntent);
   }
 
@@ -307,7 +308,7 @@ public class ShadowSpeechRecognizerTest {
     RecognitionSupport recognitionSupportReceived;
 
     @Override
-    public void onSupportResult(RecognitionSupport recognitionSupport) {
+    public void onSupportResult(@Nonnull RecognitionSupport recognitionSupport) {
       recognitionSupportReceived = recognitionSupport;
     }
 

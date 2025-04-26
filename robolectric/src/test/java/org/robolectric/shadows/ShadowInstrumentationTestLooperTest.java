@@ -11,14 +11,13 @@ import static org.robolectric.Shadows.shadowOf;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import com.google.common.base.Preconditions;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.LooperMode.Mode;
 import org.robolectric.shadow.api.Shadow;
@@ -28,7 +27,6 @@ import org.robolectric.shadow.api.Shadow;
 public class ShadowInstrumentationTestLooperTest {
 
   @Test
-  @Config(minSdk = 18)
   public void testThreadIsNotMainThread() {
     assertFalse(Looper.getMainLooper().isCurrentThread());
   }
@@ -91,7 +89,7 @@ public class ShadowInstrumentationTestLooperTest {
         () -> {
           throw new RuntimeException("Exception should be propagated!");
         });
-    assertThrows(RuntimeException.class, () -> shadowMainLooper.idle());
+    assertThrows(RuntimeException.class, shadowMainLooper::idle);
 
     // Restore main looper and main thread to avoid error at tear down
     ShadowPausedLooper.resetLoopers();
@@ -127,12 +125,9 @@ public class ShadowInstrumentationTestLooperTest {
     } catch (RuntimeException e) {
       exception = e;
     }
-    Preconditions.checkNotNull(exception);
+    Objects.requireNonNull(exception);
     ShadowPausedLooper.resetLoopers();
-    handler.post(
-        () -> {
-          didRun.set(true);
-        });
+    handler.post(() -> didRun.set(true));
     shadowLooper.idle();
 
     assertThat(didRun.get()).isTrue();

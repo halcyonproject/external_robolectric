@@ -1,7 +1,7 @@
 package org.robolectric.shadows;
 
 import static android.os.Build.VERSION_CODES.O;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.graphics.Bitmap;
@@ -102,7 +102,7 @@ public class ShadowPixelCopy {
       throw new IllegalArgumentException("sourceRect is empty");
     }
 
-    View view = findViewForSurface(checkNotNull(source));
+    View view = findViewForSurface(requireNonNull(source));
     Rect adjustedSrcRect = null;
     if (srcRect != null) {
       adjustedSrcRect = new Rect(srcRect);
@@ -121,6 +121,7 @@ public class ShadowPixelCopy {
       Consumer</*android.view.PixelCopy$Result*/ ?> listener) {
     PixelCopy.Request request = (PixelCopy.Request) requestObject;
     RequestReflector requestReflector = reflector(RequestReflector.class, request);
+    //noinspection Convert2Lambda
     OnPixelCopyFinishedListener legacyListener =
         new OnPixelCopyFinishedListener() {
           @Override

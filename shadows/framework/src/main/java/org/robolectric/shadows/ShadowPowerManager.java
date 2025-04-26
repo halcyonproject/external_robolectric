@@ -16,9 +16,9 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toCollection;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
+import android.annotation.RequiresApi;
 import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -87,7 +87,7 @@ public class ShadowPowerManager {
   private static boolean lowPowerStandbyEnabled = false;
   private static boolean lowPowerStandbySupported = false;
   private static boolean exemptFromLowPowerStandby = false;
-  private static final Set<String> allowedFeatures = new HashSet<String>();
+  private static final Set<String> allowedFeatures = new HashSet<>();
 
   @Implementation
   protected PowerManager.WakeLock newWakeLock(int flags, String tag) {
@@ -140,7 +140,7 @@ public class ShadowPowerManager {
     isPowerSaveMode = powerSaveMode;
   }
 
-  private Map<Integer, Boolean> supportedWakeLockLevels = new HashMap<>();
+  private final Map<Integer, Boolean> supportedWakeLockLevels = new HashMap<>();
 
   @Implementation
   protected boolean isWakeLockLevelSupported(int level) {
@@ -161,7 +161,7 @@ public class ShadowPowerManager {
 
   /** Sets the value returned by {@link #isDeviceIdleMode()}. */
   public void setIsDeviceIdleMode(boolean isDeviceIdleMode) {
-    this.isDeviceIdleMode = isDeviceIdleMode;
+    ShadowPowerManager.isDeviceIdleMode = isDeviceIdleMode;
     getContext().sendBroadcast(new Intent(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED));
   }
 
@@ -190,7 +190,7 @@ public class ShadowPowerManager {
 
   /**
    * Returns how location features should behave when battery saver is on. When battery saver is
-   * off, this will always return {@link #LOCATION_MODE_NO_CHANGE}.
+   * off, this will always return {@link PowerManager#LOCATION_MODE_NO_CHANGE}.
    */
   @Implementation(minSdk = P)
   @PowerManager.LocationPowerSaveMode
@@ -209,7 +209,7 @@ public class ShadowPowerManager {
     checkState(
         locationMode <= PowerManager.MAX_LOCATION_MODE,
         "Location Power Save Mode must be no more than " + PowerManager.MAX_LOCATION_MODE);
-    this.locationMode = locationMode;
+    ShadowPowerManager.locationMode = locationMode;
   }
 
   /** This function returns the current thermal status of the device. */
@@ -225,12 +225,12 @@ public class ShadowPowerManager {
     checkState(
         listener instanceof PowerManager.OnThermalStatusChangedListener,
         "Listener must implement PowerManager.OnThermalStatusChangedListener");
-    this.thermalListeners.add(listener);
+    thermalListeners.add(listener);
   }
 
   /** This function gets listeners for thermal status change. */
   public ImmutableSet<Object> getThermalStatusListeners() {
-    return ImmutableSet.copyOf(this.thermalListeners);
+    return ImmutableSet.copyOf(thermalListeners);
   }
 
   /** This function removes a listener for thermal status change. */
@@ -240,7 +240,7 @@ public class ShadowPowerManager {
     checkState(
         listener instanceof PowerManager.OnThermalStatusChangedListener,
         "Listener must implement PowerManager.OnThermalStatusChangedListener");
-    this.thermalListeners.remove(listener);
+    thermalListeners.remove(listener);
   }
 
   /** Sets the value returned by {@link #getCurrentThermalStatus()}. */
@@ -251,7 +251,7 @@ public class ShadowPowerManager {
     checkState(
         thermalStatus <= PowerManager.THERMAL_STATUS_SHUTDOWN,
         "Thermal status must be no more than " + PowerManager.THERMAL_STATUS_SHUTDOWN);
-    this.thermalStatus = thermalStatus;
+    ShadowPowerManager.thermalStatus = thermalStatus;
     for (Object listener : thermalListeners) {
       ((PowerManager.OnThermalStatusChangedListener) listener)
           .onThermalStatusChanged(thermalStatus);
@@ -311,11 +311,11 @@ public class ShadowPowerManager {
   @Implementation(minSdk = M)
   protected boolean isIgnoringBatteryOptimizations(String packageName) {
     Boolean result = ignoringBatteryOptimizations.get(packageName);
-    return result == null ? false : result;
+    return result != null && result;
   }
 
   public void setIgnoringBatteryOptimizations(String packageName, boolean value) {
-    ignoringBatteryOptimizations.put(packageName, Boolean.valueOf(value));
+    ignoringBatteryOptimizations.put(packageName, value);
   }
 
   /**
@@ -329,8 +329,8 @@ public class ShadowPowerManager {
   @Implementation(minSdk = S)
   protected void setBatteryDischargePrediction(
       @Nonnull Duration timeRemaining, boolean isPersonalized) {
-    this.batteryDischargePrediction = timeRemaining;
-    this.isBatteryDischargePredictionPersonalized = isPersonalized;
+    batteryDischargePrediction = timeRemaining;
+    isBatteryDischargePredictionPersonalized = isPersonalized;
   }
 
   /**
@@ -345,7 +345,7 @@ public class ShadowPowerManager {
   @Nullable
   @Implementation(minSdk = S)
   protected Duration getBatteryDischargePrediction() {
-    return this.batteryDischargePrediction;
+    return batteryDischargePrediction;
   }
 
   /**
@@ -358,7 +358,7 @@ public class ShadowPowerManager {
    */
   @Implementation(minSdk = S)
   protected boolean isBatteryDischargePredictionPersonalized() {
-    return this.isBatteryDischargePredictionPersonalized;
+    return isBatteryDischargePredictionPersonalized;
   }
 
   @Implementation
@@ -386,12 +386,12 @@ public class ShadowPowerManager {
 
   /** Sets the value returned by {@link #isAmbientDisplayAvailable()}. */
   public void setAmbientDisplayAvailable(boolean available) {
-    this.isAmbientDisplayAvailable = available;
+    isAmbientDisplayAvailable = available;
   }
 
   /** Sets the value returned by {@link #isRebootingUserspaceSupported()}. */
   public void setIsRebootingUserspaceSupported(boolean supported) {
-    this.isRebootingUserspaceSupported = supported;
+    isRebootingUserspaceSupported = supported;
   }
 
   /**
@@ -490,7 +490,7 @@ public class ShadowPowerManager {
 
     @Implementation
     protected synchronized void acquire(long timeout) {
-      Long timeoutMillis = timeout + SystemClock.elapsedRealtime();
+      long timeoutMillis = timeout + SystemClock.elapsedRealtime();
       if (timeoutMillis > 0) {
         acquireInternal(Optional.of(timeoutMillis));
       } else {
@@ -595,9 +595,9 @@ public class ShadowPowerManager {
     return lowPowerStandbySupported;
   }
 
-  @TargetApi(TIRAMISU)
+  @RequiresApi(TIRAMISU)
   public void setLowPowerStandbySupported(boolean lowPowerStandbySupported) {
-    this.lowPowerStandbySupported = lowPowerStandbySupported;
+    ShadowPowerManager.lowPowerStandbySupported = lowPowerStandbySupported;
   }
 
   @Implementation(minSdk = TIRAMISU)
@@ -607,7 +607,7 @@ public class ShadowPowerManager {
 
   @Implementation(minSdk = TIRAMISU)
   public void setLowPowerStandbyEnabled(boolean lowPowerStandbyEnabled) {
-    this.lowPowerStandbyEnabled = lowPowerStandbyEnabled;
+    ShadowPowerManager.lowPowerStandbyEnabled = lowPowerStandbyEnabled;
   }
 
   @Implementation(minSdk = UPSIDE_DOWN_CAKE)
@@ -618,7 +618,7 @@ public class ShadowPowerManager {
     return allowedFeatures.contains(feature);
   }
 
-  @TargetApi(UPSIDE_DOWN_CAKE)
+  @RequiresApi(UPSIDE_DOWN_CAKE)
   public void addAllowedInLowPowerStandby(String feature) {
     allowedFeatures.add(feature);
   }
@@ -631,9 +631,9 @@ public class ShadowPowerManager {
     return exemptFromLowPowerStandby;
   }
 
-  @TargetApi(UPSIDE_DOWN_CAKE)
+  @RequiresApi(UPSIDE_DOWN_CAKE)
   public void setExemptFromLowPowerStandby(boolean exemptFromLowPowerStandby) {
-    this.exemptFromLowPowerStandby = exemptFromLowPowerStandby;
+    ShadowPowerManager.exemptFromLowPowerStandby = exemptFromLowPowerStandby;
   }
 
   @Implementation(minSdk = UPSIDE_DOWN_CAKE)

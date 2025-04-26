@@ -201,7 +201,7 @@ public class ShadowVibratorTest {
 
   @Config(minSdk = R)
   @Test
-  public void areAllPrimitivesSupported_oneUnsupportedPrimitivie_shouldReturnFalse() {
+  public void areAllPrimitivesSupported_oneUnsupportedPrimitive_shouldReturnFalse() {
     shadowOf(vibrator)
         .setSupportedPrimitives(ImmutableList.of(EFFECT_CLICK, EFFECT_TICK, EFFECT_HEAVY_CLICK));
 
@@ -240,7 +240,7 @@ public class ShadowVibratorTest {
 
   @Config(minSdk = O, maxSdk = R)
   @Test
-  public void getAudioAttribues_vibrateWithAudioAttributes_shouldReturnAudioAttributes() {
+  public void getAudioAttributes_vibrateWithAudioAttributes_shouldReturnAudioAttributes() {
     AudioAttributes audioAttributes =
         new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST)
@@ -249,9 +249,10 @@ public class ShadowVibratorTest {
 
     vibrator.vibrate(/* delay= */ 200, audioAttributes);
 
-    AudioAttributes actualAudioAttriubes = shadowOf(vibrator).getAudioAttributesFromLastVibration();
-    assertThat(actualAudioAttriubes.getAllFlags()).isEqualTo(audioAttributes.getAllFlags());
-    assertThat(actualAudioAttriubes.getUsage()).isEqualTo(audioAttributes.getUsage());
+    AudioAttributes actualAudioAttributes =
+        shadowOf(vibrator).getAudioAttributesFromLastVibration();
+    assertThat(actualAudioAttributes.getAllFlags()).isEqualTo(audioAttributes.getAllFlags());
+    assertThat(actualAudioAttributes.getUsage()).isEqualTo(audioAttributes.getUsage());
   }
 
   @Config(minSdk = S)
@@ -278,7 +279,7 @@ public class ShadowVibratorTest {
 
   @Config(minSdk = S)
   @Test
-  public void getPrimitiveDurations_mulitpleNonDefaultsSupplied_returnsNonDefaultValues() {
+  public void getPrimitiveDurations_multipleNonDefaultsSupplied_returnsNonDefaultValues() {
     shadowOf(vibrator).setPrimitiveDurations(EFFECT_CLICK, 10);
     shadowOf(vibrator).setPrimitiveDurations(EFFECT_TICK, 20);
 
@@ -290,7 +291,7 @@ public class ShadowVibratorTest {
 
   @Config(minSdk = S)
   @Test
-  public void getPrimitiveDurations_mulitpleNonDefaultsSupplied_returnsOnlyRequestedValues() {
+  public void getPrimitiveDurations_multipleNonDefaultsSupplied_returnsOnlyRequestedValues() {
     shadowOf(vibrator).setPrimitiveDurations(EFFECT_CLICK, 10);
     shadowOf(vibrator).setPrimitiveDurations(EFFECT_TICK, 20);
 

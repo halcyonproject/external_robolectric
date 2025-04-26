@@ -15,6 +15,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +48,7 @@ public class ShadowBinderTest {
   }
 
   @Test
-  public void testLinkToDeath() throws Exception {
+  public void testLinkToDeath() {
     Binder binder = new Binder();
     DeathRecipient recipient = () -> {};
     binder.linkToDeath(recipient, 0);
@@ -55,7 +56,7 @@ public class ShadowBinderTest {
   }
 
   @Test
-  public void testLinkToDeath_unlink() throws Exception {
+  public void testLinkToDeath_unlink() {
     Binder binder = new Binder();
     DeathRecipient recipient = () -> {};
     // recipient doesn't exist, returns false.
@@ -68,7 +69,7 @@ public class ShadowBinderTest {
   }
 
   @Test
-  public void testLinkToDeath_twice() throws Exception {
+  public void testLinkToDeath_twice() {
     Binder binder = new Binder();
     DeathRecipient recipient = () -> {};
     binder.linkToDeath(recipient, 0);
@@ -80,8 +81,9 @@ public class ShadowBinderTest {
   }
 
   @Test
-  public void testLinkToDeath_weakReference() throws Exception {
+  public void testLinkToDeath_weakReference() {
     Binder binder = new Binder();
+    //noinspection Convert2Lambda
     binder.linkToDeath(
         new DeathRecipient() {
           @Override
@@ -128,7 +130,7 @@ public class ShadowBinderTest {
   static class TestThrowingBinder extends Binder {
 
     @Override
-    protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) {
+    protected boolean onTransact(int code, @Nonnull Parcel data, Parcel reply, int flags) {
       throw new SecurityException("Halt! Who goes there?");
     }
   }
@@ -174,7 +176,7 @@ public class ShadowBinderTest {
   public void testGetCallingUidOrThrowWithValueNotSet() {
     ShadowBinder.reset();
     IllegalStateException ex =
-        assertThrows(IllegalStateException.class, () -> Binder.getCallingUidOrThrow());
+        assertThrows(IllegalStateException.class, Binder::getCallingUidOrThrow);
 
     // Typo in "transaction" is intentional to match platform
     assertThat(ex).hasMessageThat().isEqualTo("Thread is not in a binder transcation");
@@ -200,7 +202,7 @@ public class ShadowBinderTest {
     ShadowBinder.setCallingUid(123);
     ShadowBinder.reset();
 
-    assertThrows(IllegalStateException.class, () -> Binder.getCallingUidOrThrow());
+    assertThrows(IllegalStateException.class, Binder::getCallingUidOrThrow);
   }
 
   @Test

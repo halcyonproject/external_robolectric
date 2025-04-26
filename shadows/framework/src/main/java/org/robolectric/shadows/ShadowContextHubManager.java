@@ -51,7 +51,7 @@ public class ShadowContextHubManager {
   private static final Map<Integer, NanoAppInstanceInfo> nanoAppUidToInfo =
       new ConcurrentHashMap<>();
   private static final Multimap<ContextHubInfo, Integer> contextHubToNanoappUid =
-      Multimaps.synchronizedMultimap(HashMultimap.<ContextHubInfo, Integer>create());
+      Multimaps.synchronizedMultimap(HashMultimap.create());
   private static final Map<Long, ContextHubInfo> nanoAppIdToInfo = new ConcurrentHashMap<>();
   private static final HashMultimap<String, ContextHubClient> attributionTagToClientMap =
       HashMultimap.create();
@@ -175,8 +175,8 @@ public class ShadowContextHubManager {
     ContextHubClient client =
         reflector(ContextHubClientReflector.class)
             .newContextHubClient((ContextHubInfo) contextHubInfo, false);
-    if (context != null && ((Context) context).getAttributionTag() != null) {
-      attributionTagToClientMap.put(((Context) context).getAttributionTag(), client);
+    if (context != null && context.getAttributionTag() != null) {
+      attributionTagToClientMap.put(context.getAttributionTag(), client);
     }
 
     if (callback != null) {

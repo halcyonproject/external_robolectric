@@ -193,14 +193,14 @@ public class ShadowLogTest {
   }
 
   @Test
-  public void shouldLogToProvidedStream() throws Exception {
+  public void shouldLogToProvidedStream() {
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
     PrintStream old = ShadowLog.stream;
     try {
       ShadowLog.stream = new PrintStream(bos);
       Log.d("tag", "msg");
       assertThat(new String(bos.toByteArray(), UTF_8))
-          .isEqualTo("D/tag: msg" + System.getProperty("line.separator"));
+          .isEqualTo("D/tag: msg" + System.lineSeparator());
 
       Log.w("tag", new RuntimeException());
       assertTrue(new String(bos.toByteArray(), UTF_8).contains("RuntimeException"));
@@ -214,7 +214,7 @@ public class ShadowLogTest {
   }
 
   @Test
-  public void shouldLogAccordingToTag() throws Exception {
+  public void shouldLogAccordingToTag() {
     ShadowLog.reset();
     Log.d("tag1", "1");
     Log.i("tag2", "2");
@@ -225,7 +225,7 @@ public class ShadowLogTest {
     Log.d("throwable", "7", specificMethodName());
 
     List<LogItem> allItems = ShadowLog.getLogs();
-    assertThat(allItems.size()).isEqualTo(7);
+    assertThat(allItems).hasSize(7);
     int i = 1;
     for (LogItem item : allItems) {
       assertThat(item.msg).isEqualTo(Integer.toString(i));
@@ -240,7 +240,7 @@ public class ShadowLogTest {
 
   private static void assertUniformLogsForTag(String tag, int count) {
     List<LogItem> tag1Items = ShadowLog.getLogsForTag(tag);
-    assertThat(tag1Items.size()).isEqualTo(count);
+    assertThat(tag1Items).hasSize(count);
     int last = -1;
     for (LogItem item : tag1Items) {
       assertThat(item.tag).isEqualTo(tag);
@@ -251,7 +251,7 @@ public class ShadowLogTest {
   }
 
   @Test
-  public void infoIsDefaultLoggableLevel() throws Exception {
+  public void infoIsDefaultLoggableLevel() {
     PrintStream old = ShadowLog.stream;
     ShadowLog.stream = null;
     assertFalse(Log.isLoggable("FOO", Log.VERBOSE));

@@ -23,9 +23,9 @@ import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 
 /**
- * The shadow {@link MessageQueue} for {@link LooperMode.Mode.LEGACY}.
+ * The shadow {@link MessageQueue} for {@link LooperMode.Mode#LEGACY}.
  *
- * <p>In {@link LooperMode.Mode.LEGACY} Robolectric puts {@link android.os.Message}s into the
+ * <p>In {@link LooperMode.Mode#LEGACY} Robolectric puts {@link android.os.Message}s into the
  * scheduler queue instead of sending them to be handled on a separate thread. {@link
  * android.os.Message}s that are scheduled to be dispatched can be triggered by calling {@link
  * ShadowLooper#idleMainLooper}.
@@ -90,32 +90,29 @@ public class ShadowLegacyMessageQueue extends ShadowMessageQueue {
         reflector(MessageQueueReflector.class, realQueue).enqueueMessage(msg, when);
     if (retval) {
       final Runnable callback =
-          new Runnable() {
-            @Override
-            public void run() {
-              synchronized (realQueue) {
-                Message m = getHead();
-                if (m == null) {
-                  return;
-                }
+          () -> {
+            synchronized (realQueue) {
+              Message m = getHead();
+              if (m == null) {
+                return;
+              }
 
-                Message n = shadowOf(m).getNext();
-                if (m == msg) {
-                  setHead(n);
-                } else {
-                  while (n != null) {
-                    if (n == msg) {
-                      n = shadowOf(n).getNext();
-                      shadowOf(m).setNext(n);
-                      break;
-                    }
-                    m = n;
-                    n = shadowOf(m).getNext();
+              Message n = shadowOf(m).getNext();
+              if (m == msg) {
+                setHead(n);
+              } else {
+                while (n != null) {
+                  if (n == msg) {
+                    n = shadowOf(n).getNext();
+                    shadowOf(m).setNext(n);
+                    break;
                   }
+                  m = n;
+                  n = shadowOf(m).getNext();
                 }
               }
-              dispatchMessage(msg);
             }
+            dispatchMessage(msg);
           };
       shadowOf(msg).setScheduledRunnable(callback);
       if (when == 0) {
@@ -155,7 +152,7 @@ public class ShadowLegacyMessageQueue extends ShadowMessageQueue {
   }
 
   private static ShadowLegacyMessage shadowOf(Message actual) {
-    return (ShadowLegacyMessage) Shadow.extract(actual);
+    return Shadow.extract(actual);
   }
 
   /** Reflector interface for {@link MessageQueue}'s internals. */

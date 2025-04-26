@@ -49,7 +49,7 @@ public class ShadowWallpaperManager {
   private static boolean isWallpaperSupported = true;
   private static WallpaperInfo wallpaperInfo = null;
   private static final List<WallpaperCommandRecord> wallpaperCommandRecords = new ArrayList<>();
-  private static AtomicInteger wallpaperId = new AtomicInteger(0);
+  private static final AtomicInteger wallpaperId = new AtomicInteger(0);
   private static int lockScreenId;
   private static int homeScreenId;
   private static int lockScreenResId;
@@ -102,7 +102,7 @@ public class ShadowWallpaperManager {
    */
   @Implementation
   protected boolean hasResourceWallpaper(int resid) {
-    return resid == this.lockScreenResId || resid == this.homeScreenResId;
+    return resid == lockScreenResId || resid == homeScreenResId;
   }
 
   /**
@@ -313,7 +313,7 @@ public class ShadowWallpaperManager {
 
   /**
    * Throws {@link SecurityException} if the caller doesn't have {@link
-   * permission.SET_WALLPAPER_COMPONENT}.
+   * permission#SET_WALLPAPER_COMPONENT}.
    */
   private static void enforceWallpaperComponentPermission() {
     // Robolectric doesn't stimulate IPC calls. When this code is executed, it will still be running

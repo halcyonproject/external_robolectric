@@ -36,7 +36,7 @@ public class ShadowStatsManager {
     broadcastSubscriberMap.clear();
   }
 
-  /** Adds metrics data that the shadow should return from {@link StatsManager#getReports()}. */
+  /** Adds metrics data that the shadow should return from {@link StatsManager#getReports(long)}. */
   public static void addReportData(long configKey, byte[] data) {
     reportDataMap.put(configKey, data);
   }
@@ -59,7 +59,7 @@ public class ShadowStatsManager {
 
   /**
    * Retrieves the statsd configurations stored in the shadow as a result of {@link
-   * StatsManager#addConfig()} and {@link StatsManager#removeConfig()}.
+   * StatsManager#addConfig(long, byte[])} and {@link StatsManager#removeConfig(long)}.
    */
   public static byte[] getConfigData(long configKey) {
     return configDataMap.getOrDefault(configKey, new byte[] {});

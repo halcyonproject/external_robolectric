@@ -49,10 +49,10 @@ public class ShadowBluetoothDevice {
   /**
    * Interceptor interface for {@link BluetoothGatt} objects. Tests that require configuration of
    * their ShadowBluetoothGatt's may inject an interceptor, which will be called with the newly
-   * constructed BluetoothGatt before {@link ShadowBluetoothGatt#connectGatt} returns.
+   * constructed BluetoothGatt before {@link ShadowBluetoothDevice#connectGatt} returns.
    */
-  public static interface BluetoothGattConnectionInterceptor {
-    public void onNewGattConnection(BluetoothGatt gatt);
+  public interface BluetoothGattConnectionInterceptor {
+    void onNewGattConnection(BluetoothGatt gatt);
   }
 
   @Deprecated // Prefer {@link android.bluetooth.BluetoothAdapter#getRemoteDevice}
@@ -88,7 +88,7 @@ public class ShadowBluetoothDevice {
   private boolean isInSilenceMode = false;
   private boolean isConnected = false;
   @Nullable private BluetoothGattConnectionInterceptor bluetoothGattConnectionInterceptor = null;
-  private Map<Integer, Integer> connectionHandlesByTransportType = new HashMap<>();
+  private final Map<Integer, Integer> connectionHandlesByTransportType = new HashMap<>();
 
   /**
    * Implements getService() in the same way the original method does, but ignores any Exceptions
@@ -277,6 +277,13 @@ public class ShadowBluetoothDevice {
   /** Returns whether this device has been bonded with. */
   @Implementation
   protected boolean createBond() {
+    checkForBluetoothConnectPermission();
+    return createdBond;
+  }
+
+  /** Returns whether this device has been bonded with. */
+  @Implementation
+  protected boolean createBond(int transport) {
     checkForBluetoothConnectPermission();
     return createdBond;
   }
@@ -502,7 +509,7 @@ public class ShadowBluetoothDevice {
   }
 
   /**
-   * Allows tests to intercept the {@link BluetoothDevice.connectGatt} method and set state on both
+   * Allows tests to intercept the {@link BluetoothDevice#connectGatt} method and set state on both
    * BluetoothDevice and BluetoothGatt objects. This is useful for e2e testing situations where the
    * fine-grained execution of Bluetooth connection logic is onerous.
    */

@@ -5,13 +5,16 @@ import java.io.File;
 import java.lang.reflect.Field;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.shadow.api.Shadow;
 
 /** */
-@Implements(value = OsConstants.class, minSdk = 21)
+@Implements(value = OsConstants.class)
 public final class ShadowOsConstants {
 
   @Implementation
   protected static void __staticInitializer__() {
+    // Invoking original static initializer just in case: there might more than static fields.
+    Shadow.directInitialize(OsConstants.class);
     shadowInitConstants();
   }
 

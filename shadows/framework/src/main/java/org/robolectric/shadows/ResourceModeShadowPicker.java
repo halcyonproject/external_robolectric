@@ -11,10 +11,10 @@ import org.robolectric.versioning.AndroidVersions.V;
 
 public class ResourceModeShadowPicker<T> implements ShadowPicker<T> {
 
-  private Class<? extends T> binaryShadowClass;
-  private Class<? extends T> binary9ShadowClass;
-  private Class<? extends T> binary10ShadowClass;
-  private Class<? extends T> binary14ShadowClass;
+  private final Class<? extends T> binaryShadowClass;
+  private final Class<? extends T> binary9ShadowClass;
+  private final Class<? extends T> binary10ShadowClass;
+  private final Class<? extends T> binary14ShadowClass;
   private Class<? extends T> nativeShadowClass;
 
   public ResourceModeShadowPicker(
@@ -59,7 +59,7 @@ public class ResourceModeShadowPicker<T> implements ShadowPicker<T> {
       return binary14ShadowClass;
     } else if (RuntimeEnvironment.getApiLevel() >= Build.VERSION_CODES.Q) {
       return binary10ShadowClass;
-    } else if (RuntimeEnvironment.getApiLevel() >= Build.VERSION_CODES.P) {
+    } else if (RuntimeEnvironment.getApiLevel() == Build.VERSION_CODES.P) {
       return binary9ShadowClass;
     } else {
       return binaryShadowClass;

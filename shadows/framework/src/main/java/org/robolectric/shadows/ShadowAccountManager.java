@@ -39,23 +39,23 @@ import org.robolectric.util.Scheduler.IdleState;
 @Implements(AccountManager.class)
 public class ShadowAccountManager {
 
-  private List<Account> accounts = new ArrayList<>();
-  private Map<Account, Map<String, String>> authTokens = new HashMap<>();
-  private Map<String, AuthenticatorDescription> authenticators = new LinkedHashMap<>();
+  private final List<Account> accounts = new ArrayList<>();
+  private final Map<Account, Map<String, String>> authTokens = new HashMap<>();
+  private final Map<String, AuthenticatorDescription> authenticators = new LinkedHashMap<>();
 
   /**
    * Maps listeners to a set of account types. If null, the listener should be notified for changes
    * to accounts of any type. Otherwise, the listener is only notified of changes to accounts of the
    * given type.
    */
-  private Map<OnAccountsUpdateListener, Set<String>> listeners = new LinkedHashMap<>();
+  private final Map<OnAccountsUpdateListener, Set<String>> listeners = new LinkedHashMap<>();
 
-  private Map<Account, Map<String, String>> userData = new HashMap<>();
-  private Map<Account, String> passwords = new HashMap<>();
-  private Map<Account, Set<String>> accountFeatures = new HashMap<>();
-  private Map<Account, Set<String>> packageVisibleAccounts = new HashMap<>();
+  private final Map<Account, Map<String, String>> userData = new HashMap<>();
+  private final Map<Account, String> passwords = new HashMap<>();
+  private final Map<Account, Set<String>> accountFeatures = new HashMap<>();
+  private final Map<Account, Set<String>> packageVisibleAccounts = new HashMap<>();
 
-  private List<Bundle> addAccountOptionsList = new ArrayList<>();
+  private final List<Bundle> addAccountOptionsList = new ArrayList<>();
   private static Handler mainHandler;
   private static RoboAccountManagerFuture pendingAddFuture;
   private static boolean authenticationErrorOnNextResponse = false;
@@ -88,7 +88,7 @@ public class ShadowAccountManager {
 
   @Implementation
   protected Account[] getAccounts() {
-    return accounts.toArray(new Account[accounts.size()]);
+    return accounts.toArray(new Account[0]);
   }
 
   @Implementation
@@ -104,7 +104,7 @@ public class ShadowAccountManager {
       }
     }
 
-    return accountsByType.toArray(new Account[accountsByType.size()]);
+    return accountsByType.toArray(new Account[0]);
   }
 
   @Implementation
@@ -244,7 +244,7 @@ public class ShadowAccountManager {
 
   @Implementation
   protected AuthenticatorDescription[] getAuthenticatorTypes() {
-    return authenticators.values().toArray(new AuthenticatorDescription[authenticators.size()]);
+    return authenticators.values().toArray(new AuthenticatorDescription[0]);
   }
 
   @Implementation
@@ -309,7 +309,7 @@ public class ShadowAccountManager {
     }
 
     if (!userData.containsKey(account)) {
-      userData.put(account, new HashMap<String, String>());
+      userData.put(account, new HashMap<>());
     }
 
     Map<String, String> userDataMap = userData.get(account);
@@ -368,8 +368,8 @@ public class ShadowAccountManager {
   /**
    * Returns a bundle that contains the account session bundle under {@link
    * AccountManager#KEY_ACCOUNT_SESSION_BUNDLE} to later be passed on to {@link
-   * AccountManager#finishSession(Bundle,Activity,AccountManagerCallback<Bundle>,Handler)}. The
-   * session bundle simply propagates the given {@code accountType} so as not to be empty and is not
+   * AccountManager#finishSession(Bundle, Activity, AccountManagerCallback, Handler)}. The session
+   * bundle simply propagates the given {@code accountType} so as not to be empty and is not
    * encrypted as it would be in the real implementation. If an activity isn't provided, resulting
    * bundle will only have a dummy {@link Intent} under {@link AccountManager#KEY_INTENT}.
    *
@@ -592,8 +592,7 @@ public class ShadowAccountManager {
   }
 
   public void setFeatures(Account account, String[] accountFeatures) {
-    HashSet<String> featureSet = new HashSet<>();
-    featureSet.addAll(Arrays.asList(accountFeatures));
+    HashSet<String> featureSet = new HashSet<>(Arrays.asList(accountFeatures));
     this.accountFeatures.put(account, featureSet);
   }
 
@@ -608,7 +607,7 @@ public class ShadowAccountManager {
     addAuthenticator(AuthenticatorDescription.newKey(type));
   }
 
-  private Map<Account, String> previousNames = new HashMap<Account, String>();
+  private final Map<Account, String> previousNames = new HashMap<>();
 
   /**
    * Sets the previous name for an account, which will be returned by {@link
@@ -734,7 +733,7 @@ public class ShadowAccountManager {
                 result.add(account);
               }
             }
-            return result.toArray(new Account[result.size()]);
+            return result.toArray(new Account[0]);
           }
         });
   }
@@ -756,7 +755,7 @@ public class ShadowAccountManager {
       }
     }
 
-    return result.toArray(new Account[result.size()]);
+    return result.toArray(new Account[0]);
   }
 
   /**
@@ -766,7 +765,7 @@ public class ShadowAccountManager {
    *     response.
    */
   public void setAuthenticationErrorOnNextResponse(boolean authenticationErrorOnNextResponse) {
-    this.authenticationErrorOnNextResponse = authenticationErrorOnNextResponse;
+    ShadowAccountManager.authenticationErrorOnNextResponse = authenticationErrorOnNextResponse;
   }
 
   /**
@@ -775,14 +774,14 @@ public class ShadowAccountManager {
    * @param removeAccountIntent the intent to surface as {@link AccountManager#KEY_INTENT}.
    */
   public void setRemoveAccountIntent(Intent removeAccountIntent) {
-    this.removeAccountIntent = removeAccountIntent;
+    ShadowAccountManager.removeAccountIntent = removeAccountIntent;
   }
 
   public Map<OnAccountsUpdateListener, Set<String>> getListeners() {
     return listeners;
   }
 
-  private abstract class BaseRoboAccountManagerFuture<T> implements AccountManagerFuture<T> {
+  private abstract static class BaseRoboAccountManagerFuture<T> implements AccountManagerFuture<T> {
     protected final AccountManagerCallback<T> callback;
     private final Handler handler;
     protected T result;
@@ -805,13 +804,7 @@ public class ShadowAccountManager {
       }
 
       if (callback != null) {
-        handler.post(
-            new Runnable() {
-              @Override
-              public void run() {
-                callback.run(BaseRoboAccountManagerFuture.this);
-              }
-            });
+        handler.post(() -> callback.run(BaseRoboAccountManagerFuture.this));
       }
     }
 

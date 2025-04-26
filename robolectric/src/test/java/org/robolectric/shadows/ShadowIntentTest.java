@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -46,7 +47,7 @@ public class ShadowIntentTest {
   @Test
   public void testGetExtraReturnsNull_whenThereAreNoExtrasAdded() {
     Intent intent = new Intent();
-    assertEquals(intent.getExtras(), null);
+    assertNull(intent.getExtras());
   }
 
   @Test
@@ -341,7 +342,7 @@ public class ShadowIntentTest {
     assertEquals("com.foobar.app", intentA.getPackage());
     assertSame(cn, intentA.getComponent());
     assertEquals(23, intentA.getIntExtra("FOO", -1));
-    assertEquals(result, flags);
+    assertEquals(flags, result);
   }
 
   @Test
@@ -476,7 +477,7 @@ public class ShadowIntentTest {
   }
 
   private static class TestSerializable implements Serializable {
-    private String someValue;
+    private final String someValue;
 
     public TestSerializable(String someValue) {
       this.someValue = someValue;
@@ -515,6 +516,7 @@ public class ShadowIntentTest {
       return s.length();
     }
 
+    @Nonnull
     @Override
     public CharSequence subSequence(int start, int end) {
       return s.subSequence(start, end);

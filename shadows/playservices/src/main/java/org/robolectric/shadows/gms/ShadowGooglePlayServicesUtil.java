@@ -10,7 +10,7 @@ import android.content.res.Resources;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.common.base.Preconditions;
+import java.util.Objects;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -22,7 +22,10 @@ import org.robolectric.annotation.Resetter;
  * #provideImpl(GooglePlayServicesUtilImpl)} to set the implementation instance. By default, a
  * {@link GooglePlayServicesUtilImpl} is used in call redirection. Use mocks or subclassing {@link
  * GooglePlayServicesUtilImpl} to achieve desired behaviors.
+ *
+ * @deprecated This package is no longer maintained and will be removed in Robolectric 4.16.
  */
+@Deprecated
 @Implements(GooglePlayServicesUtil.class)
 public class ShadowGooglePlayServicesUtil {
   private static GooglePlayServicesUtilImpl googlePlayServicesUtilImpl =
@@ -33,7 +36,7 @@ public class ShadowGooglePlayServicesUtil {
   }
 
   public static synchronized void provideImpl(GooglePlayServicesUtilImpl impl) {
-    googlePlayServicesUtilImpl = Preconditions.checkNotNull(impl);
+    googlePlayServicesUtilImpl = Objects.requireNonNull(impl);
   }
 
   @Resetter

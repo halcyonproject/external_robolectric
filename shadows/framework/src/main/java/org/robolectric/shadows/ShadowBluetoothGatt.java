@@ -53,7 +53,6 @@ public class ShadowBluetoothGatt {
   @ReflectorObject protected BluetoothGattReflector bluetoothGattReflector;
 
   @SuppressLint("PrivateApi")
-  @SuppressWarnings("unchecked")
   public static BluetoothGatt newInstance(BluetoothDevice device) {
     try {
       Class<?> iBluetoothGattClass =
@@ -86,7 +85,7 @@ public class ShadowBluetoothGatt {
                   Integer.TYPE
                 },
                 new Object[] {null, device, 0, false, 0});
-      } else if (apiLevel >= O) {
+      } else if (apiLevel == O) {
         bluetoothGatt =
             Shadow.newInstance(
                 BluetoothGatt.class,
@@ -177,7 +176,7 @@ public class ShadowBluetoothGatt {
 
   /**
    * Overrides {@link BluetoothGatt#requestMtu} to always fail before {@link
-   * ShadowBlueoothGatt.setGattCallback} is called, and always succeed after.
+   * ShadowBluetoothGatt#setGattCallback} is called, and always succeed after.
    */
   @Implementation(minSdk = O)
   protected boolean requestMtu(int mtu) {
@@ -225,7 +224,7 @@ public class ShadowBluetoothGatt {
   }
 
   /**
-   * Overrides {@link BluetoothGatt#getService} to return a service with given UUID.
+   * Overrides {@link BluetoothGatt#getService(UUID)} to return a service with given UUID.
    *
    * @return a service with given UUID that have been discovered through {@link
    *     ShadowBluetoothGatt#discoverServices}.
@@ -385,8 +384,8 @@ public class ShadowBluetoothGatt {
   }
 
   /**
-   * Simulate a successful Gatt Client Conection with {@link BluetoothConnectionManager}. Performs a
-   * {@link BluetoothGattCallback#onConnectionStateChange} if available.
+   * Simulate a successful Gatt Client Connection with {@link BluetoothConnectionManager}. Performs
+   * a {@link BluetoothGattCallback#onConnectionStateChange} if available.
    *
    * @param remoteAddress address of Gatt client
    */

@@ -6,10 +6,11 @@ plugins {
 dependencies {
   api(libs.asm)
   api(libs.asm.commons)
-  api(libs.asm.util)
+  compileOnly(libs.findbugs.jsr305)
   api(project(":utils"))
 
   testImplementation(project(":shadowapi"))
+  testCompileOnly(libs.findbugs.jsr305)
   testImplementation(libs.junit4)
   testImplementation(libs.truth)
 }

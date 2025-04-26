@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config;
 public final class ShadowStatsManagerTest {
 
   @Test
-  public void testGetMetadata() throws Exception {
+  public void testGetMetadata() {
     StatsManager statsManager =
         ApplicationProvider.getApplicationContext().getSystemService(StatsManager.class);
     byte[] metadataBytes = new byte[] {1, 2, 3, 4, 5};
@@ -109,7 +109,7 @@ public final class ShadowStatsManagerTest {
   }
 
   @Test
-  public void testReset_clearsMetadata() throws Exception {
+  public void testReset_clearsMetadata() {
     StatsManager statsManager =
         ApplicationProvider.getApplicationContext().getSystemService(StatsManager.class);
     byte[] metadataBytes = new byte[] {1, 2, 3, 4, 5};

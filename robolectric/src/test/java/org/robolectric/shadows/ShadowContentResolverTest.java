@@ -37,6 +37,7 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
@@ -55,9 +56,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -90,8 +93,8 @@ public class ShadowContentResolverTest {
   public void setUp() {
     contentResolver = ApplicationProvider.getApplicationContext().getContentResolver();
     shadowContentResolver = shadowOf(contentResolver);
-    uri21 = Uri.parse(FAKE_URI.toString() + "/21");
-    uri22 = Uri.parse(FAKE_URI.toString() + "/22");
+    uri21 = Uri.parse(FAKE_URI + "/21");
+    uri22 = Uri.parse(FAKE_URI + "/22");
 
     a = new Account("a", "type");
     b = new Account("b", "type");
@@ -122,7 +125,7 @@ public class ShadowContentResolverTest {
 
           @Override
           public Cursor query(
-              Uri uri,
+              @Nonnull Uri uri,
               String[] projection,
               String selection,
               String[] selectionArgs,
@@ -131,23 +134,23 @@ public class ShadowContentResolverTest {
           }
 
           @Override
-          public Uri insert(Uri uri, ContentValues values) {
+          public Uri insert(@Nonnull Uri uri, ContentValues values) {
             return null;
           }
 
           @Override
-          public int delete(Uri uri, String selection, String[] selectionArgs) {
+          public int delete(@Nonnull Uri uri, String selection, String[] selectionArgs) {
             return -1;
           }
 
           @Override
           public int update(
-              Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+              @Nonnull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
             return -1;
           }
 
           @Override
-          public String getType(Uri uri) {
+          public String getType(@Nonnull Uri uri) {
             return "mytype";
           }
         });
@@ -160,7 +163,7 @@ public class ShadowContentResolverTest {
     ContentValues contentValues = new ContentValues();
     contentValues.put("foo", "bar");
     contentResolver.insert(FAKE_URI, contentValues);
-    assertThat(shadowContentResolver.getInsertStatements().size()).isEqualTo(1);
+    assertThat(shadowContentResolver.getInsertStatements()).hasSize(1);
     assertThat(shadowContentResolver.getInsertStatements().get(0).getUri()).isEqualTo(FAKE_URI);
     assertThat(
             shadowContentResolver
@@ -173,7 +176,7 @@ public class ShadowContentResolverTest {
     contentValues = new ContentValues();
     contentValues.put("hello", "world");
     contentResolver.insert(FAKE_URI, contentValues);
-    assertThat(shadowContentResolver.getInsertStatements().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getInsertStatements()).hasSize(2);
     assertThat(
             shadowContentResolver
                 .getInsertStatements()
@@ -188,7 +191,7 @@ public class ShadowContentResolverTest {
     ContentValues contentValues = new ContentValues();
     contentValues.put("foo", "bar");
     contentResolver.update(FAKE_URI, contentValues, "robolectric", new String[] {"awesome"});
-    assertThat(shadowContentResolver.getUpdateStatements().size()).isEqualTo(1);
+    assertThat(shadowContentResolver.getUpdateStatements()).hasSize(1);
     assertThat(shadowContentResolver.getUpdateStatements().get(0).getUri()).isEqualTo(FAKE_URI);
     assertThat(
             shadowContentResolver
@@ -205,7 +208,7 @@ public class ShadowContentResolverTest {
     contentValues = new ContentValues();
     contentValues.put("hello", "world");
     contentResolver.update(FAKE_URI, contentValues, null, null);
-    assertThat(shadowContentResolver.getUpdateStatements().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getUpdateStatements()).hasSize(2);
     assertThat(shadowContentResolver.getUpdateStatements().get(1).getUri()).isEqualTo(FAKE_URI);
     assertThat(
             shadowContentResolver
@@ -232,23 +235,23 @@ public class ShadowContentResolverTest {
 
   @Test
   public void delete_shouldTrackDeletedUris() {
-    assertThat(shadowContentResolver.getDeletedUris().size()).isEqualTo(0);
+    assertThat(shadowContentResolver.getDeletedUris()).isEmpty();
 
     assertThat(contentResolver.delete(uri21, null, null)).isEqualTo(1);
     assertThat(shadowContentResolver.getDeletedUris()).contains(uri21);
-    assertThat(shadowContentResolver.getDeletedUris().size()).isEqualTo(1);
+    assertThat(shadowContentResolver.getDeletedUris()).hasSize(1);
 
     assertThat(contentResolver.delete(uri22, null, null)).isEqualTo(1);
     assertThat(shadowContentResolver.getDeletedUris()).contains(uri22);
-    assertThat(shadowContentResolver.getDeletedUris().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getDeletedUris()).hasSize(2);
   }
 
   @Test
   public void delete_shouldTrackDeletedStatements() {
-    assertThat(shadowContentResolver.getDeleteStatements().size()).isEqualTo(0);
+    assertThat(shadowContentResolver.getDeleteStatements()).isEmpty();
 
     assertThat(contentResolver.delete(uri21, "id", new String[] {"5"})).isEqualTo(1);
-    assertThat(shadowContentResolver.getDeleteStatements().size()).isEqualTo(1);
+    assertThat(shadowContentResolver.getDeleteStatements()).hasSize(1);
     assertThat(shadowContentResolver.getDeleteStatements().get(0).getUri()).isEqualTo(uri21);
     assertThat(shadowContentResolver.getDeleteStatements().get(0).getContentProvider()).isNull();
     assertThat(shadowContentResolver.getDeleteStatements().get(0).getWhere()).isEqualTo("id");
@@ -256,7 +259,7 @@ public class ShadowContentResolverTest {
         .isEqualTo("5");
 
     assertThat(contentResolver.delete(uri21, "foo", new String[] {"bar"})).isEqualTo(1);
-    assertThat(shadowContentResolver.getDeleteStatements().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getDeleteStatements()).hasSize(2);
     assertThat(shadowContentResolver.getDeleteStatements().get(1).getUri()).isEqualTo(uri21);
     assertThat(shadowContentResolver.getDeleteStatements().get(1).getWhere()).isEqualTo("foo");
     assertThat(shadowContentResolver.getDeleteStatements().get(1).getSelectionArgs()[0])
@@ -268,8 +271,7 @@ public class ShadowContentResolverTest {
     assertThat(shadowContentResolver.query(null, null, null, null, null)).isNull();
     BaseCursor cursor = new BaseCursor();
     shadowContentResolver.setCursor(cursor);
-    assertThat((BaseCursor) shadowContentResolver.query(null, null, null, null, null))
-        .isSameInstanceAs(cursor);
+    assertThat(shadowContentResolver.query(null, null, null, null, null)).isSameInstanceAs(cursor);
   }
 
   @Test
@@ -278,9 +280,7 @@ public class ShadowContentResolverTest {
         .isNull();
     BaseCursor cursor = new BaseCursor();
     shadowContentResolver.setCursor(cursor);
-    assertThat(
-            (BaseCursor)
-                shadowContentResolver.query(null, null, null, null, null, new CancellationSignal()))
+    assertThat(shadowContentResolver.query(null, null, null, null, null, new CancellationSignal()))
         .isSameInstanceAs(cursor);
   }
 
@@ -294,9 +294,9 @@ public class ShadowContentResolverTest {
     shadowContentResolver.setCursor(uri21, cursor21);
     shadowContentResolver.setCursor(uri22, cursor22);
 
-    assertThat((BaseCursor) shadowContentResolver.query(uri21, null, null, null, null))
+    assertThat(shadowContentResolver.query(uri21, null, null, null, null))
         .isSameInstanceAs(cursor21);
-    assertThat((BaseCursor) shadowContentResolver.query(uri22, null, null, null, null))
+    assertThat(shadowContentResolver.query(uri22, null, null, null, null))
         .isSameInstanceAs(cursor22);
   }
 
@@ -312,7 +312,7 @@ public class ShadowContentResolverTest {
     shadowContentResolver.setCursor(testCursor);
     Cursor cursor =
         shadowContentResolver.query(uri21, projection, selection, selectionArgs, sortOrder);
-    assertThat((QueryParamTrackingCursor) cursor).isEqualTo(testCursor);
+    assertThat(cursor).isEqualTo(testCursor);
     assertThat(testCursor.uri).isEqualTo(uri21);
     assertThat(testCursor.projection).isEqualTo(projection);
     assertThat(testCursor.selection).isEqualTo(selection);
@@ -335,7 +335,7 @@ public class ShadowContentResolverTest {
     QueryParamTrackingCursor testCursor = new QueryParamTrackingCursor();
     shadowContentResolver.setCursor(testCursor);
     Cursor cursor = shadowContentResolver.query(uri21, projection, queryArgs, null);
-    assertThat((QueryParamTrackingCursor) cursor).isEqualTo(testCursor);
+    assertThat(cursor).isEqualTo(testCursor);
     assertThat(testCursor.uri).isEqualTo(uri21);
     assertThat(testCursor.projection).isEqualTo(projection);
     assertThat(testCursor.selection).isEqualTo(selection);
@@ -397,7 +397,7 @@ public class ShadowContentResolverTest {
     ProviderInfo providerInfo = captor.getValue();
 
     assertThat(providerInfo.authority).isEqualTo("the-authority");
-    assertThat(providerInfo.grantUriPermissions).isEqualTo(true);
+    assertThat(providerInfo.grantUriPermissions).isTrue();
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -494,11 +494,11 @@ public class ShadowContentResolverTest {
 
   @Test
   public void openOutputStream_withRealContentProvider_canReadBytesWrittenToOutputStream()
-      throws IOException, RemoteException {
+      throws IOException {
     Robolectric.setupContentProvider(MyContentProvider.class, AUTHORITY);
     Uri uri = Uri.parse("content://" + AUTHORITY + "/test/1");
 
-    // Write content through given outputstream
+    // Write content through given outputStream
     try (OutputStream outputStream = contentResolver.openOutputStream(uri)) {
       outputStream.write("foo".getBytes(UTF_8));
     }
@@ -523,7 +523,7 @@ public class ShadowContentResolverTest {
 
           @Override
           public String toString() {
-            return "outputstream for " + uri;
+            return "outputStream for " + uri;
           }
         };
 
@@ -549,26 +549,24 @@ public class ShadowContentResolverTest {
               streamCreateCount.incrementAndGet();
               AtomicBoolean isClosed = new AtomicBoolean();
               isClosed.set(false);
-              OutputStream outputStream =
-                  new OutputStream() {
-                    @Override
-                    public void close() {
-                      isClosed.set(true);
-                    }
+              return new OutputStream() {
+                @Override
+                public void close() {
+                  isClosed.set(true);
+                }
 
-                    @Override
-                    public void write(int arg0) throws IOException {
-                      if (isClosed.get()) {
-                        throw new IOException();
-                      }
-                    }
+                @Override
+                public void write(int arg0) throws IOException {
+                  if (isClosed.get()) {
+                    throw new IOException();
+                  }
+                }
 
-                    @Override
-                    public String toString() {
-                      return "outputstream for " + uri;
-                    }
-                  };
-              return outputStream;
+                @Override
+                public String toString() {
+                  return "outputStream for " + uri;
+                }
+              };
             });
 
     assertThat(streamCreateCount.get()).isEqualTo(0);
@@ -588,11 +586,11 @@ public class ShadowContentResolverTest {
 
   @Test
   public void openOutputStream_withModeWithRealContentProvider_canReadBytesWrittenToOutputStream()
-      throws IOException, RemoteException {
+      throws IOException {
     Robolectric.setupContentProvider(MyContentProvider.class, AUTHORITY);
     Uri uri = Uri.parse("content://" + AUTHORITY + "/test/1");
 
-    // Write content through given outputstream
+    // Write content through given outputStream
     try (OutputStream outputStream = contentResolver.openOutputStream(uri, "wt")) {
       outputStream.write("foo".getBytes(UTF_8));
     }
@@ -617,7 +615,7 @@ public class ShadowContentResolverTest {
 
           @Override
           public String toString() {
-            return "outputstream for " + uri;
+            return "outputStream for " + uri;
           }
         };
 
@@ -641,26 +639,24 @@ public class ShadowContentResolverTest {
               streamCreateCount.incrementAndGet();
               AtomicBoolean isClosed = new AtomicBoolean();
               isClosed.set(false);
-              OutputStream outputStream =
-                  new OutputStream() {
-                    @Override
-                    public void close() {
-                      isClosed.set(true);
-                    }
+              return new OutputStream() {
+                @Override
+                public void close() {
+                  isClosed.set(true);
+                }
 
-                    @Override
-                    public void write(int arg0) throws IOException {
-                      if (isClosed.get()) {
-                        throw new IOException();
-                      }
-                    }
+                @Override
+                public void write(int arg0) throws IOException {
+                  if (isClosed.get()) {
+                    throw new IOException();
+                  }
+                }
 
-                    @Override
-                    public String toString() {
-                      return "outputstream for " + uri;
-                    }
-                  };
-              return outputStream;
+                @Override
+                public String toString() {
+                  return "outputStream for " + uri;
+                }
+              };
             });
 
     assertThat(streamCreateCount.get()).isEqualTo(0);
@@ -674,20 +670,20 @@ public class ShadowContentResolverTest {
 
   @Test
   public void shouldTrackNotifiedUris() {
-    contentResolver.notifyChange(Uri.parse("foo"), null, true);
+    contentResolver.notifyChange(Uri.parse("foo"), null, false);
     contentResolver.notifyChange(Uri.parse("bar"), null);
 
-    assertThat(shadowContentResolver.getNotifiedUris().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getNotifiedUris()).hasSize(2);
     ShadowContentResolver.NotifiedUri uri = shadowContentResolver.getNotifiedUris().get(0);
 
     assertThat(uri.uri.toString()).isEqualTo("foo");
-    assertThat(uri.syncToNetwork).isTrue();
+    assertThat(uri.syncToNetwork).isFalse();
     assertThat(uri.observer).isNull();
 
     uri = shadowContentResolver.getNotifiedUris().get(1);
 
     assertThat(uri.uri.toString()).isEqualTo("bar");
-    assertThat(uri.syncToNetwork).isFalse();
+    assertThat(uri.syncToNetwork).isTrue();
     assertThat(uri.observer).isNull();
   }
 
@@ -697,7 +693,7 @@ public class ShadowContentResolverTest {
     contentResolver.notifyChange(Uri.parse("foo"), null, ContentResolver.NOTIFY_SYNC_TO_NETWORK);
     contentResolver.notifyChange(Uri.parse("bar"), null, ContentResolver.NOTIFY_UPDATE);
 
-    assertThat(shadowContentResolver.getNotifiedUris().size()).isEqualTo(2);
+    assertThat(shadowContentResolver.getNotifiedUris()).hasSize(2);
 
     ShadowContentResolver.NotifiedUri uri = shadowContentResolver.getNotifiedUris().get(0);
 
@@ -714,7 +710,38 @@ public class ShadowContentResolverTest {
     assertThat(uri.flags).isEqualTo(ContentResolver.NOTIFY_UPDATE);
   }
 
-  @SuppressWarnings("serial")
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.R)
+  public void notifyChangeCollection_shouldTrackNotifiedUris() {
+    contentResolver.notifyChange(
+        Arrays.asList(Uri.parse("foo"), Uri.parse("bar")), null, ContentResolver.NOTIFY_UPDATE);
+
+    List<ShadowContentResolver.NotifiedUri> notifiedUris = shadowContentResolver.getNotifiedUris();
+    assertThat(notifiedUris).hasSize(2);
+
+    ShadowContentResolver.NotifiedUri uri = notifiedUris.get(0);
+
+    assertThat(uri.uri.toString()).isEqualTo("foo");
+    assertThat(uri.syncToNetwork).isFalse();
+    assertThat(uri.observer).isNull();
+    assertThat(uri.flags).isEqualTo(ContentResolver.NOTIFY_UPDATE);
+
+    uri = notifiedUris.get(1);
+
+    assertThat(uri.uri.toString()).isEqualTo("bar");
+    assertThat(uri.syncToNetwork).isFalse();
+    assertThat(uri.observer).isNull();
+    assertThat(uri.flags).isEqualTo(ContentResolver.NOTIFY_UPDATE);
+  }
+
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.R)
+  public void notifyChangeEmptyCollection_shouldNotTrackNotifiedUris() {
+    contentResolver.notifyChange(Collections.emptyList(), null, ContentResolver.NOTIFY_UPDATE);
+
+    assertThat(shadowContentResolver.getNotifiedUris()).isEmpty();
+  }
+
   @Test
   public void applyBatchForRegisteredProvider()
       throws RemoteException, OperationApplicationException {
@@ -729,7 +756,7 @@ public class ShadowContentResolverTest {
 
           @Override
           public Cursor query(
-              Uri uri,
+              @Nonnull Uri uri,
               String[] projection,
               String selection,
               String[] selectionArgs,
@@ -741,25 +768,25 @@ public class ShadowContentResolverTest {
           }
 
           @Override
-          public String getType(Uri uri) {
+          public String getType(@Nonnull Uri uri) {
             return null;
           }
 
           @Override
-          public Uri insert(Uri uri, ContentValues values) {
+          public Uri insert(@Nonnull Uri uri, ContentValues values) {
             operations.add("insert");
             return ContentUris.withAppendedId(uri, 1);
           }
 
           @Override
-          public int delete(Uri uri, String selection, String[] selectionArgs) {
+          public int delete(@Nonnull Uri uri, String selection, String[] selectionArgs) {
             operations.add("delete");
             return 0;
           }
 
           @Override
           public int update(
-              Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+              @Nonnull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
             operations.add("update");
             return 0;
           }
@@ -783,7 +810,7 @@ public class ShadowContentResolverTest {
     List<ContentProviderOperation> resultOperations =
         shadowContentResolver.getContentProviderOperations(AUTHORITY);
     assertThat(resultOperations).isNotNull();
-    assertThat(resultOperations.size()).isEqualTo(0);
+    assertThat(resultOperations).isEmpty();
 
     Uri uri = Uri.parse("content://org.robolectric");
     ArrayList<ContentProviderOperation> operations = new ArrayList<>();
@@ -831,7 +858,7 @@ public class ShadowContentResolverTest {
     ContentResolver.requestSync(b, AUTHORITY, new Bundle());
 
     List<SyncInfo> syncs = ContentResolver.getCurrentSyncs();
-    assertThat(syncs.size()).isEqualTo(2);
+    assertThat(syncs).hasSize(2);
 
     SyncInfo syncA = Iterables.find(syncs, s -> s.account.equals(a));
     assertThat(syncA.account).isEqualTo(a);
@@ -843,7 +870,7 @@ public class ShadowContentResolverTest {
 
     ContentResolver.cancelSync(a, AUTHORITY);
     List<SyncInfo> syncsAgain = ContentResolver.getCurrentSyncs();
-    assertThat(syncsAgain.size()).isEqualTo(1);
+    assertThat(syncsAgain).hasSize(1);
 
     SyncInfo firstAgain = syncsAgain.get(0);
     assertThat(firstAgain.account).isEqualTo(b);
@@ -851,7 +878,7 @@ public class ShadowContentResolverTest {
 
     ContentResolver.cancelSync(b, AUTHORITY);
     List<SyncInfo> s = ContentResolver.getCurrentSyncs();
-    assertThat(s.size()).isEqualTo(0);
+    assertThat(s).isEmpty();
   }
 
   @Test
@@ -962,11 +989,11 @@ public class ShadowContentResolverTest {
 
   @Test
   public void shouldGetPeriodSyncs() {
-    assertThat(ContentResolver.getPeriodicSyncs(a, AUTHORITY).size()).isEqualTo(0);
+    assertThat(ContentResolver.getPeriodicSyncs(a, AUTHORITY)).isEmpty();
     ContentResolver.addPeriodicSync(a, AUTHORITY, new Bundle(), 6000L);
 
     List<PeriodicSync> syncs = ContentResolver.getPeriodicSyncs(a, AUTHORITY);
-    assertThat(syncs.size()).isEqualTo(1);
+    assertThat(syncs).hasSize(1);
 
     PeriodicSync first = syncs.get(0);
     assertThat(first.account).isEqualTo(a);
@@ -1013,7 +1040,7 @@ public class ShadowContentResolverTest {
 
           @Override
           public Cursor query(
-              Uri uri,
+              @Nonnull Uri uri,
               String[] projection,
               String selection,
               String[] selectionArgs,
@@ -1022,23 +1049,23 @@ public class ShadowContentResolverTest {
           }
 
           @Override
-          public Uri insert(Uri uri, ContentValues values) {
+          public Uri insert(@Nonnull Uri uri, ContentValues values) {
             return null;
           }
 
           @Override
-          public int delete(Uri uri, String selection, String[] selectionArgs) {
+          public int delete(@Nonnull Uri uri, String selection, String[] selectionArgs) {
             return -1;
           }
 
           @Override
           public int update(
-              Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+              @Nonnull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
             return -1;
           }
 
           @Override
-          public String getType(Uri uri) {
+          public String getType(@Nonnull Uri uri) {
             return null;
           }
         });
@@ -1112,7 +1139,7 @@ public class ShadowContentResolverTest {
   }
 
   @Test
-  public void shouldNotifyChildContentObservers() throws Exception {
+  public void shouldNotifyChildContentObservers() {
     TestContentObserver co1 = new TestContentObserver(null);
     TestContentObserver co2 = new TestContentObserver(null);
 
@@ -1179,8 +1206,7 @@ public class ShadowContentResolverTest {
   }
 
   @Test
-  public void openTypedAssetFileDescriptor_shouldOpenDescriptor()
-      throws IOException, RemoteException {
+  public void openTypedAssetFileDescriptor_shouldOpenDescriptor() throws IOException {
     Robolectric.setupContentProvider(MyContentProvider.class, AUTHORITY);
 
     try (AssetFileDescriptor afd =
@@ -1290,32 +1316,34 @@ public class ShadowContentResolverTest {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] strings, String s, String[] strings1, String s1) {
+    public Cursor query(
+        @Nonnull Uri uri, String[] strings, String s, String[] strings1, String s1) {
       return null;
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@Nonnull Uri uri) {
       return null;
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues contentValues) {
+    public Uri insert(@Nonnull Uri uri, ContentValues contentValues) {
       return null;
     }
 
     @Override
-    public int delete(Uri uri, String s, String[] strings) {
+    public int delete(@Nonnull Uri uri, String s, String[] strings) {
       return 0;
     }
 
     @Override
-    public int update(Uri uri, ContentValues contentValues, String s, String[] strings) {
+    public int update(@Nonnull Uri uri, ContentValues contentValues, String s, String[] strings) {
       return 0;
     }
 
     @Override
-    public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+    public ParcelFileDescriptor openFile(@Nonnull Uri uri, @Nonnull String mode)
+        throws FileNotFoundException {
       final File file =
           new File(ApplicationProvider.getApplicationContext().getFilesDir(), "test_file");
       try {

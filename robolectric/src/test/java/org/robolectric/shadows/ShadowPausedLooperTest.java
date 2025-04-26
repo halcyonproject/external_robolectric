@@ -105,7 +105,7 @@ public class ShadowPausedLooperTest {
   }
 
   @Test
-  public void postedBackgroundLooperTasksAreExecuted() throws InterruptedException {
+  public void postedBackgroundLooperTasksAreExecuted() {
     Runnable mockRunnable = mock(Runnable.class);
     Handler handler = new Handler(handlerThread.getLooper());
     handler.post(mockRunnable);
@@ -115,7 +115,7 @@ public class ShadowPausedLooperTest {
   }
 
   @Test
-  public void postedBackgroundLooperTasksWhenPaused() throws InterruptedException {
+  public void postedBackgroundLooperTasksWhenPaused() {
     Runnable mockRunnable = mock(Runnable.class);
     shadowOf(handlerThread.getLooper()).pause();
     new Handler(handlerThread.getLooper()).post(mockRunnable);
@@ -155,8 +155,7 @@ public class ShadowPausedLooperTest {
   }
 
   @Test
-  public void postedDelayedBackgroundLooperTasksAreExecutedOnlyWhenSystemClockAdvanced()
-      throws InterruptedException {
+  public void postedDelayedBackgroundLooperTasksAreExecutedOnlyWhenSystemClockAdvanced() {
     Runnable mockRunnable = mock(Runnable.class);
     new Handler(handlerThread.getLooper()).postDelayed(mockRunnable, 10);
     ShadowPausedLooper shadowLooper = Shadow.extract(handlerThread.getLooper());
@@ -368,10 +367,7 @@ public class ShadowPausedLooperTest {
     final Handler mainHandler = new Handler();
 
     Runnable mockRunnable = mock(Runnable.class);
-    Runnable postingRunnable =
-        () -> {
-          mainHandler.postDelayed(mockRunnable, 100);
-        };
+    Runnable postingRunnable = () -> mainHandler.postDelayed(mockRunnable, 100);
     mainHandler.postDelayed(postingRunnable, 100);
 
     verify(mockRunnable, times(0)).run();
@@ -467,7 +463,7 @@ public class ShadowPausedLooperTest {
   }
 
   @Test
-  public void isIdle_paused() throws InterruptedException {
+  public void isIdle_paused() {
     ShadowLooper shadowLooper = shadowOf(handlerThread.getLooper());
     shadowLooper.pause();
     assertThat(shadowLooper.isIdle()).isTrue();
@@ -540,13 +536,12 @@ public class ShadowPausedLooperTest {
     shadowOf(looper).pause();
     new Handler(looper)
         .post(
-            () -> {
-              Looper.myQueue()
-                  .addIdleHandler(
-                      () -> {
-                        throw new IllegalStateException();
-                      });
-            });
+            () ->
+                Looper.myQueue()
+                    .addIdleHandler(
+                        () -> {
+                          throw new IllegalStateException();
+                        }));
     assertThrows(IllegalStateException.class, () -> shadowOf(looper).idle());
     handlerThread.join(5_000);
     assertThat(handlerThread.getState()).isEqualTo(Thread.State.TERMINATED);
@@ -678,7 +673,7 @@ public class ShadowPausedLooperTest {
       t.start();
       Looper looper = future.get();
       shadowOf(looper).pause();
-      new Handler(looper).post(() -> looper.quitSafely());
+      new Handler(looper).post(looper::quitSafely);
       shadowOf(looper).idle();
       ((ShadowPausedLooper) shadowOf(looper)).resetLooperToInitialState();
       countDownLatch.countDown();
@@ -719,23 +714,17 @@ public class ShadowPausedLooperTest {
     handler.post(
         () -> {
           token.set(postSyncBarrierCompat(handlerThread.getLooper()));
-          handler.post(
-              () -> {
-                wasRun.set(true);
-              });
+          handler.post(() -> wasRun.set(true));
         });
     shadowLooper.idle();
     assertThat(token.get()).isNotEqualTo(-1);
-    assertThat(wasRun.get()).isEqualTo(false);
+    assertThat(wasRun.get()).isFalse();
     // should be effectively a no-op and not deadlock
     shadowLooper.idle();
     // remove sync barriers messages need to get posted as async
-    asyncHandler.post(
-        () -> {
-          removeSyncBarrierCompat(handlerThread.getLooper(), token.get());
-        });
+    asyncHandler.post(() -> removeSyncBarrierCompat(handlerThread.getLooper(), token.get()));
     shadowLooper.idle();
-    assertThat(wasRun.get()).isEqualTo(true);
+    assertThat(wasRun.get()).isTrue();
   }
 
   /** Similar to previous test but with a running aka unpaused looper. */
@@ -750,23 +739,17 @@ public class ShadowPausedLooperTest {
     handler.post(
         () -> {
           token.set(postSyncBarrierCompat(handlerThread.getLooper()));
-          handler.post(
-              () -> {
-                wasRun.set(true);
-              });
+          handler.post(() -> wasRun.set(true));
         });
     shadowLooper.idle();
     assertThat(token.get()).isNotEqualTo(-1);
-    assertThat(wasRun.get()).isEqualTo(false);
+    assertThat(wasRun.get()).isFalse();
     // should be effectively a no-op and not deadlock
     shadowLooper.idle();
     // remove sync barriers messages need to get posted as async
-    asyncHandler.post(
-        () -> {
-          removeSyncBarrierCompat(handlerThread.getLooper(), token.get());
-        });
+    asyncHandler.post(() -> removeSyncBarrierCompat(handlerThread.getLooper(), token.get()));
     shadowLooper.idle();
-    assertThat(wasRun.get()).isEqualTo(true);
+    assertThat(wasRun.get()).isTrue();
   }
 
   private static class BlockingRunnable implements Runnable {

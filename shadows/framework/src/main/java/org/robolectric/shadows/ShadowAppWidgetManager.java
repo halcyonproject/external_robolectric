@@ -53,7 +53,7 @@ public class ShadowAppWidgetManager {
   private static boolean validWidgetProviderComponentName = true;
   private final Map<Integer, RemoteViews> widgetPreviews = new HashMap<>();
   private final ArrayList<AppWidgetProviderInfo> installedProviders = new ArrayList<>();
-  private Multimap<UserHandle, AppWidgetProviderInfo> installedProvidersForProfile =
+  private final Multimap<UserHandle, AppWidgetProviderInfo> installedProvidersForProfile =
       HashMultimap.create();
   private Context context;
   private final Map<Integer, WidgetInfo> widgetInfos = new HashMap<>();
@@ -130,7 +130,7 @@ public class ShadowAppWidgetManager {
         idList.add(id);
       }
     }
-    int ids[] = new int[idList.size()];
+    int[] ids = new int[idList.size()];
     for (int i = 0; i < idList.size(); i++) {
       ids[i] = idList.get(i);
     }
@@ -261,7 +261,7 @@ public class ShadowAppWidgetManager {
     }
   }
 
-  /** Returns true if {@link setSupportedToRequestPinAppWidget} is called with {@code true} */
+  /** Returns true if {@link #setRequestPinAppWidgetSupported} is called with {@code true} */
   @Implementation(minSdk = O)
   protected boolean isRequestPinAppWidgetSupported() {
     return requestPinAppWidgetSupported;
@@ -438,7 +438,7 @@ public class ShadowAppWidgetManager {
   }
 
   public void setValidWidgetProviderComponentName(boolean validWidgetProviderComponentName) {
-    this.validWidgetProviderComponentName = validWidgetProviderComponentName;
+    ShadowAppWidgetManager.validWidgetProviderComponentName = validWidgetProviderComponentName;
   }
 
   private static class WidgetInfo {

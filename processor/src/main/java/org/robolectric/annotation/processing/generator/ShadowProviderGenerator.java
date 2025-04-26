@@ -59,7 +59,8 @@ public class ShadowProviderGenerator extends Generator {
   }
 
   void generate(PrintWriter writer) {
-    writer.print("package " + shadowPackage + ";\n");
+    writer.println("package " + shadowPackage + ";");
+    writer.println();
     for (String name : model.getImports()) {
       writer.println("import " + name + ';');
     }
@@ -83,9 +84,9 @@ public class ShadowProviderGenerator extends Generator {
 
     writer.println("  static {");
     for (ShadowInfo shadowInfo : model.getAllShadowTypes()) {
-      final String shadow = shadowInfo.getShadowBinaryName();
-      final String actual = shadowInfo.getActualName();
       if (shadowInfo.getShadowPickerBinaryName() == null) {
+        final String shadow = shadowInfo.getShadowBinaryName();
+        final String actual = shadowInfo.getActualName();
         writer.println(
             "    SHADOWS.add(new AbstractMap.SimpleImmutableEntry<>(\""
                 + actual
@@ -130,15 +131,13 @@ public class ShadowProviderGenerator extends Generator {
               + " shadowOf("
               + shadowInfo.getActualTypeWithParams()
               + " actual) {");
-      writer.println("    return (" + shadow + ") Shadow.extract(actual);");
+      writer.println("    return Shadow.extract(actual);");
       writer.println("  }");
       writer.println();
     }
 
     // this sucks, kill:
-    for (Entry<String, ShadowInfo> entry : model.getShadowPickers().entrySet()) {
-      ShadowInfo shadowInfo = entry.getValue();
-
+    for (ShadowInfo shadowInfo : model.getShadowPickers().values()) {
       if (!shadowInfo.actualIsPublic() || !shadowInfo.isInAndroidSdk()) {
         continue;
       }
@@ -147,7 +146,7 @@ public class ShadowProviderGenerator extends Generator {
         writer.println("  @Deprecated");
       }
       String paramDefStr = shadowInfo.getParamDefStr();
-      final String shadow = shadowInfo.getShadowName();
+      final String shadow = shadowInfo.getShadowTypeWithParams();
       writer.println(
           "  public static "
               + (paramDefStr.isEmpty() ? "" : paramDefStr + " ")
@@ -155,7 +154,7 @@ public class ShadowProviderGenerator extends Generator {
               + " shadowOf("
               + shadowInfo.getActualTypeWithParams()
               + " actual) {");
-      writer.println("    return (" + shadow + ") Shadow.extract(actual);");
+      writer.println("    return Shadow.extract(actual);");
       writer.println("  }");
       writer.println();
     }
@@ -166,6 +165,8 @@ public class ShadowProviderGenerator extends Generator {
       int minSdk = resetterInfo.getMinSdk();
       int maxSdk = resetterInfo.getMaxSdk();
       String ifClause;
+      // The fully-qualiied name 'org.robolectric.RuntimeEnvironment' is required because shadow
+      // packages may not be in the 'org.robolectric' package.
       if (minSdk != -1 && maxSdk != -1) {
         ifClause =
             "if (org.robolectric.RuntimeEnvironment.getApiLevel() >= "

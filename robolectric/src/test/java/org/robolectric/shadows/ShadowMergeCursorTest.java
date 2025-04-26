@@ -22,14 +22,14 @@ public class ShadowMergeCursorTest {
   private SQLiteCursor dbCursor1;
   private SQLiteCursor dbCursor2;
 
-  private static String[] TABLE_1_INSERTS = {
+  private static final String[] TABLE_1_INSERTS = {
     "INSERT INTO table_1 (id, name_1, value_1, float_value_1, double_value_1) VALUES(1234,"
         + " 'Chuck', 3463, 1.5, 3.14159);",
     "INSERT INTO table_1 (id, name_1) VALUES(1235, 'Julie');",
     "INSERT INTO table_1 (id, name_1) VALUES(1236, 'Chris');"
   };
 
-  private static String[] TABLE_2_INSERTS = {
+  private static final String[] TABLE_2_INSERTS = {
     "INSERT INTO table_2 (id, name_2, value_2, float_value_2, double_value_2) VALUES(4321, 'Mary',"
         + " 3245, 5.4, 2.7818);",
     "INSERT INTO table_2 (id, name_2) VALUES(4322, 'Elizabeth');",
@@ -158,7 +158,7 @@ public class ShadowMergeCursorTest {
   }
 
   @Test
-  public void testGetDataSingleCursor() throws Exception {
+  public void testGetDataSingleCursor() {
     Cursor[] cursors = new Cursor[1];
     cursors[0] = dbCursor1;
     cursor = new MergeCursor(cursors);
@@ -168,7 +168,7 @@ public class ShadowMergeCursorTest {
   }
 
   @Test
-  public void testGetDataMultipleCursor() throws Exception {
+  public void testGetDataMultipleCursor() {
     Cursor[] cursors = new Cursor[2];
     cursors[0] = dbCursor1;
     cursors[1] = dbCursor2;

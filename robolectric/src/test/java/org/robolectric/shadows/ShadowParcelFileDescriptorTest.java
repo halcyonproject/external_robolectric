@@ -89,15 +89,8 @@ public class ShadowParcelFileDescriptorTest {
   }
 
   @Test
-  public void testOpenWithOnCloseListener_nullHandler() throws Exception {
-    final AtomicBoolean onCloseCalled = new AtomicBoolean(false);
-    ParcelFileDescriptor.OnCloseListener onCloseListener =
-        new ParcelFileDescriptor.OnCloseListener() {
-          @Override
-          public void onClose(IOException e) {
-            onCloseCalled.set(true);
-          }
-        };
+  public void testOpenWithOnCloseListener_nullHandler() {
+    ParcelFileDescriptor.OnCloseListener onCloseListener = e -> {};
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -106,7 +99,7 @@ public class ShadowParcelFileDescriptorTest {
   }
 
   @Test
-  public void testOpenWithOnCloseListener_nullOnCloseListener() throws Exception {
+  public void testOpenWithOnCloseListener_nullOnCloseListener() {
     HandlerThread handlerThread = new HandlerThread("test");
     handlerThread.start();
     Handler handler = new Handler(handlerThread.getLooper());
@@ -122,13 +115,7 @@ public class ShadowParcelFileDescriptorTest {
     handlerThread.start();
     Handler handler = new Handler(handlerThread.getLooper());
     final AtomicBoolean onCloseCalled = new AtomicBoolean(false);
-    ParcelFileDescriptor.OnCloseListener onCloseListener =
-        new ParcelFileDescriptor.OnCloseListener() {
-          @Override
-          public void onClose(IOException e) {
-            onCloseCalled.set(true);
-          }
-        };
+    ParcelFileDescriptor.OnCloseListener onCloseListener = e -> onCloseCalled.set(true);
     pfd =
         ParcelFileDescriptor.open(
             file, ParcelFileDescriptor.MODE_READ_WRITE, handler, onCloseListener);
@@ -393,8 +380,7 @@ public class ShadowParcelFileDescriptorTest {
     ParcelFileDescriptor clone2 = ParcelFileDescriptor.CREATOR.createFromParcel(parcel);
     pfd.close();
     assertThat(readLine(clone1.getFileDescriptor())).isEqualTo("bar");
-    assertThrows(
-        FileDescriptorFromParcelUnavailableException.class, () -> clone2.getFileDescriptor());
+    assertThrows(FileDescriptorFromParcelUnavailableException.class, clone2::getFileDescriptor);
     parcel.recycle();
   }
 
@@ -410,8 +396,7 @@ public class ShadowParcelFileDescriptorTest {
     pfd.close(); // Makes our data available to anyone downstream on the chain.
 
     assertThat(readLine(pfd3.getFileDescriptor())).isEqualTo("foo");
-    assertThrows(
-        FileDescriptorFromParcelUnavailableException.class, () -> pfd2.getFileDescriptor());
+    assertThrows(FileDescriptorFromParcelUnavailableException.class, pfd2::getFileDescriptor);
   }
 
   @Test
@@ -538,7 +523,7 @@ public class ShadowParcelFileDescriptorTest {
 
   @Test
   public void testClose_afterDup_doesNotCloseOriginalFd() throws Exception {
-    ParcelFileDescriptor pfd = null;
+    ParcelFileDescriptor pfd;
     File tempFile = File.createTempFile("testFile", ".txt");
     String content = "abc123";
     Files.asCharSink(tempFile, UTF_8).write(content);

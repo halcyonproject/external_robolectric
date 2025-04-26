@@ -32,7 +32,7 @@ public class ShadowPausedAsyncTaskTest {
     transcript = new ArrayList<>();
   }
 
-  /** Test uses AsyncTask without overridding executor. */
+  /** Test uses AsyncTask without overriding executor. */
   @Test
   public void testNormalFlow() throws Exception {
     AsyncTask<String, String, String> asyncTask = new RecordingAsyncTask();
@@ -180,7 +180,7 @@ public class ShadowPausedAsyncTaskTest {
           @Override
           protected Void doInBackground(Void... params) {
             boolean isMainLooper = Looper.getMainLooper().getThread() == Thread.currentThread();
-            transcript.add("doInBackground on main looper " + Boolean.toString(isMainLooper));
+            transcript.add("doInBackground on main looper " + isMainLooper);
             return null;
           }
         };
@@ -243,7 +243,7 @@ public class ShadowPausedAsyncTaskTest {
 
   private static class BlockingAsyncTask extends AsyncTask<Void, Void, Void> {
 
-    private CountDownLatch latch = new CountDownLatch(1);
+    private final CountDownLatch latch = new CountDownLatch(1);
 
     @Override
     protected Void doInBackground(Void... voids) {

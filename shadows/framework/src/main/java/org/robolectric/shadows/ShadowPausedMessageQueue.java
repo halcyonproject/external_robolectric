@@ -30,7 +30,7 @@ import org.robolectric.util.reflector.ForType;
 import org.robolectric.versioning.AndroidVersions.V;
 
 /**
- * The shadow {@link} MessageQueue} for {@link LooperMode.Mode.PAUSED}
+ * The shadow {@link} MessageQueue} for {@link LooperMode.Mode#PAUSED}
  *
  * <p>This class should not be referenced directly. Use {@link ShadowMessageQueue} instead.
  */
@@ -41,8 +41,8 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
   @RealObject private MessageQueue realQueue;
 
   // just use this class as the native object
-  private static NativeObjRegistry<ShadowPausedMessageQueue> nativeQueueRegistry =
-      new NativeObjRegistry<ShadowPausedMessageQueue>(ShadowPausedMessageQueue.class);
+  private static final NativeObjRegistry<ShadowPausedMessageQueue> nativeQueueRegistry =
+      new NativeObjRegistry<>(ShadowPausedMessageQueue.class);
   private boolean isPolling = false;
   private ShadowPausedSystemClock.Listener clockListener;
   private Exception uncaughtException = null;

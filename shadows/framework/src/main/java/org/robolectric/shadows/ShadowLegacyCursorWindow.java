@@ -7,17 +7,17 @@ import android.database.CursorWindow;
 import com.almworks.sqlite4java.SQLiteConstants;
 import com.almworks.sqlite4java.SQLiteException;
 import com.almworks.sqlite4java.SQLiteStatement;
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-/** Legacy shadow for {@link CursowWindow}. */
+/** Legacy shadow for {@link CursorWindow}. */
 @Implements(value = CursorWindow.class, isInAndroidSdk = false)
 public class ShadowLegacyCursorWindow extends ShadowCursorWindow {
   private static final WindowData WINDOW_DATA = new WindowData();
@@ -92,7 +92,7 @@ public class ShadowLegacyCursorWindow extends ShadowCursorWindow {
   @Implementation
   protected static boolean nativePutBlob(long windowPtr, byte[] value, int row, int column) {
     // Real Android will crash in native code if putString is called with a null value.
-    Preconditions.checkNotNull(value);
+    Objects.requireNonNull(value);
     return WINDOW_DATA
         .get(windowPtr)
         .putValue(new Value(value, Cursor.FIELD_TYPE_BLOB), row, column);
@@ -101,7 +101,7 @@ public class ShadowLegacyCursorWindow extends ShadowCursorWindow {
   @Implementation
   protected static boolean nativePutString(long windowPtr, String value, int row, int column) {
     // Real Android will crash in native code if putString is called with a null value.
-    Preconditions.checkNotNull(value);
+    Objects.requireNonNull(value);
     return WINDOW_DATA
         .get(windowPtr)
         .putValue(new Value(value, Cursor.FIELD_TYPE_STRING), row, column);
@@ -178,7 +178,7 @@ public class ShadowLegacyCursorWindow extends ShadowCursorWindow {
 
     public Data(String name, int cursorWindowSize) {
       this.name = name;
-      this.rows = new ArrayList<Row>();
+      this.rows = new ArrayList<>();
     }
 
     public Value value(int rowN, int colN) {
@@ -255,7 +255,7 @@ public class ShadowLegacyCursorWindow extends ShadowCursorWindow {
     private final List<Value> values;
 
     public Row(int length) {
-      values = new ArrayList<Value>(length);
+      values = new ArrayList<>(length);
       for (int i = 0; i < length; i++) {
         values.add(new Value(null, Cursor.FIELD_TYPE_NULL));
       }

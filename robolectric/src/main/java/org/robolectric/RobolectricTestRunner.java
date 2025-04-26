@@ -27,7 +27,6 @@ import org.robolectric.android.AndroidSdkShadowMatcher;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.annotation.LooperMode;
-import org.robolectric.annotation.LooperMode.Mode;
 import org.robolectric.annotation.ResourcesMode;
 import org.robolectric.annotation.SQLiteMode;
 import org.robolectric.config.AndroidConfigurer;
@@ -64,8 +63,6 @@ import org.robolectric.util.inject.Injector;
  */
 @SuppressWarnings("NewApi")
 public class RobolectricTestRunner extends SandboxTestRunner {
-
-  public static final String CONFIG_PROPERTIES = "robolectric.properties";
   private static final int MAX_DATA_DIR_NAME_LENGTH = 120;
   private static final Injector DEFAULT_INJECTOR = defaultInjector().build();
   private static final Map<ManifestIdentifier, AndroidManifest> appManifestsCache = new HashMap<>();
@@ -108,7 +105,7 @@ public class RobolectricTestRunner extends SandboxTestRunner {
   private final ConfigurationStrategy configurationStrategy;
   private final AndroidConfigurer androidConfigurer;
 
-  private boolean alwaysIncludeVariantMarkersInName =
+  private final boolean alwaysIncludeVariantMarkersInName =
       Boolean.parseBoolean(
           System.getProperty("robolectric.alwaysIncludeVariantMarkersInTestName", "false"));
 
@@ -256,26 +253,10 @@ public class RobolectricTestRunner extends SandboxTestRunner {
     Sdk sdk = roboMethod.getSdk();
 
     InstrumentationConfiguration classLoaderConfig = createClassLoaderConfig(method);
-    ResourcesMode.Mode resourcesMode =
-        roboMethod.configuration == null
-            ? ResourcesMode.Mode.BINARY
-            : roboMethod.configuration.get(ResourcesMode.Mode.class);
-    ;
-
-    LooperMode.Mode looperMode =
-        roboMethod.configuration == null
-            ? Mode.LEGACY
-            : roboMethod.configuration.get(LooperMode.Mode.class);
-
-    SQLiteMode.Mode sqliteMode =
-        roboMethod.configuration == null
-            ? SQLiteMode.Mode.LEGACY
-            : roboMethod.configuration.get(SQLiteMode.Mode.class);
-
-    GraphicsMode.Mode graphicsMode =
-        roboMethod.configuration == null
-            ? GraphicsMode.Mode.LEGACY
-            : roboMethod.configuration.get(GraphicsMode.Mode.class);
+    ResourcesMode.Mode resourcesMode = roboMethod.configuration.get(ResourcesMode.Mode.class);
+    LooperMode.Mode looperMode = roboMethod.configuration.get(LooperMode.Mode.class);
+    SQLiteMode.Mode sqliteMode = roboMethod.configuration.get(SQLiteMode.Mode.class);
+    GraphicsMode.Mode graphicsMode = roboMethod.configuration.get(GraphicsMode.Mode.class);
 
     sdk.verifySupportedSdk(method.getDeclaringClass().getName());
     return sandboxManager.getAndroidSandbox(
@@ -513,9 +494,6 @@ public class RobolectricTestRunner extends SandboxTestRunner {
   }
 
   @Override
-  protected void afterClass() {}
-
-  @Override
   public Object createTest() throws Exception {
     throw new UnsupportedOperationException(
         "this should always be invoked on the HelperTestRunner!");
@@ -567,7 +545,7 @@ public class RobolectricTestRunner extends SandboxTestRunner {
     private final boolean alwaysIncludeVariantMarkersInName;
 
     private boolean includeVariantMarkersInTestName = true;
-    TestLifecycle<?> testLifecycle;
+    TestLifecycle testLifecycle;
     Sandbox sandbox;
     TestEnvironment testEnvironment;
 

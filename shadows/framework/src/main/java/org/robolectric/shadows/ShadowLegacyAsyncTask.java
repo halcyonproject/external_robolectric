@@ -17,13 +17,19 @@ import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.util.reflector.ForType;
 
-/** A {@link AsyncTask} shadow for {@link LooperMode.Mode.LEGACY}. */
+/**
+ * A {@link AsyncTask} shadow for {@link LooperMode.Mode#LEGACY}.
+ *
+ * @deprecated {@link AsyncTask} is deprecated in the Android SDK.
+ */
+@Deprecated
 @Implements(
     value = AsyncTask.class,
     shadowPicker = ShadowAsyncTask.Picker.class,
     // TODO: turn off shadowOf generation. Figure out why this is needed
     isInAndroidSdk = false)
-public class ShadowLegacyAsyncTask<Params, Progress, Result> extends ShadowAsyncTask {
+public class ShadowLegacyAsyncTask<Params, Progress, Result>
+    extends ShadowAsyncTask<Params, Progress, Result> {
 
   @RealObject private AsyncTask<Params, Progress, Result> realAsyncTask;
 

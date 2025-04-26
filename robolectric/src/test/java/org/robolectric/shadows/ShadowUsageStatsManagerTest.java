@@ -66,7 +66,7 @@ public class ShadowUsageStatsManagerTest {
   }
 
   @Test
-  public void testQueryEvents_emptyEvents() throws Exception {
+  public void testQueryEvents_emptyEvents() {
     UsageEvents events = usageStatsManager.queryEvents(1000L, 2000L);
     Event event = new Event();
 
@@ -75,7 +75,7 @@ public class ShadowUsageStatsManagerTest {
   }
 
   @Test
-  public void testQueryEvents_overlappingEvents() throws Exception {
+  public void testQueryEvents_overlappingEvents() {
     shadowOf(usageStatsManager).addEvent(TEST_PACKAGE_NAME1, 1000L, Event.MOVE_TO_BACKGROUND);
     shadowOf(usageStatsManager)
         .addEvent(
@@ -108,7 +108,7 @@ public class ShadowUsageStatsManagerTest {
   }
 
   @Test
-  public void testQueryEvents_appendEventData_shouldCombineWithPreviousData() throws Exception {
+  public void testQueryEvents_appendEventData_shouldCombineWithPreviousData() {
     shadowOf(usageStatsManager).addEvent(TEST_PACKAGE_NAME1, 500L, Event.MOVE_TO_FOREGROUND);
     shadowOf(usageStatsManager).addEvent(TEST_PACKAGE_NAME1, 1000L, Event.MOVE_TO_BACKGROUND);
     shadowOf(usageStatsManager)
@@ -150,8 +150,7 @@ public class ShadowUsageStatsManagerTest {
   }
 
   @Test
-  public void testQueryEvents_appendEventData_simulateTimeChange_shouldAddOffsetToPreviousData()
-      throws Exception {
+  public void testQueryEvents_appendEventData_simulateTimeChange_shouldAddOffsetToPreviousData() {
     shadowOf(usageStatsManager).addEvent(TEST_PACKAGE_NAME1, 500L, Event.MOVE_TO_FOREGROUND);
     shadowOf(usageStatsManager).addEvent(TEST_PACKAGE_NAME1, 1000L, Event.MOVE_TO_BACKGROUND);
     shadowOf(usageStatsManager)
@@ -195,7 +194,7 @@ public class ShadowUsageStatsManagerTest {
 
   @Test
   @Config(minSdk = Build.VERSION_CODES.P)
-  public void testGetAppStandbyBucket_withPackageName() throws Exception {
+  public void testGetAppStandbyBucket_withPackageName() {
     assertThat(shadowOf(usageStatsManager).getAppStandbyBuckets()).isEmpty();
 
     shadowOf(usageStatsManager).setAppStandbyBucket("app1", UsageStatsManager.STANDBY_BUCKET_RARE);
@@ -211,7 +210,7 @@ public class ShadowUsageStatsManagerTest {
 
   @Test
   @Config(minSdk = Build.VERSION_CODES.P)
-  public void testSetAppStandbyBuckets() throws Exception {
+  public void testSetAppStandbyBuckets() {
     assertThat(shadowOf(usageStatsManager).getAppStandbyBuckets()).isEmpty();
     assertThat(shadowOf(usageStatsManager).getAppStandbyBucket("app1"))
         .isEqualTo(UsageStatsManager.STANDBY_BUCKET_ACTIVE);
@@ -227,7 +226,7 @@ public class ShadowUsageStatsManagerTest {
 
   @Test
   @Config(minSdk = Build.VERSION_CODES.P)
-  public void testGetAppStandbyBucket_currentApp() throws Exception {
+  public void testGetAppStandbyBucket_currentApp() {
     shadowOf(usageStatsManager).setCurrentAppStandbyBucket(UsageStatsManager.STANDBY_BUCKET_RARE);
     assertThat(shadowOf(usageStatsManager).getAppStandbyBucket())
         .isEqualTo(UsageStatsManager.STANDBY_BUCKET_RARE);
@@ -1067,7 +1066,7 @@ public class ShadowUsageStatsManagerTest {
 
   @Test
   @Config(minSdk = V.SDK_INT)
-  public void testQueryEvents_newApiV_shouldReturn() throws Exception {
+  public void testQueryEvents_newApiV_shouldReturn() {
     // These events should be returned.
     shadowOf(usageStatsManager)
         .addEvent(

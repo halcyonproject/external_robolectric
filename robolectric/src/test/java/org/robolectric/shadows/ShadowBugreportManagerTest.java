@@ -70,7 +70,7 @@ public final class ShadowBugreportManagerTest {
     shadowBugreportManager.requestBugreport(
         new BugreportParams(BugreportParams.BUGREPORT_MODE_INTERACTIVE), title, description);
 
-    // executeOnFInished() will call resetParams(), which should not crash from referencing any null
+    // executeOnFinished() will call resetParams(), which should not crash from referencing any null
     // values.
     shadowBugreportManager.executeOnFinished();
   }
@@ -93,20 +93,19 @@ public final class ShadowBugreportManagerTest {
   }
 
   @Test
-  public void startBugreport_noPermission() throws Exception {
+  public void startBugreport_noPermission() {
     BugreportCallback callback = mock(BugreportCallback.class);
     shadowBugreportManager.setHasPermission(false);
 
     assertThrows(
         SecurityException.class,
-        () -> {
-          shadowBugreportManager.startBugreport(
-              createWriteFile("bugreport"),
-              createWriteFile("screenshot"),
-              new BugreportParams(BugreportParams.BUGREPORT_MODE_FULL),
-              directExecutor(),
-              callback);
-        });
+        () ->
+            shadowBugreportManager.startBugreport(
+                createWriteFile("bugreport"),
+                createWriteFile("screenshot"),
+                new BugreportParams(BugreportParams.BUGREPORT_MODE_FULL),
+                directExecutor(),
+                callback));
     shadowMainLooper().idle();
 
     assertThat(shadowBugreportManager.isBugreportInProgress()).isFalse();
@@ -167,7 +166,7 @@ public final class ShadowBugreportManagerTest {
 
   @Test
   @Config(minSdk = UPSIDE_DOWN_CAKE)
-  public void retrieveBugreport_noPermission() throws Exception {
+  public void retrieveBugreport_noPermission() {
     BugreportCallback callback = mock(BugreportCallback.class);
     shadowBugreportManager.setHasPermission(false);
 

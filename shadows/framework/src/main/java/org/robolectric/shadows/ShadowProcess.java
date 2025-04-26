@@ -19,7 +19,7 @@ public class ShadowProcess {
   private static int pid;
   private static final int UID = getRandomApplicationUid();
   private static Integer uidOverride;
-  private static int tid = getRandomApplicationUid();
+  private static final int tid = getRandomApplicationUid();
   private static final Object threadPrioritiesLock = new Object();
   private static final Object killedProcessesLock = new Object();
   // The range of thread priority values is specified by
@@ -28,7 +28,7 @@ public class ShadowProcess {
   private static final int THREAD_PRIORITY_LOWEST = 19;
 
   @GuardedBy("threadPrioritiesLock")
-  private static final Map<Integer, Integer> threadPriorities = new HashMap<Integer, Integer>();
+  private static final Map<Integer, Integer> threadPriorities = new HashMap<>();
 
   @GuardedBy("killedProcessesLock")
   private static final Set<Integer> killedProcesses = new HashSet<>();

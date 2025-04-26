@@ -728,10 +728,10 @@ public class ShadowMediaPlayerTest {
         .isNotEqualTo(0);
   }
 
-  private Tester onErrorTester = new OnErrorTester(-38, 0);
-  private Tester iseTester = new ExceptionTester(IllegalStateException.class);
-  private Tester logTester = new LogTester(null);
-  private Tester assertTester = new ExceptionTester(AssertionError.class);
+  private final Tester onErrorTester = new OnErrorTester(-38, 0);
+  private final Tester iseTester = new ExceptionTester(IllegalStateException.class);
+  private final Tester logTester = new LogTester(null);
+  private final Tester assertTester = new ExceptionTester(AssertionError.class);
 
   private void testStates(String methodName, EnumSet<State> invalidStates, State nextState) {
     testStates(new MethodSpec(methodName), invalidStates, iseTester, nextState);
@@ -744,7 +744,7 @@ public class ShadowMediaPlayerTest {
     public Object[] args;
 
     public MethodSpec(String method) {
-      this(method, (Class<?>[]) null, (Object[]) null);
+      this(method, null, (Object[]) null);
     }
 
     public MethodSpec(String method, Class<?>[] argTypes, Object[] args) {
@@ -864,8 +864,8 @@ public class ShadowMediaPlayerTest {
   }
 
   private class OnErrorTester implements Tester {
-    private int what;
-    private int extra;
+    private final int what;
+    private final int extra;
 
     public OnErrorTester(int what, int extra) {
       this.what = what;
@@ -899,7 +899,7 @@ public class ShadowMediaPlayerTest {
   }
 
   private class ExceptionTester implements Tester {
-    private Class<? extends Throwable> eClass;
+    private final Class<? extends Throwable> eClass;
 
     public ExceptionTester(Class<? extends Throwable> eClass) {
       this.eClass = eClass;
@@ -924,7 +924,7 @@ public class ShadowMediaPlayerTest {
   }
 
   private class LogTester implements Tester {
-    private State next;
+    private final State next;
 
     public LogTester(State next) {
       this.next = next;
@@ -1135,7 +1135,7 @@ public class ShadowMediaPlayerTest {
   }
 
   @Test
-  public void testSimulatenousEventsAllRun() {
+  public void testSimultaneousEventsAllRun() {
     // Simultaneous events should all run even if
     // one of them stops playback.
     MediaEvent e1 = (mp, smp) -> smp.doStop();

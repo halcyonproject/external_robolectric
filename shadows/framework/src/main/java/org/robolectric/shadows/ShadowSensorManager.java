@@ -2,7 +2,7 @@ package org.robolectric.shadows;
 
 import static android.os.Build.VERSION_CODES.O;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import android.hardware.Sensor;
 import android.hardware.SensorDirectChannel;
@@ -33,7 +33,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 /** Shadow for {@link SensorManager}. */
 @Implements(value = SensorManager.class)
 public class ShadowSensorManager {
-  private static AtomicBoolean forceListenersToFail = new AtomicBoolean();
+  private static final AtomicBoolean forceListenersToFail = new AtomicBoolean();
   private static final Multimap<Integer, Sensor> sensorMap =
       Multimaps.synchronizedMultimap(HashMultimap.create());
   private static final Multimap<SensorEventListener, Sensor> listeners =
@@ -59,18 +59,18 @@ public class ShadowSensorManager {
    */
   @Deprecated
   public void addSensor(int sensorType, Sensor sensor) {
-    checkNotNull(sensor);
+    requireNonNull(sensor);
     sensorMap.put(sensorType, sensor);
   }
 
   /** Adds a {@link Sensor} to the {@link SensorManager} */
   public void addSensor(Sensor sensor) {
-    checkNotNull(sensor);
+    requireNonNull(sensor);
     sensorMap.put(sensor.getType(), sensor);
   }
 
   public void removeSensor(Sensor sensor) {
-    checkNotNull(sensor);
+    requireNonNull(sensor);
     sensorMap.get(sensor.getType()).remove(sensor);
   }
 
@@ -122,12 +122,12 @@ public class ShadowSensorManager {
   }
 
   public void setForceListenersToFail(boolean forceListenersToFail) {
-    this.forceListenersToFail.set(forceListenersToFail);
+    ShadowSensorManager.forceListenersToFail.set(forceListenersToFail);
   }
 
   @Implementation
   protected boolean registerListener(SensorEventListener listener, Sensor sensor, int rate) {
-    if (this.forceListenersToFail.get()) {
+    if (forceListenersToFail.get()) {
       return false;
     }
     listeners.put(listener, sensor);

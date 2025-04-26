@@ -166,8 +166,7 @@ public final class ExpectedLogMessagesRule implements TestRule {
    * will fail.
    *
    * <p>This will also match any log statement which contains a throwable as well. For verifying the
-   * throwable, please see {@link #expectLogMessageWithThrowable(int, String, Matcher<String>,
-   * Matcher<Throwable>)}.
+   * throwable, please see {@link #expectLogMessageWithThrowable(int, String, Matcher, Matcher)}}.
    *
    * <p>Do not use this to suppress failures. Use this to test that expected error cases in your
    * code cause log messages to be printed.
@@ -194,7 +193,7 @@ public final class ExpectedLogMessagesRule implements TestRule {
 
   /**
    * Adds an expected log statement using a regular expression. If this log is not printed during
-   * test execution, the test case will fail. When possible, log output should be made determinstic
+   * test execution, the test case will fail. When possible, log output should be made deterministic
    * and {@link #expectLogMessage(int, String, String)} used instead.
    *
    * <p>This will also match any log statement which contain a throwable as well. For verifying the
@@ -336,7 +335,7 @@ public final class ExpectedLogMessagesRule implements TestRule {
 
       ExpectedLogItem log = (ExpectedLogItem) o;
       return type == log.type
-          && !(tag != null ? !tag.equals(log.tag) : log.tag != null)
+          && Objects.equals(tag, log.tag)
           && Objects.equals(msgMatcher, log.msgMatcher)
           && Objects.equals(throwableMatcher, log.throwableMatcher);
     }
@@ -370,8 +369,7 @@ public final class ExpectedLogMessagesRule implements TestRule {
 
     @Override
     public boolean matches(Object other) {
-      // Allow direct cast since we only use this matcher in a type-safe way.
-      return msg.equals((String) other);
+      return msg.equals(other);
     }
 
     // Designed to match legacy toString() behaviour - do not modify.
@@ -419,7 +417,7 @@ public final class ExpectedLogMessagesRule implements TestRule {
     // This matches legacy behaviour to allow ExpectedLogItem to de-duplicate regex expectations.
     @Override
     public boolean equals(Object other) {
-      return other instanceof MsgRegex ? isEqual(pattern, ((MsgRegex) other).pattern) : false;
+      return other instanceof MsgRegex && isEqual(pattern, ((MsgRegex) other).pattern);
     }
 
     @Override

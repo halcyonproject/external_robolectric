@@ -94,7 +94,7 @@ public class ShadowRemoteCallbackList<E extends IInterface> {
         throw new IllegalStateException("beginBroadcast() called while already in a broadcast");
       }
       final int N = broadcastCount = callbacks.size();
-      if (N <= 0) {
+      if (N == 0) {
         return 0;
       }
       Object[] active = activeBroadcast;
@@ -134,7 +134,7 @@ public class ShadowRemoteCallbackList<E extends IInterface> {
     broadcastCount = -1;
   }
 
-  @Implementation(minSdk = 17)
+  @Implementation
   protected int getRegisteredCallbackCount() {
     return callbacks.size();
   }

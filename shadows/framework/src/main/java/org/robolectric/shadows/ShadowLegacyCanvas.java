@@ -17,9 +17,9 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.RealObject;
@@ -46,13 +46,13 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
   @ReflectorObject protected CanvasReflector canvasReflector;
 
   private final List<RoundRectPaintHistoryEvent> roundRectPaintEvents = new ArrayList<>();
-  private List<PathPaintHistoryEvent> pathPaintEvents = new ArrayList<>();
-  private List<CirclePaintHistoryEvent> circlePaintEvents = new ArrayList<>();
-  private List<ArcPaintHistoryEvent> arcPaintEvents = new ArrayList<>();
-  private List<RectPaintHistoryEvent> rectPaintEvents = new ArrayList<>();
-  private List<LinePaintHistoryEvent> linePaintEvents = new ArrayList<>();
-  private List<OvalPaintHistoryEvent> ovalPaintEvents = new ArrayList<>();
-  private List<TextHistoryEvent> drawnTextEventHistory = new ArrayList<>();
+  private final List<PathPaintHistoryEvent> pathPaintEvents = new ArrayList<>();
+  private final List<CirclePaintHistoryEvent> circlePaintEvents = new ArrayList<>();
+  private final List<ArcPaintHistoryEvent> arcPaintEvents = new ArrayList<>();
+  private final List<RectPaintHistoryEvent> rectPaintEvents = new ArrayList<>();
+  private final List<LinePaintHistoryEvent> linePaintEvents = new ArrayList<>();
+  private final List<OvalPaintHistoryEvent> ovalPaintEvents = new ArrayList<>();
+  private final List<TextHistoryEvent> drawnTextEventHistory = new ArrayList<>();
   private Paint drawnPaint;
   private Bitmap targetBitmap = ReflectionHelpers.callConstructor(Bitmap.class);
   private float translateX;
@@ -180,7 +180,7 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
     }
 
     if (src != null) {
-      descriptionBuilder.append(" taken from ").append(src.toString());
+      descriptionBuilder.append(" taken from ").append(src);
     }
     appendDescription(descriptionBuilder.toString());
   }
@@ -203,7 +203,7 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
     }
 
     if (src != null) {
-      descriptionBuilder.append(" taken from ").append(src.toString());
+      descriptionBuilder.append(" taken from ").append(src);
     }
     appendDescription(descriptionBuilder.toString());
   }
@@ -288,7 +288,7 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
   }
 
   private void separateLines() {
-    if (getDescription().length() != 0) {
+    if (!getDescription().isEmpty()) {
       appendDescription("\n");
     }
   }
@@ -315,7 +315,7 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
 
   @Override
   public boolean hasDrawnCircle() {
-    return circlePaintEvents.size() > 0;
+    return !circlePaintEvents.isEmpty();
   }
 
   @Override
@@ -384,7 +384,7 @@ public class ShadowLegacyCanvas extends ShadowCanvas {
 
   @Implementation
   protected boolean getClipBounds(Rect bounds) {
-    Preconditions.checkNotNull(bounds);
+    Objects.requireNonNull(bounds);
     if (targetBitmap == null) {
       return false;
     }

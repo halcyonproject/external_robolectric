@@ -11,7 +11,7 @@ import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
 
-/** Robolectric implementation of {@link android.os.AutofillManager}. */
+/** Robolectric implementation of {@link AutofillManager}. */
 @Implements(value = AutofillManager.class, minSdk = O)
 public class ShadowAutofillManager {
   @Nullable private static ComponentName autofillServiceComponentName = null;
@@ -56,7 +56,7 @@ public class ShadowAutofillManager {
    * AutofillManager#getAutofillServiceComponentName()}.
    */
   public void setAutofillServiceComponentName(@Nullable ComponentName componentName) {
-    this.autofillServiceComponentName = componentName;
+    autofillServiceComponentName = componentName;
   }
 
   /**
@@ -64,7 +64,7 @@ public class ShadowAutofillManager {
    * AutofillManager#isAutofillSupported()}.
    */
   public void setAutofillSupported(boolean supported) {
-    this.autofillSupported = supported;
+    autofillSupported = supported;
   }
 
   /**
@@ -72,6 +72,6 @@ public class ShadowAutofillManager {
    * AutofillManager#isEnabled()}.
    */
   public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
+    ShadowAutofillManager.enabled = enabled;
   }
 }

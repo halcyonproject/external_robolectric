@@ -23,7 +23,6 @@ import android.webkit.WebViewClient;
 import android.webkit.WebViewFactoryProvider;
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -50,11 +49,11 @@ public class ShadowWebView extends ShadowViewGroup {
 
   private static PackageInfo packageInfo = null;
 
-  private List<RoboWebMessagePort[]> allCreatedPorts = new ArrayList<>();
+  private final List<RoboWebMessagePort[]> allCreatedPorts = new ArrayList<>();
   private String lastUrl;
   private Map<String, String> lastAdditionalHttpHeaders;
-  private HashMap<String, Object> javascriptInterfaces = new HashMap<>();
-  private WebSettings webSettings = new RoboWebSettings();
+  private final HashMap<String, Object> javascriptInterfaces = new HashMap<>();
+  private final WebSettings webSettings = new RoboWebSettings();
   private WebViewClient webViewClient = null;
   private boolean clearCacheCalled = false;
   private boolean clearCacheIncludeDiskFiles = false;
@@ -109,29 +108,19 @@ public class ShadowWebView extends ShadowViewGroup {
             Proxy.newProxyInstance(
                 classLoader,
                 new Class[] {webViewProviderClass},
-                new InvocationHandler() {
-                  @Override
-                  public Object invoke(Object proxy, Method method, Object[] args)
-                      throws Throwable {
-                    if (method.getName().equals("getViewDelegate")
-                        || method.getName().equals("getScrollDelegate")) {
-                      return Proxy.newProxyInstance(
-                          classLoader,
-                          new Class[] {
-                            getClassNamed("android.webkit.WebViewProvider$ViewDelegate"),
-                            getClassNamed("android.webkit.WebViewProvider$ScrollDelegate")
-                          },
-                          new InvocationHandler() {
-                            @Override
-                            public Object invoke(Object proxy, Method method, Object[] args)
-                                throws Throwable {
-                              return nullish(method);
-                            }
-                          });
-                    }
-
-                    return nullish(method);
+                (proxy, method, args) -> {
+                  if (method.getName().equals("getViewDelegate")
+                      || method.getName().equals("getScrollDelegate")) {
+                    return Proxy.newProxyInstance(
+                        classLoader,
+                        new Class[] {
+                          getClassNamed("android.webkit.WebViewProvider$ViewDelegate"),
+                          getClassNamed("android.webkit.WebViewProvider$ScrollDelegate")
+                        },
+                        (proxy1, method1, args1) -> nullish(method1));
                   }
+
+                  return nullish(method);
                 });
         mProvider.set(realView, provider);
       }
@@ -238,7 +227,7 @@ public class ShadowWebView extends ShadowViewGroup {
 
   /**
    * Performs no callbacks on {@link WebViewClient} and {@link WebChromeClient} when any of {@link
-   * #loadUrl}, {@link loadData} or {@link #loadDataWithBaseURL} is called.
+   * #loadUrl}, {@link #loadData} or {@link #loadDataWithBaseURL} is called.
    */
   public void performNoPageLoadClientCallbacks() {
     this.pageLoadType = PageLoadType.UNDEFINED;
@@ -246,7 +235,7 @@ public class ShadowWebView extends ShadowViewGroup {
 
   /**
    * Performs callbacks on {@link WebViewClient} and {@link WebChromeClient} that simulates a
-   * successful page load when any of {@link #loadUrl}, {@link loadData} or {@link
+   * successful page load when any of {@link #loadUrl}, {@link #loadData} or {@link
    * #loadDataWithBaseURL} is called.
    */
   public void performSuccessfulPageLoadClientCallbacks() {
@@ -597,7 +586,7 @@ public class ShadowWebView extends ShadowViewGroup {
 
   @Implementation
   protected WebBackForwardList saveState(Bundle outState) {
-    if (history.size() > 0) {
+    if (!history.isEmpty()) {
       outState.putStringArrayList(HISTORY_KEY, history);
       outState.putInt(HISTORY_INDEX_KEY, historyIndex);
     }
@@ -614,7 +603,7 @@ public class ShadowWebView extends ShadowViewGroup {
       historyIndex = inState.getInt(HISTORY_INDEX_KEY);
     }
 
-    if (history.size() > 0) {
+    if (!history.isEmpty()) {
       originalUrl = history.get(historyIndex);
       lastUrl = history.get(historyIndex);
       return new BackForwardList(history, historyIndex);
@@ -714,8 +703,8 @@ public class ShadowWebView extends ShadowViewGroup {
    * Defines a type of page load which is associated with a certain order of {@link WebViewClient}
    * and {@link WebChromeClient} callbacks.
    *
-   * <p>A page load is triggered either using {@link #loadUrl}, {@link loadData} or {@link
-   * loadDataWithBaseURL}.
+   * <p>A page load is triggered either using {@link #loadUrl}, {@link #loadData} or {@link
+   * #loadDataWithBaseURL}.
    */
   private enum PageLoadType {
     /** Default type, triggers no {@link WebViewClient} or {@link WebChromeClient} callbacks. */

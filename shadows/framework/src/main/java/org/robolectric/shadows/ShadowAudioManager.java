@@ -12,8 +12,8 @@ import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
+import android.annotation.RequiresApi;
 import android.annotation.RequiresPermission;
-import android.annotation.TargetApi;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
@@ -29,7 +29,6 @@ import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 import android.os.Parcel;
 import android.view.KeyEvent;
-import com.android.internal.util.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
@@ -83,7 +82,7 @@ public class ShadowAudioManager {
   private int nextResponseValue = AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
   private AudioManager.OnAudioFocusChangeListener lastAbandonedAudioFocusListener;
   private android.media.AudioFocusRequest lastAbandonedAudioFocusRequest;
-  private HashMap<Integer, AudioStream> streamStatus = new HashMap<>();
+  private final HashMap<Integer, AudioStream> streamStatus = new HashMap<>();
   private List<AudioPlaybackConfiguration> activePlaybackConfigurations = Collections.emptyList();
   private List<AudioRecordingConfiguration> activeRecordingConfigurations = ImmutableList.of();
   private final HashSet<AudioManager.AudioRecordingCallback> audioRecordingCallbacks =
@@ -215,7 +214,7 @@ public class ShadowAudioManager {
     if (!AudioManager.isValidRingerMode(ringerMode)) {
       return;
     }
-    this.ringerMode = ringerMode;
+    ShadowAudioManager.ringerMode = ringerMode;
   }
 
   @Implementation
@@ -225,14 +224,14 @@ public class ShadowAudioManager {
             <= (int) ReflectionHelpers.getStaticField(AudioManager.class, "RINGER_MODE_MAX");
   }
 
-  /** Note that this method can silently fail. See {@link lockMode}. */
+  /** Note that this method can silently fail. See {@link #lockMode}. */
   @Implementation
   protected void setMode(int mode) {
     if (lockMode) {
       return;
     }
-    int previousMode = this.mode;
-    this.mode = mode;
+    int previousMode = ShadowAudioManager.mode;
+    ShadowAudioManager.mode = mode;
     if (RuntimeEnvironment.getApiLevel() >= S && mode != previousMode) {
       dispatchModeChangedListeners(mode);
     }
@@ -262,14 +261,14 @@ public class ShadowAudioManager {
         .dispatchAudioModeChanged(newMode);
   }
 
-  /** Sets whether subsequent calls to {@link setMode} will succeed or not. */
+  /** Sets whether subsequent calls to {@link #setMode} will succeed or not. */
   public void lockMode(boolean lockMode) {
-    this.lockMode = lockMode;
+    ShadowAudioManager.lockMode = lockMode;
   }
 
   @Implementation
   protected int getMode() {
-    return this.mode;
+    return mode;
   }
 
   @ForType(className = "android.media.AudioManager$ModeDispatcherStub")
@@ -335,7 +334,7 @@ public class ShadowAudioManager {
 
   @Implementation
   protected void setBluetoothScoOn(boolean isBluetoothScoOn) {
-    this.isBluetoothScoOn = isBluetoothScoOn;
+    ShadowAudioManager.isBluetoothScoOn = isBluetoothScoOn;
   }
 
   @Implementation
@@ -439,7 +438,7 @@ public class ShadowAudioManager {
   }
 
   public void setIsBluetoothScoAvailableOffCall(boolean isBluetoothScoAvailableOffCall) {
-    this.isBluetoothScoAvailableOffCall = isBluetoothScoAvailableOffCall;
+    ShadowAudioManager.isBluetoothScoAvailableOffCall = isBluetoothScoAvailableOffCall;
   }
 
   public void setIsStreamMute(int streamType, boolean isMuted) {
@@ -448,7 +447,7 @@ public class ShadowAudioManager {
 
   /**
    * Registers callback that will receive changes made to the list of active playback configurations
-   * by {@link setActivePlaybackConfigurationsFor}.
+   * by {@link #setActivePlaybackConfigurationsFor)}.
    */
   @Implementation(minSdk = O)
   protected void registerAudioPlaybackCallback(
@@ -599,7 +598,7 @@ public class ShadowAudioManager {
    * #addOutputDevice(AudioDeviceInfo, boolean)}, {@link #removeOutputDevice(AudioDeviceInfo,
    * boolean)}.
    */
-  @TargetApi(VERSION_CODES.S)
+  @RequiresApi(VERSION_CODES.S)
   public void setAvailableCommunicationDevices(
       List<AudioDeviceInfo> availableCommunicationDevices) {
     this.availableCommunicationDevices = new ArrayList<>(availableCommunicationDevices);
@@ -656,7 +655,7 @@ public class ShadowAudioManager {
    * AudioDeviceCallback} if the device was not present before and indicated by {@code
    * notifyAudioDeviceCallbacks}.
    */
-  @TargetApi(VERSION_CODES.S)
+  @RequiresApi(VERSION_CODES.S)
   public void addAvailableCommunicationDevice(
       AudioDeviceInfo communicationDevice, boolean notifyAudioDeviceCallbacks) {
     boolean changed =
@@ -672,7 +671,7 @@ public class ShadowAudioManager {
    * AudioDeviceCallback} if the device was present before and indicated by {@code
    * notifyAudioDeviceCallbacks}.
    */
-  @TargetApi(VERSION_CODES.S)
+  @RequiresApi(VERSION_CODES.S)
   public void removeAvailableCommunicationDevice(
       AudioDeviceInfo communicationDevice, boolean notifyAudioDeviceCallbacks) {
     boolean changed = this.availableCommunicationDevices.remove(communicationDevice);
@@ -740,7 +739,7 @@ public class ShadowAudioManager {
     return outputDevices;
   }
 
-  /** Note that this method can silently fail. See {@link lockCommunicationDevice}. */
+  /** Note that this method can silently fail. See {@link #lockCommunicationDevice}. */
   @Implementation(minSdk = S)
   protected boolean setCommunicationDevice(AudioDeviceInfo communicationDevice) {
     if (!lockCommunicationDevice) {
@@ -749,9 +748,9 @@ public class ShadowAudioManager {
     return !lockCommunicationDevice;
   }
 
-  /** Sets whether subsequent calls to {@link setCommunicationDevice} will succeed. */
+  /** Sets whether subsequent calls to {@link #setCommunicationDevice} will succeed. */
   public void lockCommunicationDevice(boolean lockCommunicationDevice) {
-    this.lockCommunicationDevice = lockCommunicationDevice;
+    ShadowAudioManager.lockCommunicationDevice = lockCommunicationDevice;
   }
 
   @Implementation(minSdk = S)
@@ -804,7 +803,7 @@ public class ShadowAudioManager {
    * <p>Note that there is no public {@link AudioPlaybackConfiguration} constructor, so the
    * configurations returned are specified by their audio attributes only.
    */
-  @TargetApi(VERSION_CODES.O)
+  @RequiresApi(VERSION_CODES.O)
   public void setActivePlaybackConfigurationsFor(List<AudioAttributes> audioAttributes) {
     setActivePlaybackConfigurationsFor(audioAttributes, /* notifyCallbackListeners= */ false);
   }
@@ -813,7 +812,7 @@ public class ShadowAudioManager {
    * Same as {@link #setActivePlaybackConfigurationsFor(List)}, but also notifies callbacks if
    * notifyCallbackListeners is true.
    */
-  @TargetApi(VERSION_CODES.O)
+  @RequiresApi(VERSION_CODES.O)
   public void setActivePlaybackConfigurationsFor(
       List<AudioAttributes> audioAttributes, boolean notifyCallbackListeners) {
     if (RuntimeEnvironment.getApiLevel() < O) {
@@ -875,7 +874,7 @@ public class ShadowAudioManager {
   }
 
   public void setIsMusicActive(boolean isMusicActive) {
-    this.isMusicActive = isMusicActive;
+    ShadowAudioManager.isMusicActive = isMusicActive;
   }
 
   public AudioFocusRequest getLastAudioFocusRequest() {
@@ -905,7 +904,7 @@ public class ShadowAudioManager {
 
   /**
    * Registers callback that will receive changes made to the list of active recording
-   * configurations by {@link setActiveRecordingConfigurations}.
+   * configurations by {@link #setActiveRecordingConfigurations}.
    */
   @Implementation(minSdk = N)
   protected void registerAudioRecordingCallback(
@@ -966,15 +965,15 @@ public class ShadowAudioManager {
    * <p>Note: this implementation does NOT ensure that we have the permissions necessary to register
    * the given {@link AudioPolicy}.
    *
-   * @return {@link AudioManager.ERROR} if the given policy has already been registered, and {@link
-   *     AudioManager.SUCCESS} otherwise.
+   * @return {@link AudioManager#ERROR} if the given policy has already been registered, and {@link
+   *     AudioManager#SUCCESS} otherwise.
    */
   @HiddenApi
   @Implementation(minSdk = P)
   @RequiresPermission(android.Manifest.permission.MODIFY_AUDIO_ROUTING)
   protected int registerAudioPolicy(
       @Nonnull @ClassName("android.media.audiopolicy.AudioPolicy") Object audioPolicy) {
-    Preconditions.checkNotNull(audioPolicy, "Illegal null AudioPolicy argument");
+    Objects.requireNonNull(audioPolicy, "Illegal null AudioPolicy argument");
     AudioPolicy policy = (AudioPolicy) audioPolicy;
     String id = getIdForAudioPolicy(audioPolicy);
     if (registeredAudioPolicies.containsKey(id)) {
@@ -989,7 +988,7 @@ public class ShadowAudioManager {
   @Implementation(minSdk = Q)
   protected void unregisterAudioPolicy(
       @Nonnull @ClassName("android.media.audiopolicy.AudioPolicy") Object audioPolicy) {
-    Preconditions.checkNotNull(audioPolicy, "Illegal null AudioPolicy argument");
+    Objects.requireNonNull(audioPolicy, "Illegal null AudioPolicy argument");
     AudioPolicy policy = (AudioPolicy) audioPolicy;
     registeredAudioPolicies.remove(getIdForAudioPolicy(policy));
     policy.setRegistration(null);

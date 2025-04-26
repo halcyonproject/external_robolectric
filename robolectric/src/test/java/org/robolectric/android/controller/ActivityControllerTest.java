@@ -28,6 +28,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,14 +102,14 @@ public class ActivityControllerTest {
   }
 
   @Test
-  public void shouldSetIntent() throws Exception {
+  public void shouldSetIntent() {
     MyActivity myActivity = controller.create().get();
     assertThat(myActivity.getIntent()).isNotNull();
     assertThat(myActivity.getIntent().getComponent()).isEqualTo(componentName);
   }
 
   @Test
-  public void shouldSetIntentComponentWithCustomIntentWithoutComponentSet() throws Exception {
+  public void shouldSetIntentComponentWithCustomIntentWithoutComponentSet() {
     MyActivity myActivity =
         Robolectric.buildActivity(MyActivity.class, new Intent(Intent.ACTION_VIEW)).create().get();
     assertThat(myActivity.getIntent().getAction()).isEqualTo(Intent.ACTION_VIEW);
@@ -116,7 +117,7 @@ public class ActivityControllerTest {
   }
 
   @Test
-  public void shouldSetIntentForGivenActivityInstance() throws Exception {
+  public void shouldSetIntentForGivenActivityInstance() {
     ActivityController<MyActivity> activityController =
         ActivityController.of(new MyActivity()).create();
     assertThat(activityController.get().getIntent()).isNotNull();
@@ -124,7 +125,7 @@ public class ActivityControllerTest {
 
   @Test
   @LooperMode(LEGACY)
-  public void whenLooperIsNotPaused_shouldCreateWithMainLooperPaused() throws Exception {
+  public void whenLooperIsNotPaused_shouldCreateWithMainLooperPaused() {
     ShadowLooper.unPauseMainLooper();
     controller.create();
     assertThat(shadowOf(Looper.getMainLooper()).isPaused()).isFalse();
@@ -132,7 +133,7 @@ public class ActivityControllerTest {
   }
 
   @Test
-  public void whenLooperIsAlreadyPaused_shouldCreateWithMainLooperPaused() throws Exception {
+  public void whenLooperIsAlreadyPaused_shouldCreateWithMainLooperPaused() {
     shadowMainLooper().pause();
     controller.create();
     assertThat(transcript).contains("finishedOnCreate");
@@ -448,7 +449,6 @@ public class ActivityControllerTest {
   public void close_transitionsActivityStateToDestroyed() {
     Robolectric.buildActivity(MyActivity.class).close();
     assertThat(transcript).isEmpty();
-    transcript.clear();
 
     Robolectric.buildActivity(MyActivity.class).create().close();
     assertThat(transcript)
@@ -551,14 +551,14 @@ public class ActivityControllerTest {
 
   public static class MyActivity extends Activity {
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    protected void onRestoreInstanceState(@Nonnull Bundle savedInstanceState) {
       super.onRestoreInstanceState(savedInstanceState);
       transcribeWhilePaused("onRestoreInstanceState");
       transcript.add("finishedOnRestoreInstanceState");
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@Nonnull Bundle outState) {
       super.onSaveInstanceState(outState);
       transcribeWhilePaused("onSaveInstanceState");
       transcript.add("finishedOnSaveInstanceState");
@@ -651,7 +651,7 @@ public class ActivityControllerTest {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@Nonnull Configuration newConfig) {
       super.onConfigurationChanged(newConfig);
       transcribeWhilePaused("onConfigurationChanged");
       transcript.add("finishedOnConfigurationChanged");
@@ -687,13 +687,13 @@ public class ActivityControllerTest {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@Nonnull Bundle outState) {
       super.onSaveInstanceState(outState);
       outState.putSerializable("test", new Exception());
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@Nonnull Configuration newConfig) {
       this.newConfig = new Configuration(newConfig);
       super.onConfigurationChanged(newConfig);
     }

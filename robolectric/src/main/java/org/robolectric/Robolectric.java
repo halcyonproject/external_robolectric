@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Xml;
 import android.view.View;
 import java.lang.reflect.Modifier;
 import javax.annotation.Nullable;
@@ -34,6 +35,7 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.util.Logger;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.Scheduler;
+import org.xmlpull.v1.XmlPullParser;
 
 public class Robolectric {
 
@@ -137,7 +139,7 @@ public class Robolectric {
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
-  public static final <T extends Activity> T setupActivity(Class<T> activityClass) {
+  public static <T extends Activity> T setupActivity(Class<T> activityClass) {
     return buildActivity(activityClass).setup().get();
   }
 
@@ -327,7 +329,7 @@ public class Robolectric {
   /**
    * Builder of {@link AttributeSet}s.
    *
-   * @deprecated Use {@link org.robolectric.android.AttributeSetBuilder} instead.
+   * @deprecated Use {@link Xml#asAttributeSet(XmlPullParser)} instead.
    */
   @Deprecated
   public interface AttributeSetBuilder {
@@ -364,12 +366,21 @@ public class Robolectric {
    * Return the foreground scheduler (e.g. the UI thread scheduler).
    *
    * @return Foreground scheduler.
+   * @deprecated The {@link Scheduler} APIs are designed for LEGACY Looper mode. It is strongly
+   *     recommended to migrate tests to PAUSED Looper mode to avoid the need for this API.
    */
+  @Deprecated
   public static Scheduler getForegroundThreadScheduler() {
     return RuntimeEnvironment.getMasterScheduler();
   }
 
-  /** Execute all runnables that have been enqueued on the foreground scheduler. */
+  /**
+   * Execute all runnables that have been enqueued on the foreground scheduler.
+   *
+   * @deprecated The {@link Scheduler} APIs are designed for LEGACY Looper mode. Use {@link
+   *     org.robolectric.shadows.ShadowLooper#runToEndOfTasks} instead.
+   */
+  @Deprecated
   public static void flushForegroundThreadScheduler() {
     getForegroundThreadScheduler().advanceToLastPostedRunnable();
   }
@@ -378,12 +389,21 @@ public class Robolectric {
    * Return the background scheduler.
    *
    * @return Background scheduler.
+   * @deprecated The {@link Scheduler} APIs are designed for LEGACY Looper mode. It is strongly
+   *     recommended to migrate tests to PAUSED Looper mode to avoid the need for this API.
    */
+  @Deprecated
   public static Scheduler getBackgroundThreadScheduler() {
     return ShadowApplication.getInstance().getBackgroundThreadScheduler();
   }
 
-  /** Execute all runnables that have been enqueued on the background scheduler. */
+  /**
+   * Execute all runnables that have been enqueued on the background scheduler.
+   *
+   * @deprecated The {@link Scheduler} APIs are designed for LEGACY Looper mode. Use {@link
+   *     org.robolectric.shadows.ShadowLooper#runToEndOfTasks} instead.
+   */
+  @Deprecated
   public static void flushBackgroundThreadScheduler() {
     getBackgroundThreadScheduler().advanceToLastPostedRunnable();
   }
@@ -398,7 +418,7 @@ public class Robolectric {
           Service instance =
               factory.instantiateService(
                   loadedApk.getClassLoader(), serviceClass.getName(), intent);
-          if (instance != null && serviceClass.isAssignableFrom(instance.getClass())) {
+          if (serviceClass.isAssignableFrom(instance.getClass())) {
             return (T) instance;
           }
         } catch (ReflectiveOperationException e) {
@@ -418,7 +438,7 @@ public class Robolectric {
         try {
           ContentProvider instance =
               factory.instantiateProvider(loadedApk.getClassLoader(), providerClass.getName());
-          if (instance != null && providerClass.isAssignableFrom(instance.getClass())) {
+          if (providerClass.isAssignableFrom(instance.getClass())) {
             return (T) instance;
           }
         } catch (ReflectiveOperationException e) {
@@ -439,7 +459,7 @@ public class Robolectric {
           Activity instance =
               factory.instantiateActivity(
                   loadedApk.getClassLoader(), activityClass.getName(), intent);
-          if (instance != null && activityClass.isAssignableFrom(instance.getClass())) {
+          if (activityClass.isAssignableFrom(instance.getClass())) {
             return (T) instance;
           }
         } catch (ReflectiveOperationException e) {

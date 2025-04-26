@@ -37,7 +37,7 @@ public class ShadowUwbManager {
 
   @Implementation
   protected void registerAdapterStateCallback(Executor executor, AdapterStateCallback callback) {
-    this.callback = callback;
+    ShadowUwbManager.callback = callback;
     callback.onStateChanged(adapterState, stateChangedReason);
   }
 
@@ -51,19 +51,20 @@ public class ShadowUwbManager {
    * @throws IllegalArgumentException if the callback is missing.
    */
   public void simulateAdapterStateChange(@AdapterState int state, @StateChangeReason int reason) {
-    if (this.callback == null) {
+    if (callback == null) {
       throw new IllegalArgumentException("AdapterStateCallback should not be null");
     }
 
     adapterState = state;
     stateChangedReason = reason;
 
-    this.callback.onStateChanged(state, reason);
+    callback.onStateChanged(state, reason);
   }
 
   /**
-   * Simply returns the bundle provided by {@link ShadowUwbManager#setSpecificationInfo()}, allowing
-   * the tester to dictate available features.
+   * Simply returns the bundle provided by {@link
+   * ShadowUwbManager#setSpecificationInfo(PersistableBundle)}, allowing the tester to dictate
+   * available features.
    */
   @Implementation
   protected PersistableBundle getSpecificationInfo() {
@@ -71,7 +72,8 @@ public class ShadowUwbManager {
   }
 
   /**
-   * Returns the adapter state provided by {@link ShadowUwbManager#simulateAdapterStateChange()}.
+   * Returns the adapter state provided by {@link ShadowUwbManager#simulateAdapterStateChange(int,
+   * int)}.
    */
   @Implementation
   @AdapterState
@@ -81,7 +83,8 @@ public class ShadowUwbManager {
 
   /**
    * Instantiates a {@link ShadowRangingSession} with the adapter provided by {@link
-   * ShadowUwbManager#setUwbAdapter()}, allowing the tester dictate the results of ranging attempts.
+   * ShadowUwbManager#setUwbAdapter(ShadowRangingSession.Adapter)}, allowing the tester dictate the
+   * results of ranging attempts.
    *
    * @throws IllegalArgumentException if UWB is disabled.
    */
@@ -100,12 +103,12 @@ public class ShadowUwbManager {
 
   /** Sets the UWB adapter to use for new {@link ShadowRangingSession}s. */
   public void setUwbAdapter(ShadowRangingSession.Adapter adapter) {
-    this.adapter = adapter;
+    ShadowUwbManager.adapter = adapter;
   }
 
   /** Sets the bundle to be returned by {@link android.uwb.UwbManager#getSpecificationInfo}. */
   public void setSpecificationInfo(PersistableBundle specificationInfo) {
-    this.specificationInfo = new PersistableBundle(specificationInfo);
+    ShadowUwbManager.specificationInfo = new PersistableBundle(specificationInfo);
   }
 
   /**
@@ -145,8 +148,8 @@ public class ShadowUwbManager {
       stateChanged = true;
     }
 
-    if (this.callback != null && stateChanged) {
-      this.callback.onStateChanged(
+    if (callback != null && stateChanged) {
+      callback.onStateChanged(
           adapterState, AdapterStateCallback.STATE_CHANGED_REASON_SYSTEM_POLICY);
     }
   }
@@ -162,7 +165,7 @@ public class ShadowUwbManager {
 
   /** Sets the list of bundles to be returned by {@link android.uwb.UwbManager#getChipInfos}. */
   public void setChipInfos(List<PersistableBundle> chipInfos) {
-    this.chipInfos = new ArrayList<>(chipInfos);
+    ShadowUwbManager.chipInfos = new ArrayList<>(chipInfos);
   }
 
   @Resetter

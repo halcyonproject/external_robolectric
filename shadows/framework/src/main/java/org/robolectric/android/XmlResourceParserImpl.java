@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import org.robolectric.res.AttributeResource;
-import org.robolectric.res.Fs;
 import org.robolectric.res.ResName;
 import org.robolectric.res.ResourceTable;
 import org.robolectric.res.StringResources;
@@ -21,6 +20,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 /**
@@ -58,20 +58,6 @@ public class XmlResourceParserImpl implements XmlResourceParser {
   private boolean mDecNextDepth = false;
   private int mDepth = 0;
   private int mEventType = START_DOCUMENT;
-
-  /**
-   * @deprecated use {@link XmlResourceParserImpl#XmlResourceParserImpl(Document, Path, String,
-   *     String, ResourceTable)} instead.
-   */
-  @Deprecated
-  public XmlResourceParserImpl(
-      Document document,
-      String fileName,
-      String packageName,
-      String applicationPackageName,
-      ResourceTable resourceTable) {
-    this(document, Fs.fromUrl(fileName), packageName, applicationPackageName, resourceTable);
-  }
 
   public XmlResourceParserImpl(
       Document document,
@@ -190,7 +176,7 @@ public class XmlResourceParserImpl implements XmlResourceParser {
   }
 
   /*package*/
-  public boolean isWhitespace(String text) throws XmlPullParserException {
+  public boolean isWhitespace(String text) {
     if (text == null) {
       return false;
     }
@@ -418,6 +404,7 @@ public class XmlResourceParserImpl implements XmlResourceParser {
           throw new IllegalArgumentException("END_DOCUMENT should not be found here.");
         }
       case (END_TAG):
+      case (TEXT):
         {
           return navigateToNextNode(currentNode);
         }
@@ -444,15 +431,11 @@ public class XmlResourceParserImpl implements XmlResourceParser {
             return END_TAG;
           }
         }
-      case (TEXT):
-        {
-          return navigateToNextNode(currentNode);
-        }
       default:
         {
           // This can only happen if mEventType is
           // assigned with an unmapped integer.
-          throw new RuntimeException("Robolectric-> Uknown XML event type: " + mEventType);
+          throw new RuntimeException("Robolectric-> Unknown XML event type: " + mEventType);
         }
     }
   }
@@ -464,9 +447,6 @@ public class XmlResourceParserImpl implements XmlResourceParser {
           throw new IllegalArgumentException("ATTRIBUTE_NODE");
         }
       case (Node.CDATA_SECTION_NODE):
-        {
-          return navigateToNextNode(node);
-        }
       case (Node.COMMENT_NODE):
         {
           return navigateToNextNode(node);
@@ -480,6 +460,8 @@ public class XmlResourceParserImpl implements XmlResourceParser {
           throw new IllegalArgumentException("DOCUMENT_NODE");
         }
       case (Node.DOCUMENT_TYPE_NODE):
+      case (Node.NOTATION_NODE):
+      case (Node.PROCESSING_INSTRUCTION_NODE):
         {
           throw new IllegalArgumentException("DOCUMENT_TYPE_NODE");
         }
@@ -495,14 +477,6 @@ public class XmlResourceParserImpl implements XmlResourceParser {
       case (Node.ENTITY_REFERENCE_NODE):
         {
           throw new IllegalArgumentException("ENTITY_REFERENCE_NODE");
-        }
-      case (Node.NOTATION_NODE):
-        {
-          throw new IllegalArgumentException("DOCUMENT_TYPE_NODE");
-        }
-      case (Node.PROCESSING_INSTRUCTION_NODE):
-        {
-          throw new IllegalArgumentException("DOCUMENT_TYPE_NODE");
         }
       case (Node.TEXT_NODE):
         {
@@ -529,9 +503,9 @@ public class XmlResourceParserImpl implements XmlResourceParser {
    * parent.
    *
    * @param node the node which was just explored.
-   * @return {@link XmlPullParserException#START_TAG} if the given node has siblings, {@link
-   *     XmlPullParserException#END_TAG} if the node has no unexplored siblings or {@link
-   *     XmlPullParserException#END_DOCUMENT} if the explored was the root document.
+   * @return {@link XmlPullParser#START_TAG} if the given node has siblings, {@link
+   *     XmlPullParser#END_TAG} if the node has no unexplored siblings or {@link
+   *     XmlPullParser#END_DOCUMENT} if the explored was the root document.
    * @throws XmlPullParserException if the parser fails to parse the next node.
    */
   int navigateToNextNode(Node node) throws XmlPullParserException {
@@ -712,9 +686,7 @@ public class XmlResourceParserImpl implements XmlResourceParser {
   public int getAttributeIntValue(int idx, int defaultValue) {
     try {
       return Integer.parseInt(getAttributeValue(idx));
-    } catch (NumberFormatException ex) {
-      return defaultValue;
-    } catch (IndexOutOfBoundsException ex) {
+    } catch (IndexOutOfBoundsException | NumberFormatException ex) {
       return defaultValue;
     }
   }
@@ -732,9 +704,7 @@ public class XmlResourceParserImpl implements XmlResourceParser {
   public float getAttributeFloatValue(int idx, float defaultValue) {
     try {
       return Float.parseFloat(getAttributeValue(idx));
-    } catch (NumberFormatException ex) {
-      return defaultValue;
-    } catch (IndexOutOfBoundsException ex) {
+    } catch (IndexOutOfBoundsException | NumberFormatException ex) {
       return defaultValue;
     }
   }

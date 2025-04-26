@@ -408,7 +408,7 @@ public class ShadowAccountManagerTest {
   }
 
   @Test
-  public void removeAccount_doesNotNotifyIfUnuccessful() {
+  public void removeAccount_doesNotNotifyIfUnsuccessful() {
     Account account = new Account("name", "type");
 
     TestOnAccountsUpdateListener listener = new TestOnAccountsUpdateListener();
@@ -794,7 +794,7 @@ public class ShadowAccountManagerTest {
   }
 
   @Test
-  public void addAccount_withOptionsShouldSupportGetNextAddAccountOptions() throws Exception {
+  public void addAccount_withOptionsShouldSupportGetNextAddAccountOptions() {
     assertThat(shadowOf(am).getNextAddAccountOptions()).isNull();
 
     shadowOf(am).addAuthenticator("google.com");
@@ -811,7 +811,7 @@ public class ShadowAccountManagerTest {
   }
 
   @Test
-  public void addAccount_withOptionsShouldSupportPeekNextAddAccountOptions() throws Exception {
+  public void addAccount_withOptionsShouldSupportPeekNextAddAccountOptions() {
     assertThat(shadowOf(am).peekNextAddAccountOptions()).isNull();
 
     shadowOf(am).addAuthenticator("google.com");
@@ -847,7 +847,7 @@ public class ShadowAccountManagerTest {
   }
 
   @Test
-  public void testGetAsSystemService() throws Exception {
+  public void testGetAsSystemService() {
     AccountManager systemService =
         (AccountManager)
             ApplicationProvider.getApplicationContext().getSystemService(Context.ACCOUNT_SERVICE);
@@ -970,7 +970,7 @@ public class ShadowAccountManagerTest {
         am.hasFeatures(account, new String[] {"FEATURE_1", "FEATURE_2"}, callback, new Handler());
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.getResult().booleanValue()).isEqualTo(true);
+    assertThat(future.getResult()).isTrue();
 
     shadowMainLooper().idle();
     assertThat(callback.hasBeenCalled()).isTrue();
@@ -987,7 +987,7 @@ public class ShadowAccountManagerTest {
         am.hasFeatures(account, new String[] {"FEATURE_1", "FEATURE_2"}, callback, new Handler());
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.getResult().booleanValue()).isEqualTo(false);
+    assertThat(future.getResult()).isFalse();
     shadowMainLooper().idle();
     assertThat(callback.hasBeenCalled()).isTrue();
   }
@@ -1090,7 +1090,7 @@ public class ShadowAccountManagerTest {
   }
 
   @Test
-  public void removeAllAccounts() throws Exception {
+  public void removeAllAccounts() {
 
     Account account = new Account("name@gmail.com", "gmail.com");
     shadowOf(am).addAccount(account);

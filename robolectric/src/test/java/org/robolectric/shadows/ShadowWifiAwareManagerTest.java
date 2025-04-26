@@ -20,6 +20,7 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,8 +74,7 @@ public final class ShadowWifiAwareManagerTest {
   }
 
   @Test
-  public void attach_shouldNotAttachSessionIfSessionDetachedAndWifiAwareUnavailable()
-      throws Exception {
+  public void attach_shouldNotAttachSessionIfSessionDetachedAndWifiAwareUnavailable() {
     shadowOf(wifiAwareManager).setAvailable(false);
     shadowOf(wifiAwareManager).setSessionDetached(true);
     TestAttachCallback testAttachCallback = new TestAttachCallback();
@@ -188,12 +188,12 @@ public final class ShadowWifiAwareManagerTest {
     private boolean subscribeSuccess;
 
     @Override
-    public void onPublishStarted(PublishDiscoverySession publishDiscoverySession) {
+    public void onPublishStarted(@Nonnull PublishDiscoverySession publishDiscoverySession) {
       publishSuccess = true;
     }
 
     @Override
-    public void onSubscribeStarted(SubscribeDiscoverySession subscribeDiscoverySession) {
+    public void onSubscribeStarted(@Nonnull SubscribeDiscoverySession subscribeDiscoverySession) {
       subscribeSuccess = true;
     }
   }

@@ -334,72 +334,69 @@ public class AndroidTestEnvironment implements TestEnvironment {
 
     RuntimeEnvironment.application = application;
 
-    if (application != null) {
-      final Class<?> appBindDataClass;
-      try {
-        appBindDataClass = Class.forName("android.app.ActivityThread$AppBindData");
-      } catch (ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-      final Object appBindData = ReflectionHelpers.callConstructor(appBindDataClass);
-      final _AppBindData_ _appBindData_ = reflector(_AppBindData_.class, appBindData);
-      _appBindData_.setProcessName(parsedPackage.packageName);
-      _appBindData_.setAppInfo(applicationInfo);
-      activityThreadReflector.setBoundApplication(appBindData);
-
-      final LoadedApk loadedApk =
-          activityThread.getPackageInfo(applicationInfo, null, Context.CONTEXT_INCLUDE_CODE);
-      final _LoadedApk_ _loadedApk_ = reflector(_LoadedApk_.class, loadedApk);
-
-      Context contextImpl =
-          reflector(_ContextImpl_.class).createAppContext(activityThread, loadedApk);
-      ShadowPackageManager shadowPackageManager = Shadow.extract(contextImpl.getPackageManager());
-      shadowPackageManager.addPackageInternal(parsedPackage);
-      activityThreadReflector.setInitialApplication(application);
-      ShadowApplication shadowApplication = Shadow.extract(application);
-      shadowApplication.callAttach(contextImpl);
-      reflector(_ContextImpl_.class, contextImpl).setOuterContext(application);
-      if (apiLevel >= VERSION_CODES.O) {
-        reflector(_ContextImpl_.class, contextImpl)
-            .setClassLoader(this.getClass().getClassLoader());
-      }
-
-      Resources appResources = application.getResources();
-      _loadedApk_.setResources(appResources);
-      _loadedApk_.setApplication(application);
-      if (RuntimeEnvironment.getApiLevel() >= VERSION_CODES.O) {
-        // Preload fonts resources
-        FontsContract.setApplicationContextForResources(application);
-      }
-      registerBroadcastReceivers(application, appManifest, loadedApk);
-
-      appResources.updateConfiguration(androidConfiguration, Bootstrap.getDisplayMetrics());
-
-      // Circumvent the 'No Compatibility callbacks set!' log. See #8509
-      if (apiLevel >= AndroidVersions.V.SDK_INT) {
-        // Adds loggableChanges parameter.
-        ReflectionHelpers.callStaticMethod(
-            AppCompatCallbacks.class,
-            "install",
-            ClassParameter.from(long[].class, new long[0]),
-            ClassParameter.from(long[].class, new long[0]));
-      } else if (apiLevel >= AndroidVersions.R.SDK_INT) {
-        // Invoke the previous version.
-        ReflectionHelpers.callStaticMethod(
-            AppCompatCallbacks.class, "install", ClassParameter.from(long[].class, new long[0]));
-      }
-
-      if (RuntimeEnvironment.getApiLevel() >= Q
-          && Boolean.parseBoolean(
-              System.getProperty("robolectric.installFakeMediaProvider", "true"))) {
-        Robolectric.setupContentProvider(FakeMediaProvider.class, MediaStore.AUTHORITY);
-      }
-
-      PerfStatsCollector.getInstance()
-          .measure(
-              "application onCreate()",
-              () -> androidInstrumentation.callApplicationOnCreate(application));
+    final Class<?> appBindDataClass;
+    try {
+      appBindDataClass = Class.forName("android.app.ActivityThread$AppBindData");
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
     }
+    final Object appBindData = ReflectionHelpers.callConstructor(appBindDataClass);
+    final _AppBindData_ _appBindData_ = reflector(_AppBindData_.class, appBindData);
+    _appBindData_.setProcessName(parsedPackage.packageName);
+    _appBindData_.setAppInfo(applicationInfo);
+    activityThreadReflector.setBoundApplication(appBindData);
+
+    final LoadedApk loadedApk =
+        activityThread.getPackageInfo(applicationInfo, null, Context.CONTEXT_INCLUDE_CODE);
+    final _LoadedApk_ _loadedApk_ = reflector(_LoadedApk_.class, loadedApk);
+
+    Context contextImpl =
+        reflector(_ContextImpl_.class).createAppContext(activityThread, loadedApk);
+    ShadowPackageManager shadowPackageManager = Shadow.extract(contextImpl.getPackageManager());
+    shadowPackageManager.addPackageInternal(parsedPackage);
+    activityThreadReflector.setInitialApplication(application);
+    ShadowApplication shadowApplication = Shadow.extract(application);
+    shadowApplication.callAttach(contextImpl);
+    reflector(_ContextImpl_.class, contextImpl).setOuterContext(application);
+    if (apiLevel >= VERSION_CODES.O) {
+      reflector(_ContextImpl_.class, contextImpl).setClassLoader(this.getClass().getClassLoader());
+    }
+
+    Resources appResources = application.getResources();
+    _loadedApk_.setResources(appResources);
+    _loadedApk_.setApplication(application);
+    if (RuntimeEnvironment.getApiLevel() >= VERSION_CODES.O) {
+      // Preload fonts resources
+      FontsContract.setApplicationContextForResources(application);
+    }
+    registerBroadcastReceivers(application, appManifest, loadedApk);
+
+    appResources.updateConfiguration(androidConfiguration, Bootstrap.getDisplayMetrics());
+
+    // Circumvent the 'No Compatibility callbacks set!' log. See #8509
+    if (apiLevel >= AndroidVersions.V.SDK_INT) {
+      // Adds loggableChanges parameter.
+      ReflectionHelpers.callStaticMethod(
+          AppCompatCallbacks.class,
+          "install",
+          ClassParameter.from(long[].class, new long[0]),
+          ClassParameter.from(long[].class, new long[0]));
+    } else if (apiLevel >= AndroidVersions.R.SDK_INT) {
+      // Invoke the previous version.
+      ReflectionHelpers.callStaticMethod(
+          AppCompatCallbacks.class, "install", ClassParameter.from(long[].class, new long[0]));
+    }
+
+    if (RuntimeEnvironment.getApiLevel() >= Q
+        && Boolean.parseBoolean(
+            System.getProperty("robolectric.installFakeMediaProvider", "true"))) {
+      Robolectric.setupContentProvider(FakeMediaProvider.class, MediaStore.AUTHORITY);
+    }
+
+    PerfStatsCollector.getInstance()
+        .measure(
+            "application onCreate()",
+            () -> androidInstrumentation.callApplicationOnCreate(application));
 
     return application;
   }
@@ -422,13 +419,12 @@ public class AndroidTestEnvironment implements TestEnvironment {
       parsedPackage = ShadowPackageParser.callParsePackage(packageFile);
     } else {
       parsedPackage = new Package("org.robolectric.default");
-      parsedPackage.applicationInfo.targetSdkVersion = appManifest.getTargetSdkVersion();
     }
-
-    if (parsedPackage != null
-        && parsedPackage.applicationInfo != null
-        && RuntimeEnvironment.getApiLevel() >= P) {
-      parsedPackage.applicationInfo.appComponentFactory = appManifest.getAppComponentFactory();
+    if (parsedPackage != null && parsedPackage.applicationInfo != null) {
+      parsedPackage.applicationInfo.targetSdkVersion = appManifest.getTargetSdkVersion();
+      if (RuntimeEnvironment.getApiLevel() >= P) {
+        parsedPackage.applicationInfo.appComponentFactory = appManifest.getAppComponentFactory();
+      }
     }
     return parsedPackage;
   }
@@ -668,8 +664,20 @@ public class AndroidTestEnvironment implements TestEnvironment {
       }
       String receiverClassName = receiver.getName();
       if (loadedApk != null && RuntimeEnvironment.getApiLevel() >= P) {
-        application.registerReceiver(
-            newBroadcastReceiverFromP(receiverClassName, loadedApk), filter);
+        if (RuntimeEnvironment.getApiLevel() >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+          // In Robolectric, we simulate server in the client part, and we need to inject
+          // receiver exported flags based on the definition in the AndroidManifest.xml
+          // to avoid receiver exported flags checking reporting error for system's
+          // registration of static receivers in AndroidManifest.xml as Robolectric reuses
+          // common APIs to simulate server's behavior and behave for client APIs.
+          application.registerReceiver(
+              newBroadcastReceiverFromP(receiverClassName, loadedApk),
+              filter,
+              receiver.isExported() ? Context.RECEIVER_EXPORTED : Context.RECEIVER_NOT_EXPORTED);
+        } else {
+          application.registerReceiver(
+              newBroadcastReceiverFromP(receiverClassName, loadedApk), filter);
+        }
       } else {
         application.registerReceiver((BroadcastReceiver) newInstanceOf(receiverClassName), filter);
       }

@@ -200,7 +200,7 @@ public class ShadowTextToSpeech {
               Voice.QUALITY_NORMAL,
               Voice.LATENCY_NORMAL,
               /* requiresNetworkConnection= */ false,
-              new HashSet<String>()));
+              new HashSet<>()));
     }
 
     return languageAvailability;
@@ -372,6 +372,6 @@ public class ShadowTextToSpeech {
   interface TextToSpeechReflector {
 
     @Direct
-    int speak(final String text, final int queueMode, final HashMap params);
+    int speak(final String text, final int queueMode, final HashMap<?, ?> params);
   }
 }

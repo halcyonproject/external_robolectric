@@ -9,10 +9,11 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.HiddenApi;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.Resetter;
 
 /**
- * A shadow SystemClock for {@link LooperMode.Mode.LEGACY}
+ * A shadow SystemClock for {@link LooperMode.Mode#LEGACY}
  *
  * <p>In LEGACY LooperMode, Robolectric's concept of current time is base on the current time of the
  * UI Scheduler for consistency with previous implementations. This is not ideal, since both
@@ -24,7 +25,7 @@ import org.robolectric.annotation.Resetter;
     // turn off shadowOf generation
     isInAndroidSdk = false)
 public class ShadowLegacySystemClock extends ShadowSystemClock {
-  private static long bootedAt = 0;
+  private static final long bootedAt = 0;
   private static long nanoTime = 0;
   private static final int MILLIS_PER_NANO = 1000000;
 

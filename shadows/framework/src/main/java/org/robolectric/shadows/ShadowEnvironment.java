@@ -298,7 +298,7 @@ public class ShadowEnvironment {
   /**
    * Sets the {@link #getExternalStorageState(File)} for given directory.
    *
-   * @param externalStorageState Value to return from {@link #getExternalStorageState(File)}.
+   * @param state Value to return from {@link #getExternalStorageState(File)}.
    */
   public static void setExternalStorageState(File directory, String state) {
     storageState.put(directory.toPath(), state);
@@ -309,7 +309,7 @@ public class ShadowEnvironment {
 
     @Implementation(minSdk = M)
     protected File[] getExternalDirs() {
-      return externalDirs.toArray(new File[externalDirs.size()]);
+      return externalDirs.toArray(new File[0]);
     }
   }
 

@@ -13,6 +13,7 @@ import android.media.MediaFormat;
 import android.util.Range;
 import com.google.common.base.Preconditions;
 import java.util.HashSet;
+import java.util.Objects;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
@@ -45,7 +46,7 @@ public class MediaCodecInfoBuilder {
    * @throws NullPointerException if name is null.
    */
   public MediaCodecInfoBuilder setName(String name) {
-    this.name = Preconditions.checkNotNull(name);
+    this.name = Objects.requireNonNull(name);
     return this;
   }
 
@@ -72,7 +73,7 @@ public class MediaCodecInfoBuilder {
   }
 
   /**
-   * Sets whether the codec is softwrare only or not.
+   * Sets whether the codec is software only or not.
    *
    * @param isSoftwareOnly a boolean to indicate whether the codec is software only {@code true} or
    *     not {@code false}. Default value is {@code false}.
@@ -108,7 +109,7 @@ public class MediaCodecInfoBuilder {
   }
 
   public MediaCodecInfo build() {
-    Preconditions.checkNotNull(name, "Codec name is not set.");
+    Objects.requireNonNull(name, "Codec name is not set.");
 
     if (RuntimeEnvironment.getApiLevel() >= Q) {
       int flags = getCodecFlags();
@@ -190,18 +191,17 @@ public class MediaCodecInfoBuilder {
      * Sets media format.
      *
      * @param mediaFormat a {@link MediaFormat} supported by the codec. It is a requirement for
-     *     mediaFormat to have {@link MediaFormat.KEY_MIME} set. Other keys are optional. Setting
-     *     {@link MediaFormat.KEY_WIDTH}, {@link MediaFormat.KEY_MAX_WIDTH} and {@link
-     *     MediaFormat.KEY_HEIGHT}, {@link MediaFormat.KEY_MAX_HEIGHT} will set the minimum and
+     *     mediaFormat to have {@link MediaFormat#KEY_MIME} set. Other keys are optional. Setting
+     *     {@link MediaFormat#KEY_WIDTH}, {@link MediaFormat#KEY_MAX_WIDTH} and {@link
+     *     MediaFormat#KEY_HEIGHT}, {@link MediaFormat#KEY_MAX_HEIGHT} will set the minimum and
      *     maximum width, height respectively. For backwards compatibility, setting only {@link
-     *     MediaFormat.KEY_WIDTH}, {@link MediaFormat.KEY_HEIGHT} will only set the maximum width,
+     *     MediaFormat#KEY_WIDTH}, {@link MediaFormat#KEY_HEIGHT} will only set the maximum width,
      *     height respectively.
-     * @throws {@link NullPointerException} if mediaFormat is null.
-     * @throws {@link IllegalArgumentException} if mediaFormat does not have {@link
-     *     MediaFormat.KEY_MIME}.
+     * @throws NullPointerException if mediaFormat is null.
+     * @throws IllegalArgumentException if mediaFormat does not have {@link MediaFormat#KEY_MIME}.
      */
     public CodecCapabilitiesBuilder setMediaFormat(MediaFormat mediaFormat) {
-      Preconditions.checkNotNull(mediaFormat);
+      Objects.requireNonNull(mediaFormat);
       Preconditions.checkArgument(
           mediaFormat.getString(MediaFormat.KEY_MIME) != null,
           "MIME type of the format is not set.");
@@ -238,7 +238,7 @@ public class MediaCodecInfoBuilder {
      * @throws NullPointerException if profileLevels is null.
      */
     public CodecCapabilitiesBuilder setProfileLevels(CodecProfileLevel[] profileLevels) {
-      this.profileLevels = Preconditions.checkNotNull(profileLevels);
+      this.profileLevels = Objects.requireNonNull(profileLevels);
       return this;
     }
 
@@ -297,8 +297,8 @@ public class MediaCodecInfoBuilder {
     }
 
     public CodecCapabilities build() {
-      Preconditions.checkNotNull(mediaFormat, "mediaFormat is not set.");
-      Preconditions.checkNotNull(profileLevels, "profileLevels is not set.");
+      Objects.requireNonNull(mediaFormat, "mediaFormat is not set.");
+      Objects.requireNonNull(profileLevels, "profileLevels is not set.");
 
       final String mime = mediaFormat.getString(MediaFormat.KEY_MIME);
       final boolean isVideoCodec = mime.startsWith("video/");
@@ -309,13 +309,13 @@ public class MediaCodecInfoBuilder {
 
       caps.profileLevels = profileLevels;
       if (isVideoCodec) {
-        Preconditions.checkNotNull(colorFormats, "colorFormats should not be null for video codec");
+        Objects.requireNonNull(colorFormats, "colorFormats should not be null for video codec");
         caps.colorFormats = colorFormats;
       } else {
         Preconditions.checkArgument(
             colorFormats == null || colorFormats.length == 0,
             "colorFormats should not be set for audio codec");
-        caps.colorFormats = new int[0]; // To prevet crash in CodecCapabilities.dup().
+        caps.colorFormats = new int[0]; // To prevent crash in CodecCapabilities.dup().
       }
 
       capsReflector.setMime(mime);
@@ -411,8 +411,8 @@ public class MediaCodecInfoBuilder {
       int flagsSupported = 0;
       Object[] validFeatures = ReflectionHelpers.callInstanceMethod(parent, "getValidFeatures");
       for (Object validFeature : validFeatures) {
-        String featureName = (String) ReflectionHelpers.getField(validFeature, "mName");
-        int featureValue = (int) ReflectionHelpers.getField(validFeature, "mValue");
+        String featureName = ReflectionHelpers.getField(validFeature, "mName");
+        int featureValue = ReflectionHelpers.getField(validFeature, "mValue");
         if (mediaFormat.containsFeature(featureName)
             && mediaFormat.getFeatureEnabled(featureName)) {
           flagsSupported |= featureValue;
@@ -430,8 +430,8 @@ public class MediaCodecInfoBuilder {
       Object[] validFeatures = ReflectionHelpers.callInstanceMethod(parent, "getValidFeatures");
       HashSet<String> requiredFeaturesSet = new HashSet<>(asList(requiredFeatures));
       for (Object validFeature : validFeatures) {
-        String featureName = (String) ReflectionHelpers.getField(validFeature, "mName");
-        int featureValue = (int) ReflectionHelpers.getField(validFeature, "mValue");
+        String featureName = ReflectionHelpers.getField(validFeature, "mName");
+        int featureValue = ReflectionHelpers.getField(validFeature, "mValue");
         if (requiredFeaturesSet.contains(featureName)) {
           flagsRequired |= featureValue;
         }

@@ -8,10 +8,10 @@ import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import android.os.UserManager;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
-import com.google.common.base.Preconditions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.HiddenApi;
 import org.robolectric.annotation.Implementation;
@@ -44,15 +44,15 @@ public class ShadowStorageManager {
   /**
    * Adds a {@link StorageVolume} to the list returned by {@link #getStorageVolumes()}.
    *
-   * @param StorageVolume to add to list
+   * @param storageVolume to add to list
    */
   public void addStorageVolume(StorageVolume storageVolume) {
-    Preconditions.checkNotNull(storageVolume);
+    Objects.requireNonNull(storageVolume);
     storageVolumeList.add(storageVolume);
   }
 
   /**
-   * Returns the storage volumes configured via {@link #addStorageVolume()}.
+   * Returns the storage volumes configured via {@link #addStorageVolume(StorageVolume)}.
    *
    * @return StorageVolume list
    */
@@ -70,7 +70,7 @@ public class ShadowStorageManager {
    * Checks whether File belongs to any {@link StorageVolume} in the list returned by {@link
    * #getStorageVolumes()}.
    *
-   * @param File to check
+   * @param file to check
    * @return StorageVolume for the file
    */
   @Implementation(minSdk = N)

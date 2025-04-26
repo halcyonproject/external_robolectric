@@ -674,7 +674,7 @@ public final class AndroidVersions {
    * Version: 14 <br>
    * ShortCode: U <br>
    * SDK API Level: 34 <br>
-   * release: false <br>
+   * release: true <br>
    */
   public static final class U extends AndroidReleased {
 
@@ -731,17 +731,46 @@ public final class AndroidVersions {
   }
 
   /**
-   * Baklava is an InDevelopment SDK after V, the name scheme has wrapped the alphabet.
+   * Baklava is an SDK after V, the name scheme has wrapped the alphabet.
    *
    * <p>All values here subject to change.
    */
-  public static final class Baklava extends AndroidUnreleased {
+  public static final class Baklava extends AndroidReleased {
 
     public static final int SDK_INT = 36;
 
     public static final String SHORT_CODE = "Baklava";
 
     public static final String VERSION = "16";
+
+    @Override
+    public int getSdkInt() {
+      return SDK_INT;
+    }
+
+    @Override
+    public String getShortCode() {
+      return SHORT_CODE;
+    }
+
+    @Override
+    public String getVersion() {
+      return VERSION;
+    }
+  }
+
+  /**
+   * Placeholder for the next InDevelopment release after Baklava.
+   *
+   * <p>All values here subject to change.
+   */
+  public static final class PostBaklava extends AndroidUnreleased {
+
+    public static final int SDK_INT = 37;
+
+    public static final String SHORT_CODE = "PostBaklava";
+
+    public static final String VERSION = "17";
 
     @Override
     public int getSdkInt() {
@@ -942,9 +971,9 @@ public final class AndroidVersions {
                 .append(activeCodenameLetter)
                 .append("\n");
           } else {
-            // attempt to find assume the fullname is the "shortCode", aka "Sv2", "OMR1".
+            // attempt to find assume the full name is the "shortCode", aka "Sv2", "OMR1".
             current = shortCodeToAllReleases.get(codename);
-            // else, assume the fullname is the first letter is correct.
+            // else, assume the full name is the first letter is correct.
             if (current == null) {
               current = shortCodeToAllReleases.get(foundCode);
             }
@@ -1003,6 +1032,22 @@ public final class AndroidVersions {
 
       return current;
     }
+
+    // Computes sdk int from short name. Returns -1 if not found.
+    public int computeSdkIntFromShortCode(String shortCode) {
+      for (AndroidRelease release : this.allReleases) {
+        if (release.getShortCode().equals(shortCode)) {
+          return release.getSdkInt();
+        }
+      }
+      return -1;
+    }
+  }
+
+  /** Computes sdk int from short name. Returns -1 if not found. */
+  public static int computeSdkIntFromShortCode(String shortCode) {
+    SdkInformation information = gatherStaticSdkInformationFromThisClass();
+    return information.computeSdkIntFromShortCode(shortCode);
   }
 
   /**
@@ -1062,9 +1107,9 @@ public final class AndroidVersions {
     int sdk = sdkVersionString == null ? 0 : Integer.parseInt(sdkVersionString);
     // "REL"
     String release = buildProps.getProperty("ro.build.version.release");
-    // "Tiramasu", "UpsideDownCake"
+    // "Tiramisu", "UpsideDownCake"
     String codename = buildProps.getProperty("ro.build.version.codename");
-    // "Tiramasu,UpsideDownCake", "UpsideDownCake", "REL"
+    // "Tiramisu,UpsideDownCake", "UpsideDownCake", "REL"
     String codenames = buildProps.getProperty("ro.build.version.all_codenames");
     String[] allCodeNames = codenames == null ? new String[0] : codenames.split(",");
     String[] activeCodeNames =

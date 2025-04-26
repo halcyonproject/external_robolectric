@@ -49,6 +49,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import javax.annotation.Nonnull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -149,10 +150,10 @@ public class ShadowWifiManagerTest {
   @Test
   public void getIsScanAlwaysAvailable() {
     shadowOf(wifiManager).setIsScanAlwaysAvailable(true);
-    assertThat(wifiManager.isScanAlwaysAvailable()).isEqualTo(true);
+    assertThat(wifiManager.isScanAlwaysAvailable()).isTrue();
 
     shadowOf(wifiManager).setIsScanAlwaysAvailable(false);
-    assertThat(wifiManager.isScanAlwaysAvailable()).isEqualTo(false);
+    assertThat(wifiManager.isScanAlwaysAvailable()).isFalse();
   }
 
   @Test
@@ -230,7 +231,7 @@ public class ShadowWifiManagerTest {
 
     assertThat(wifiManager.updateNetwork(configuration)).isEqualTo(networkId);
     List<WifiConfiguration> configuredNetworks = wifiManager.getConfiguredNetworks();
-    assertThat(configuredNetworks.size()).isEqualTo(2);
+    assertThat(configuredNetworks).hasSize(2);
     assertThat(configuration.priority).isEqualTo(44);
     assertThat(configuredNetworks.get(1).priority).isEqualTo(44);
   }
@@ -260,12 +261,12 @@ public class ShadowWifiManagerTest {
     wifiManager.addNetwork(wifiConfiguration);
 
     List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
-    assertThat(list.size()).isEqualTo(1);
+    assertThat(list).hasSize(1);
 
     wifiManager.removeNetwork(0);
 
     list = wifiManager.getConfiguredNetworks();
-    assertThat(list.size()).isEqualTo(0);
+    assertThat(list).isEmpty();
   }
 
   @Test
@@ -356,16 +357,16 @@ public class ShadowWifiManagerTest {
     wifiManager.addNetwork(wifiConfiguration);
 
     List<WifiConfiguration> list = wifiManager.getPrivilegedConfiguredNetworks();
-    assertThat(list.size()).isEqualTo(1);
+    assertThat(list).hasSize(1);
 
     wifiManager.removeNetwork(0);
 
     list = wifiManager.getPrivilegedConfiguredNetworks();
-    assertThat(list.size()).isEqualTo(0);
+    assertThat(list).isEmpty();
   }
 
   @Test
-  public void updateNetwork_shouldRejectNullandNewConfigs() {
+  public void updateNetwork_shouldRejectNullAndNewConfigs() {
     WifiConfiguration config = new WifiConfiguration();
     config.networkId = -1;
     assertThat(wifiManager.updateNetwork(config)).isEqualTo(-1);
@@ -406,7 +407,7 @@ public class ShadowWifiManagerTest {
   }
 
   @Test
-  public void shouldAcquireAndReleaseWifilockRefCounted() {
+  public void shouldAcquireAndReleaseWifiLockRefCounted() {
     WifiManager.WifiLock lock = wifiManager.createWifiLock("TAG");
     lock.acquire();
     lock.acquire();
@@ -418,7 +419,7 @@ public class ShadowWifiManagerTest {
   }
 
   @Test
-  public void shouldAcquireAndReleaseWifilockNonRefCounted() {
+  public void shouldAcquireAndReleaseWifiLockNonRefCounted() {
     WifiManager.WifiLock lock = wifiManager.createWifiLock("TAG");
     lock.setReferenceCounted(false);
     lock.acquire();
@@ -430,7 +431,7 @@ public class ShadowWifiManagerTest {
   }
 
   @Test
-  public void shouldThrowRuntimeExceptionIfWifiLockisUnderlocked() {
+  public void shouldThrowRuntimeExceptionIfWifiLockIsUnderlocked() {
     WifiManager.WifiLock lock = wifiManager.createWifiLock("TAG");
     try {
       lock.release();
@@ -441,7 +442,7 @@ public class ShadowWifiManagerTest {
   }
 
   @Test
-  public void shouldThrowUnsupportedOperationIfWifiLockisOverlocked() {
+  public void shouldThrowUnsupportedOperationIfWifiLockIsOverlocked() {
     WifiManager.WifiLock lock = wifiManager.createWifiLock("TAG");
     try {
       for (int i = 0; i < ShadowWifiManager.ShadowWifiLock.MAX_ACTIVE_LOCKS; i++) {
@@ -483,18 +484,17 @@ public class ShadowWifiManagerTest {
   }
 
   @Test
-  public void shouldThrowRuntimeExceptionIfMulticastLockisUnderlocked() {
+  public void shouldThrowRuntimeExceptionIfMulticastLockIsUnderlocked() {
     MulticastLock lock = wifiManager.createMulticastLock("TAG");
     try {
       lock.release();
       fail("Expected exception");
     } catch (RuntimeException expected) {
     }
-    ;
   }
 
   @Test
-  public void shouldThrowUnsupportedOperationIfMulticastLockisOverlocked() {
+  public void shouldThrowUnsupportedOperationIfMulticastLockIsOverlocked() {
     MulticastLock lock = wifiManager.createMulticastLock("TAG");
     try {
       for (int i = 0; i < ShadowWifiManager.ShadowMulticastLock.MAX_ACTIVE_LOCKS; i++) {
@@ -1387,7 +1387,7 @@ public class ShadowWifiManagerTest {
     private final BlockingQueue<IncomingFailure> incomingFailures = new LinkedBlockingQueue<>();
 
     @Override
-    public void onConnectionFailed(WifiNetworkSpecifier wifiNetworkSpecifier, int i) {
+    public void onConnectionFailed(@Nonnull WifiNetworkSpecifier wifiNetworkSpecifier, int i) {
       incomingFailures.add(new IncomingFailure(wifiNetworkSpecifier, i));
     }
   }

@@ -10,6 +10,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.Window;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,7 +54,7 @@ public class ShadowSurfaceViewTest {
     surfaceHolder.addCallback(callback1);
     surfaceHolder.addCallback(callback2);
 
-    assertThat(fakeSurfaceHolder.getCallbacks().size()).isEqualTo(2);
+    assertThat(fakeSurfaceHolder.getCallbacks()).hasSize(2);
 
     surfaceHolder.removeCallback(callback1);
 
@@ -104,13 +105,13 @@ public class ShadowSurfaceViewTest {
     int updatedHeight;
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {}
+    public void surfaceCreated(@Nonnull SurfaceHolder holder) {}
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {}
+    public void surfaceDestroyed(@Nonnull SurfaceHolder holder) {}
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+    public void surfaceChanged(@Nonnull SurfaceHolder holder, int format, int w, int h) {
       updatedFormat = format;
       updatedWidth = w;
       updatedHeight = h;

@@ -19,7 +19,6 @@ tasks.compileKotlin.configure { compilerOptions.jvmTarget = JvmTarget.JVM_1_8 }
 tasks.compileTestKotlin.configure { compilerOptions.jvmTarget = JvmTarget.JVM_1_8 }
 
 dependencies {
-  api(project(":annotations"))
   api(project(":pluginapi"))
   api(libs.javax.inject)
   api(libs.javax.annotation.api)
@@ -29,8 +28,7 @@ dependencies {
   testCompileOnly(libs.auto.service.annotations)
   testAnnotationProcessor(libs.auto.service)
   testAnnotationProcessor(libs.error.prone.core)
-  implementation(libs.error.prone.annotations)
-
+  testImplementation(libs.findbugs.jsr305)
   testImplementation(libs.junit4)
   testImplementation(libs.truth)
   testImplementation(libs.kotlin.stdlib)

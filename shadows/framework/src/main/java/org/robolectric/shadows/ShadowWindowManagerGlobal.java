@@ -17,11 +17,11 @@ import static android.view.WindowInsets.Type.navigationBars;
 import static android.view.WindowInsets.Type.statusBars;
 import static android.view.WindowInsets.Type.systemBars;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 import static org.robolectric.shadows.ShadowView.useRealGraphics;
 import static org.robolectric.shadows.SystemUi.systemUiForDisplay;
 import static org.robolectric.util.ReflectionHelpers.callConstructor;
@@ -143,7 +143,7 @@ public class ShadowWindowManagerGlobal {
    * ShadowWindowManagerGlobal#startPredictiveBackGesture}. One or more drag progress events can be
    * dispatched by calling {@link #moveBy}. The gesture must be ended by either calling {@link
    * #cancel()} or {@link #close()}, if {@link #cancel()} is called a subsequent call to {@link
-   * close()} will do nothing to allow using the gesture in a try with resources statement:
+   * #close()} will do nothing to allow using the gesture in a try with resources statement:
    *
    * <pre>
    * try (PredictiveBackGesture backGesture =
@@ -183,7 +183,7 @@ public class ShadowWindowManagerGlobal {
             .onBackInvokedCallbackInfo
             .getCallback()
             .onBackProgressed(
-                BackMotionEvents.newBackMotionEvent(edge, touchX, touchY, caclulateProgress()));
+                BackMotionEvents.newBackMotionEvent(edge, touchX, touchY, calculateProgress()));
         ShadowLooper.idleMainLooper();
       } catch (RemoteException e) {
         throw new RuntimeException(e);
@@ -232,7 +232,7 @@ public class ShadowWindowManagerGlobal {
       }
     }
 
-    private float caclulateProgress() {
+    private float calculateProgress() {
       // The real implementation anchors the progress on the start x and resets it each time the
       // threshold is lost, it also calculates a linear and non linear progress area. This
       // implementation is much simpler.
@@ -509,13 +509,13 @@ public class ShadowWindowManagerGlobal {
           if (windowInfo.hasInsetsControl) {
             populateInsetSourceControls(windowInfo, controls);
           } else {
-            Arrays.setAll(controls, i -> null);
+            Arrays.fill(controls, null);
           }
         }
         Rect[] rects = findAll(Rect.class, args);
         int requestedSizeIdx = sdk < S ? 3 : 2;
         configureWindowFrames(
-            checkNotNull(windowInfo),
+            requireNonNull(windowInfo),
             /* inAttrs= */ (WindowManager.LayoutParams) args[sdk <= R ? 2 : 1],
             /* requestedSize= */ new Point(
                 (int) args[requestedSizeIdx], (int) args[requestedSizeIdx + 1]),
@@ -668,7 +668,7 @@ public class ShadowWindowManagerGlobal {
     void sendInsetsControlChanged(
         IWindow window, @Nullable Integer type, boolean hasControlsChanged) {
       int sdk = RuntimeEnvironment.getApiLevel();
-      WindowInfo windowInfo = checkNotNull(windows.get(window));
+      WindowInfo windowInfo = requireNonNull(windows.get(window));
       InsetsState insetsState = new InsetsState(windowInfo.insetsState);
       // On R if we don't remove the sources that aren't changing we'll infinite loop when toggling
       // visibility of multiple bars.
@@ -702,7 +702,7 @@ public class ShadowWindowManagerGlobal {
 
     void sendResize(IWindow window) {
       int sdk = RuntimeEnvironment.getApiLevel();
-      WindowInfo windowInfo = checkNotNull(windows.get(window));
+      WindowInfo windowInfo = requireNonNull(windows.get(window));
       configureWindowFrames(
           windowInfo,
           windowInfo.attrs,

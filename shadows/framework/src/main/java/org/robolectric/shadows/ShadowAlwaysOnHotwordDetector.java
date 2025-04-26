@@ -161,15 +161,16 @@ public class ShadowAlwaysOnHotwordDetector {
     }
   }
 
-  /** Shadow for AsyncTask kicked off in the constructor of AlwaysOnHotwordDetector. */
+  /**
+   * Shadow for AsyncTask kicked off in the constructor of AlwaysOnHotwordDetector for T and below.
+   */
   @Implements(
       className = "android.service.voice.AlwaysOnHotwordDetector$RefreshAvailabiltyTask",
       maxSdk = TIRAMISU,
       isInAndroidSdk = false)
   @SuppressWarnings("robolectric.mismatchedTypes")
-  public static class ShadowRefreshAvailabilityTask<Params, Progress, Result>
+  public static class ShadowRefreshAvailabilityTaskPreU<Params, Progress, Result>
       extends ShadowPausedAsyncTask<Params, Progress, Result> {
-
     @Implementation
     protected int internalGetInitialAvailability() {
       return STATE_KEYPHRASE_ENROLLED;
@@ -178,6 +179,24 @@ public class ShadowAlwaysOnHotwordDetector {
     @Implementation(maxSdk = Q)
     protected boolean internalGetIsEnrolled(int keyphraseId, Locale locale) {
       return true;
+    }
+
+    @Implementation(minSdk = R)
+    protected void internalUpdateEnrolledKeyphraseMetadata() {
+      // No-op, we already set this field in #setEnrollmentFields()
+    }
+  }
+
+  /** Shadow for AsyncTask kicked off in the constructor of AlwaysOnHotwordDetector for U+. */
+  @Implements(
+      className = "android.service.voice.AlwaysOnHotwordDetector$RefreshAvailabilityTask",
+      minSdk = UPSIDE_DOWN_CAKE,
+      isInAndroidSdk = false)
+  @SuppressWarnings("robolectric.mismatchedTypes")
+  public static class ShadowRefreshAvailabilityTask<Params, Progress, Result> {
+    @Implementation
+    protected int internalGetInitialAvailability() {
+      return STATE_KEYPHRASE_ENROLLED;
     }
 
     @Implementation(minSdk = R)

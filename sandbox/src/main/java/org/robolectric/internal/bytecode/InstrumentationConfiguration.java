@@ -69,7 +69,7 @@ public class InstrumentationConfiguration {
       Collection<String> instrumentedPackages,
       Collection<String> instrumentedClasses,
       Collection<String> classesToNotAcquire,
-      Collection<String> packagesToNotAquire,
+      Collection<String> packagesToNotAcquire,
       Collection<String> classesToNotInstrument,
       Collection<String> packagesToNotInstrument,
       String classesToNotInstrumentRegex) {
@@ -78,7 +78,7 @@ public class InstrumentationConfiguration {
     this.instrumentedPackages = ImmutableList.copyOf(instrumentedPackages);
     this.instrumentedClasses = ImmutableSet.copyOf(instrumentedClasses);
     this.classesToNotAcquire = ImmutableSet.copyOf(classesToNotAcquire);
-    this.packagesToNotAcquire = ImmutableSet.copyOf(packagesToNotAquire);
+    this.packagesToNotAcquire = ImmutableSet.copyOf(packagesToNotAcquire);
     this.classesToNotInstrument = ImmutableSet.copyOf(classesToNotInstrument);
     this.packagesToNotInstrument = ImmutableSet.copyOf(packagesToNotInstrument);
     this.classesToNotInstrumentRegex = classesToNotInstrumentRegex;

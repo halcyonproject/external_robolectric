@@ -23,6 +23,7 @@ import org.robolectric.res.Fs;
 import org.robolectric.res.ResourcePath;
 import org.robolectric.res.ResourceTable;
 import org.robolectric.util.Logger;
+import org.robolectric.versioning.AndroidVersions;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -151,12 +152,12 @@ public class AndroidManifest implements UsesSdk {
     return themeRef;
   }
 
-  public String getRClassName() throws Exception {
+  public String getRClassName() {
     parseAndroidManifest();
     return rClassName;
   }
 
-  public Class getRClass() {
+  public Class<?> getRClass() {
     try {
       String rClassName = getRClassName();
       return Class.forName(rClassName);
@@ -220,11 +221,8 @@ public class AndroidManifest implements UsesSdk {
         minSdkVersion =
             getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
 
-        String targetSdkText =
-            getTagAttributeText(manifestDocument, "uses-sdk", "android:targetSdkVersion");
-        if (targetSdkText != null) {
-          targetSdkVersion = Integer.parseInt(targetSdkText);
-        }
+        targetSdkVersion =
+            getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
 
         maxSdkVersion =
             getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:maxSdkVersion");
@@ -249,7 +247,7 @@ public class AndroidManifest implements UsesSdk {
                 + "testOptions.unitTests.includeAndroidResources = true to your build.gradle");
       }
 
-      if (packageName == null || packageName.equals("")) {
+      if (packageName == null || packageName.isEmpty()) {
         packageName = "org.robolectric.default";
       }
 
@@ -435,9 +433,6 @@ public class AndroidManifest implements UsesSdk {
     ActivityData targetActivity = null;
     if (isAlias) {
       String targetName = resolveClassRef(activityAttrs.get(ActivityData.getTargetAttr("android")));
-      if (activityName == null) {
-        return;
-      }
       // The target activity should have been parsed already so if it exists we should find it in
       // activityDatas.
       targetActivity = activityDatas.get(targetName);
@@ -578,7 +573,22 @@ public class AndroidManifest implements UsesSdk {
       final Document doc, final String tag, final String attribute, final Integer defaultValue) {
     String valueString = getTagAttributeText(doc, tag, attribute);
     if (valueString != null) {
-      return Integer.parseInt(valueString);
+      Integer result;
+      try {
+        result = Integer.parseInt(valueString);
+      } catch (NumberFormatException e) {
+        result = defaultValue;
+        // for unfinalized releases, try to parse the value as a string.
+        if (attribute.endsWith("minSdkVersion")
+            || attribute.endsWith("maxSdkVersion")
+            || attribute.endsWith("targetSdkVersion")) {
+          int sdkInt = AndroidVersions.computeSdkIntFromShortCode(valueString);
+          if (sdkInt != -1) {
+            result = sdkInt;
+          }
+        }
+      }
+      return result;
     }
     return defaultValue;
   }
@@ -665,7 +675,7 @@ public class AndroidManifest implements UsesSdk {
   public Map<String, Object> getApplicationMetaData() {
     parseAndroidManifest();
     if (applicationMetaData == null) {
-      applicationMetaData = new MetaData(Collections.<Node>emptyList());
+      applicationMetaData = new MetaData(Collections.emptyList());
     }
     return applicationMetaData.getValueMap();
   }
@@ -842,22 +852,5 @@ public class AndroidManifest implements UsesSdk {
 
   public Path getApkFile() {
     return apkFile;
-  }
-
-  /**
-   * @deprecated Do not use.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public final boolean supportsLegacyResourcesMode() {
-    return true;
-  }
-
-  /**
-   * @deprecated Do not use.
-   */
-  @Deprecated
-  public synchronized boolean supportsBinaryResourcesMode() {
-    return true;
   }
 }
