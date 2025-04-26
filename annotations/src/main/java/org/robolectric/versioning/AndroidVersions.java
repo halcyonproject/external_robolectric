@@ -1032,6 +1032,22 @@ public final class AndroidVersions {
 
       return current;
     }
+
+    // Computes sdk int from short name. Returns -1 if not found.
+    public int computeSdkIntFromShortCode(String shortCode) {
+      for (AndroidRelease release : this.allReleases) {
+        if (release.getShortCode().equals(shortCode)) {
+          return release.getSdkInt();
+        }
+      }
+      return -1;
+    }
+  }
+
+  /** Computes sdk int from short name. Returns -1 if not found. */
+  public static int computeSdkIntFromShortCode(String shortCode) {
+    SdkInformation information = gatherStaticSdkInformationFromThisClass();
+    return information.computeSdkIntFromShortCode(shortCode);
   }
 
   /**

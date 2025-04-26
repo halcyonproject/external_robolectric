@@ -23,6 +23,7 @@ import org.robolectric.res.Fs;
 import org.robolectric.res.ResourcePath;
 import org.robolectric.res.ResourceTable;
 import org.robolectric.util.Logger;
+import org.robolectric.versioning.AndroidVersions;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -220,11 +221,8 @@ public class AndroidManifest implements UsesSdk {
         minSdkVersion =
             getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
 
-        String targetSdkText =
-            getTagAttributeText(manifestDocument, "uses-sdk", "android:targetSdkVersion");
-        if (targetSdkText != null) {
-          targetSdkVersion = Integer.parseInt(targetSdkText);
-        }
+        targetSdkVersion =
+            getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
 
         maxSdkVersion =
             getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:maxSdkVersion");
@@ -575,7 +573,22 @@ public class AndroidManifest implements UsesSdk {
       final Document doc, final String tag, final String attribute, final Integer defaultValue) {
     String valueString = getTagAttributeText(doc, tag, attribute);
     if (valueString != null) {
-      return Integer.parseInt(valueString);
+      Integer result;
+      try {
+        result = Integer.parseInt(valueString);
+      } catch (NumberFormatException e) {
+        result = defaultValue;
+        // for unfinalized releases, try to parse the value as a string.
+        if (attribute.endsWith("minSdkVersion")
+            || attribute.endsWith("maxSdkVersion")
+            || attribute.endsWith("targetSdkVersion")) {
+          int sdkInt = AndroidVersions.computeSdkIntFromShortCode(valueString);
+          if (sdkInt != -1) {
+            result = sdkInt;
+          }
+        }
+      }
+      return result;
     }
     return defaultValue;
   }
