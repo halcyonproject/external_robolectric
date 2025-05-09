@@ -24,6 +24,7 @@ import org.robolectric.res.ResourcePath;
 import org.robolectric.res.ResourceTable;
 import org.robolectric.util.Logger;
 import org.robolectric.versioning.AndroidVersions;
+import org.robolectric.versioning.AndroidVersions.AndroidRelease;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -219,13 +220,13 @@ public class AndroidManifest implements UsesSdk {
         }
 
         minSdkVersion =
-            getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
+            getTagAttributeSdkIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
 
         targetSdkVersion =
-            getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
+            getTagAttributeSdkIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
 
         maxSdkVersion =
-            getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:maxSdkVersion");
+            getTagAttributeSdkIntValue(manifestDocument, "uses-sdk", "android:maxSdkVersion");
         if (processName == null) {
           processName = packageName;
         }
@@ -565,11 +566,6 @@ public class AndroidManifest implements UsesSdk {
   }
 
   private Integer getTagAttributeIntValue(
-      final Document doc, final String tag, final String attribute) {
-    return getTagAttributeIntValue(doc, tag, attribute, null);
-  }
-
-  private Integer getTagAttributeIntValue(
       final Document doc, final String tag, final String attribute, final Integer defaultValue) {
     String valueString = getTagAttributeText(doc, tag, attribute);
     if (valueString != null) {
@@ -591,6 +587,36 @@ public class AndroidManifest implements UsesSdk {
       return result;
     }
     return defaultValue;
+  }
+
+  private Integer getTagAttributeSdkIntValue(
+      final Document doc, final String tag, final String attribute) {
+    String sdkString = getTagAttributeText(doc, tag, attribute);
+    if (sdkString != null) {
+      try {
+        return Integer.parseInt(sdkString);
+      } catch (NumberFormatException e) {
+        // for unfinalized releases, try to parse the value as a string.
+        List<AndroidRelease> releasedReleases = AndroidVersions.getReleases();
+        List<AndroidRelease> unreleasedReleases = AndroidVersions.getUnreleased();
+
+        // check the latest release
+        if (!releasedReleases.isEmpty()) {
+          AndroidRelease latestRelease = releasedReleases.get(releasedReleases.size() - 1);
+          if (latestRelease.getShortCode().equals(sdkString)) {
+            return latestRelease.getSdkInt();
+          }
+        } else {
+          // check the unreleased versions
+          for (AndroidRelease release : unreleasedReleases) {
+            if (release.getShortCode().equals(sdkString)) {
+              return release.getSdkInt();
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   public String getApplicationName() {
