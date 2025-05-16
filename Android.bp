@@ -243,6 +243,7 @@ java_host_for_device {
         "//packages/apps/Car/Launcher/libs/appgrid/lib/robotests:__pkg__",
         "//packages/apps/Car/libs/car-ui-lib:__pkg__",
         "//packages/apps/Car/Notification/tests/robotests:__pkg__",
+        "//packages/apps/Car/SensitiveAppLock/tests:__pkg__",
         "//packages/apps/Car/Settings/tests/deviceless:__pkg__",
         "//packages/apps/Car/Settings/tests/multivalent:__pkg__",
         "//packages/apps/Car/Settings/tests/robotests:__pkg__",
