@@ -23,13 +23,13 @@ public class ShadowSensor {
   /** Constructs a {@link Sensor} with a given type. */
   public static Sensor newInstance(int type) {
     Sensor sensor = Shadow.newInstanceOf(Sensor.class);
-    reflector(_Sensor_.class, sensor).setTypeCompat(type);
+    reflector(SensorReflector.class, sensor).setTypeCompat(type);
     return sensor;
   }
 
   /** Controls the return value of {@link Sensor#isWakeUpSensor()}. */
   public void setWakeUpFlag(boolean wakeup) {
-    int wakeUpSensorMask = reflector(_Sensor_.class).getWakeUpSensorFlag();
+    int wakeUpSensorMask = reflector(SensorReflector.class).getWakeUpSensorFlag();
 
     if (wakeup) {
       setMask(wakeUpSensorMask);
@@ -50,22 +50,27 @@ public class ShadowSensor {
 
   /** Sets the return value for {@link Sensor#getMinDelay}. */
   public void setMinDelay(int delay) {
-    reflector(_Sensor_.class, realSensor).setMinDelay(delay);
+    reflector(SensorReflector.class, realSensor).setMinDelay(delay);
   }
 
   private void setMask(int mask) {
-    _Sensor_ _sensor_ = reflector(_Sensor_.class, realSensor);
-    _sensor_.setFlags(_sensor_.getFlags() | mask);
+    SensorReflector sensorReflector = reflector(SensorReflector.class, realSensor);
+    sensorReflector.setFlags(sensorReflector.getFlags() | mask);
   }
 
   private void clearMask(int mask) {
-    _Sensor_ _sensor_ = reflector(_Sensor_.class, realSensor);
-    _sensor_.setFlags(_sensor_.getFlags() & ~mask);
+    SensorReflector sensorReflector = reflector(SensorReflector.class, realSensor);
+    sensorReflector.setFlags(sensorReflector.getFlags() & ~mask);
+  }
+
+  /** Sets the return value for {@link Sensor#getName}. */
+  public void setName(String name) {
+    reflector(SensorReflector.class, realSensor).setName(name);
   }
 
   /** Accessor interface for {@link Sensor}'s internals. */
   @ForType(Sensor.class)
-  interface _Sensor_ {
+  interface SensorReflector {
 
     @Accessor("mType")
     void setTypeField(int type);
@@ -85,6 +90,9 @@ public class ShadowSensor {
 
     @Accessor("mFlags")
     void setFlags(int flags);
+
+    @Accessor("mName")
+    void setName(String name);
 
     @Accessor("mMinDelay")
     void setMinDelay(int minDelay);
