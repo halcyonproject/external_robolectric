@@ -3,7 +3,7 @@ description: "Android Unit Testing Framework"
 third_party {
   url {
     type: GIT
-    value: "https://github.com/robolectric/robolectric"
+    value: "https://github.com/robolectric/robolectric/tree/google"
   }
   version: "e20c1a2e0fa650910c04ac845d98f8046121cbd7"
   license_type: NOTICE
