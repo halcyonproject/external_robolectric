@@ -1,15 +1,19 @@
+# This project was upgraded with external_updater.
+# Usage: tools/external_updater/updater.sh update external/robolectric
+# For more info, check https://cs.android.com/android/platform/superproject/main/+/main:tools/external_updater/README.md
+
 name: "robolectric"
 description: "Android Unit Testing Framework"
 third_party {
-  url {
-    type: GIT
-    value: "https://github.com/robolectric/robolectric/tree/google"
-  }
-  version: "e20c1a2e0fa650910c04ac845d98f8046121cbd7"
   license_type: NOTICE
   last_upgrade_date {
     year: 2025
-    month: 1
-    day: 24
+    month: 6
+    day: 10
+  }
+  identifier {
+    type: "Git"
+    value: "https://github.com/robolectric/robolectric/tree/google"
+    version: "5f047b66f81c7ba4697cbe9508fdfb1d18a892a7"
   }
 }
