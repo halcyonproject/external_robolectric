@@ -230,6 +230,7 @@ java_host_for_device {
         "//frameworks/base/services/robotests/backup:__pkg__",
         "//frameworks/base/tests/InputScreenshotTest/robotests:__pkg__",
         "//frameworks/libs/systemui/animationlib:__pkg__",
+        "//frameworks/libs/systemui/iconloaderlib/tests:__pkg__",
         "//frameworks/libs/systemui/tracinglib/robolectric:__pkg__",
         "//frameworks/opt/car/setupwizard/library/main/tests/robotests:__pkg__",
         "//frameworks/opt/localepicker/tests:__pkg__",
