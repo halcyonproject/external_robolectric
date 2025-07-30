@@ -1,6 +1,5 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.M;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -9,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.FileDescriptor;
 import java.net.DatagramSocket;
 import java.net.Socket;
+import javax.net.SocketFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Shadows;
@@ -26,7 +26,7 @@ public class ShadowNetworkTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  @Config(minSdk = M)
   public void bindSocketDatagramSocket_shouldNotCrash() throws Exception {
     Network network = ShadowNetwork.newInstance(0);
     network.bindSocket(new DatagramSocket());
@@ -46,7 +46,7 @@ public class ShadowNetworkTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  @Config(minSdk = M)
   public void isSocketBoundSocketDatagramSocket() throws Exception {
     Network network = ShadowNetwork.newInstance(0);
     DatagramSocket datagramSocket = new DatagramSocket();
@@ -81,5 +81,26 @@ public class ShadowNetworkTest {
     network.bindSocket(fileDescriptor);
     assertThat(Shadows.shadowOf(network).isSocketBound(fileDescriptor)).isTrue();
     assertThat(Shadows.shadowOf(network).boundSocketCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Config(minSdk = M)
+  public void setSocketFactory_shouldOverrideSocketFactory() {
+    Network network = ShadowNetwork.newInstance(0);
+    ShadowNetwork shadowNetwork = Shadows.shadowOf(network);
+    SocketFactory customSocketFactory = SocketFactory.getDefault();
+
+    shadowNetwork.setSocketFactory(customSocketFactory);
+
+    assertThat(shadowNetwork.getSocketFactory()).isSameInstanceAs(customSocketFactory);
+  }
+
+  @Test
+  @Config(minSdk = M)
+  public void getSocketFactory_withoutOverride_shouldReturnSocketFactory() {
+    Network network = ShadowNetwork.newInstance(0);
+    ShadowNetwork shadowNetwork = Shadows.shadowOf(network);
+
+    assertThat(shadowNetwork.getSocketFactory()).isNotNull();
   }
 }

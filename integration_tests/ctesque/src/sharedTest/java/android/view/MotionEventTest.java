@@ -1,6 +1,7 @@
 package android.view;
 
 import static android.os.Build.VERSION_CODES.N;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static androidx.test.ext.truth.view.MotionEventSubject.assertThat;
 import static androidx.test.ext.truth.view.PointerCoordsSubject.assertThat;
 import static androidx.test.ext.truth.view.PointerPropertiesSubject.assertThat;
@@ -16,6 +17,7 @@ import android.os.Parcelable;
 import android.os.SystemClock;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
+import androidx.test.core.view.MotionEventBuilder;
 import androidx.test.core.view.PointerCoordsBuilder;
 import androidx.test.core.view.PointerPropertiesBuilder;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -50,6 +52,7 @@ public class MotionEventTest {
   private static final int DEVICE_ID_1 = 1;
   private static final int EDGE_FLAGS = MotionEvent.EDGE_TOP;
   private static final float TOLERANCE = 0.01f;
+  private static final int FLAG_2 = 2;
 
   @Before
   public void setup() {
@@ -147,6 +150,63 @@ public class MotionEventTest {
     assertThat(motionEventDynamic).size().isWithin(TOLERANCE).of(SIZE_1F);
     assertThat(motionEventDynamic).xPrecision().isWithin(TOLERANCE).of(X_PRECISION_3F);
     assertThat(motionEventDynamic).yPrecision().isWithin(TOLERANCE).of(Y_PRECISION_4F);
+  }
+
+  @Test
+  public void testObtainWithClassification() {
+    assumeTrue(Build.VERSION.SDK_INT >= UPSIDE_DOWN_CAKE);
+    final int pointerCount = 1;
+    final int displayId = 5;
+    PointerProperties properties0 =
+        PointerPropertiesBuilder.newBuilder()
+            .setId(0)
+            .setToolType(MotionEvent.TOOL_TYPE_FINGER)
+            .build();
+    PointerCoords coords0 =
+        PointerCoordsBuilder.newBuilder()
+            .setCoords(X_3F, Y_4F)
+            .setPressure(PRESSURE_1F)
+            .setSize(SIZE_1F)
+            .setTool(1.2f, 1.4f)
+            .build();
+    motionEventDynamic =
+        MotionEvent.obtain(
+            downTime,
+            eventTime,
+            MotionEvent.ACTION_DOWN,
+            pointerCount,
+            new PointerProperties[] {properties0},
+            new PointerCoords[] {coords0},
+            META_STATE,
+            MotionEvent.BUTTON_SECONDARY,
+            X_PRECISION_3F,
+            Y_PRECISION_4F,
+            DEVICE_ID_1,
+            EDGE_FLAGS,
+            InputDevice.SOURCE_TOUCHSCREEN,
+            displayId,
+            FLAG_2,
+            MotionEvent.CLASSIFICATION_PINCH);
+
+    assertThat(motionEventDynamic).isNotNull();
+    assertThat(motionEventDynamic).hasDownTime(downTime);
+    assertThat(motionEventDynamic).hasEventTime(eventTime);
+    assertThat(motionEventDynamic).hasAction(MotionEvent.ACTION_DOWN);
+    assertThat(motionEventDynamic).hasPointerCount(pointerCount);
+    assertThat(motionEventDynamic).pointerProperties(0).isEqualTo(properties0);
+    MotionEventEqualitySubject.assertThat(motionEventDynamic)
+        .pointerCoords(0)
+        .isEqualToWithinTolerance(coords0, TOLERANCE);
+    assertThat(motionEventDynamic).hasMetaState(META_STATE);
+    assertThat(motionEventDynamic).hasButtonState(MotionEvent.BUTTON_SECONDARY);
+    assertThat(motionEventDynamic).xPrecision().isWithin(TOLERANCE).of(X_PRECISION_3F);
+    assertThat(motionEventDynamic).yPrecision().isWithin(TOLERANCE).of(Y_PRECISION_4F);
+    assertThat(motionEventDynamic).hasDeviceId(DEVICE_ID_1);
+    assertThat(motionEventDynamic).hasEdgeFlags(EDGE_FLAGS);
+    assertThat(motionEventDynamic.getSource()).isEqualTo(InputDevice.SOURCE_TOUCHSCREEN);
+    // displayId is neither exposed nor set in the shadow.
+    assertThat(motionEventDynamic.getFlags()).isEqualTo(FLAG_2);
+    assertThat(motionEventDynamic.getClassification()).isEqualTo(MotionEvent.CLASSIFICATION_PINCH);
   }
 
   @Test
@@ -684,6 +744,32 @@ public class MotionEventTest {
   }
 
   @Test
+  public void testTransform() {
+    MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+    coords.setAxisValue(MotionEvent.AXIS_X, 10.0f);
+    coords.setAxisValue(MotionEvent.AXIS_Y, 20.0f);
+    coords.setAxisValue(MotionEvent.AXIS_RELATIVE_X, 30.0f);
+    coords.setAxisValue(MotionEvent.AXIS_RELATIVE_Y, 40.0f);
+    MotionEvent event =
+        MotionEventBuilder.newBuilder()
+            .setSource(InputDevice.SOURCE_TOUCHSCREEN)
+            .setPointer(new MotionEvent.PointerProperties(), coords)
+            .build();
+    Matrix matrix = new Matrix();
+    matrix.setValues(new float[] {1, 2, 3, 4, 5, 6, 0, 0, 1});
+    event.transform(matrix);
+    assertThat(event.getX(0)).isWithin(TOLERANCE).of(53.0f);
+    assertThat(event.getY(0)).isWithin(TOLERANCE).of(146.0f);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
+      assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_X)).isWithin(TOLERANCE).of(110.0f);
+      assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_Y)).isWithin(TOLERANCE).of(320.0f);
+    } else {
+      assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_X)).isWithin(TOLERANCE).of(30.0f);
+      assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_Y)).isWithin(TOLERANCE).of(40.0f);
+    }
+  }
+
+  @Test
   public void testTransformShouldApplyMatrixToPointsAndPreserveRawPosition() {
     // Generate some points on a circle.
     // Each point 'i' is a point on a circle of radius ROTATION centered at (3,2) at an angle
@@ -857,6 +943,68 @@ public class MotionEventTest {
   public void testAxisFromToString() {
     assertThat(MotionEvent.axisToString(MotionEvent.AXIS_RTRIGGER)).isEqualTo("AXIS_RTRIGGER");
     assertThat(MotionEvent.axisFromString("AXIS_RTRIGGER")).isEqualTo(MotionEvent.AXIS_RTRIGGER);
+  }
+
+  @Test
+  public void testGetAxisValue() {
+    // Below axes are hardcoded as a special case in MotionEvent.java.
+    MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+    coords.setAxisValue(MotionEvent.AXIS_X, 10.0f);
+    coords.setAxisValue(MotionEvent.AXIS_Y, 20.0f);
+    coords.setAxisValue(MotionEvent.AXIS_PRESSURE, 0.1f);
+    coords.setAxisValue(MotionEvent.AXIS_SIZE, 0.2f);
+    coords.setAxisValue(MotionEvent.AXIS_TOUCH_MAJOR, 0.3f);
+    coords.setAxisValue(MotionEvent.AXIS_TOUCH_MINOR, 0.4f);
+    coords.setAxisValue(MotionEvent.AXIS_TOOL_MAJOR, 0.5f);
+    coords.setAxisValue(MotionEvent.AXIS_TOOL_MINOR, 0.6f);
+    coords.setAxisValue(MotionEvent.AXIS_ORIENTATION, 0.7f);
+    coords.setAxisValue(MotionEvent.AXIS_RELATIVE_X, 30.0f);
+    coords.setAxisValue(MotionEvent.AXIS_RELATIVE_Y, 40.0f);
+    coords.setAxisValue(MotionEvent.AXIS_VSCROLL, 50.0f);
+    coords.setAxisValue(MotionEvent.AXIS_HSCROLL, 60.0f);
+    coords.setAxisValue(MotionEvent.AXIS_SCROLL, 70.0f);
+    MotionEvent event =
+        MotionEventBuilder.newBuilder()
+            .setPointer(new MotionEvent.PointerProperties(), coords)
+            .build();
+
+    assertThat(event.getAxisValue(MotionEvent.AXIS_X)).isWithin(TOLERANCE).of(10.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_Y)).isWithin(TOLERANCE).of(20.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_PRESSURE)).isWithin(TOLERANCE).of(0.1f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_SIZE)).isWithin(TOLERANCE).of(0.2f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_TOUCH_MAJOR)).isWithin(TOLERANCE).of(0.3f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_TOUCH_MINOR)).isWithin(TOLERANCE).of(0.4f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_TOOL_MAJOR)).isWithin(TOLERANCE).of(0.5f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_TOOL_MINOR)).isWithin(TOLERANCE).of(0.6f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_ORIENTATION)).isWithin(TOLERANCE).of(0.7f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_X)).isWithin(TOLERANCE).of(30.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_RELATIVE_Y)).isWithin(TOLERANCE).of(40.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_VSCROLL)).isWithin(TOLERANCE).of(50.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_HSCROLL)).isWithin(TOLERANCE).of(60.0f);
+    assertThat(event.getAxisValue(MotionEvent.AXIS_SCROLL)).isWithin(TOLERANCE).of(70.0f);
+  }
+
+  @Test
+  public void testGetPointerCoordsClearsExistingValues() {
+    MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+    coords.setAxisValue(MotionEvent.AXIS_X, 10.0f);
+    coords.setAxisValue(MotionEvent.AXIS_Y, 20.0f);
+    MotionEvent event =
+        MotionEventBuilder.newBuilder()
+            .setPointer(new MotionEvent.PointerProperties(), coords)
+            .build();
+    MotionEvent.PointerCoords coords2 = new MotionEvent.PointerCoords();
+    coords2.setAxisValue(MotionEvent.AXIS_X, 30.0f);
+    coords2.setAxisValue(MotionEvent.AXIS_Y, 40.0f);
+    coords2.setAxisValue(MotionEvent.AXIS_PRESSURE, 0.1f);
+    coords2.setAxisValue(MotionEvent.AXIS_SIZE, 0.2f);
+
+    event.getPointerCoords(0, coords2);
+
+    assertThat(coords2.getAxisValue(MotionEvent.AXIS_X)).isWithin(TOLERANCE).of(10.0f);
+    assertThat(coords2.getAxisValue(MotionEvent.AXIS_Y)).isWithin(TOLERANCE).of(20.0f);
+    assertThat(coords2.getAxisValue(MotionEvent.AXIS_PRESSURE)).isWithin(TOLERANCE).of(0.0f);
+    assertThat(coords2.getAxisValue(MotionEvent.AXIS_SIZE)).isWithin(TOLERANCE).of(0.0f);
   }
 
   private static class MotionEventEqualitySubject extends Subject {
