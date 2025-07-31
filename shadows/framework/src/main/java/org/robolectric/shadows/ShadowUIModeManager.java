@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.robolectric.util.reflector.Reflector.reflector;
@@ -16,6 +17,7 @@ import android.os.Build.VERSION_CODES;
 import android.os.IBinder;
 import android.provider.Settings;
 import com.android.internal.annotations.GuardedBy;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,10 +41,15 @@ import org.robolectric.versioning.AndroidVersions.V;
 public class ShadowUIModeManager {
   private static final int DEFAULT_PRIORITY = 0;
 
-  public int currentModeType = Configuration.UI_MODE_TYPE_UNDEFINED;
-  public int currentNightMode = UiModeManager.MODE_NIGHT_AUTO;
-  public int lastFlags;
-  public int lastCarModePriority;
+  /**
+   * @deprecated Use {@link #setCurrentModeType(int)} or {@link UiModeManager#getCurrentModeType()}
+   *     instead.
+   */
+  @Deprecated public int currentModeType = Configuration.UI_MODE_TYPE_UNDEFINED;
+
+  private int currentNightMode = UiModeManager.MODE_NIGHT_AUTO;
+  private int lastFlags;
+  private int lastCarModePriority;
   private int currentApplicationNightMode = 0;
   private final Map<Integer, Set<String>> activeProjectionTypes = new HashMap<>();
   private boolean failOnProjectionToggle;
@@ -88,6 +95,31 @@ public class ShadowUIModeManager {
     lastFlags = flags;
   }
 
+  /**
+   * Returns the last set car mode priority
+   *
+   * <p>It is changed by {@link UiModeManager#enableCarMode(int)} or {@link
+   * UiModeManager#enableCarMode(int, int)}, and tracked by Robolectric for test purpose.
+   *
+   * @return The tracked last set car mode priority.
+   */
+  public int getLastCarModePriority() {
+    return lastCarModePriority;
+  }
+
+  /**
+   * Returns the last set flags.
+   *
+   * <p>It is changed by {@link UiModeManager#enableCarMode(int)}, {@link
+   * UiModeManager#enableCarMode(int, int)} or {@link UiModeManager#disableCarMode(int)}, and
+   * tracked by Robolectric for test purpose.
+   *
+   * @return The tracked last set flags.
+   */
+  public int getLastFlags() {
+    return lastFlags;
+  }
+
   @Implementation
   protected int getNightMode() {
     return currentNightMode;
@@ -96,27 +128,24 @@ public class ShadowUIModeManager {
   @Implementation
   protected void setNightMode(int mode) {
     synchronized (lock) {
-      ContentResolver resolver = getContentResolver();
       switch (mode) {
         case UiModeManager.MODE_NIGHT_NO:
         case UiModeManager.MODE_NIGHT_YES:
         case UiModeManager.MODE_NIGHT_AUTO:
           currentNightMode = mode;
-          nightModeCustomType = UiModeManager.MODE_NIGHT_CUSTOM_TYPE_UNKNOWN;
-          if (resolver != null) {
-            Settings.Secure.putInt(resolver, Settings.Secure.UI_NIGHT_MODE, mode);
-            Settings.Secure.putInt(
-                resolver,
-                Settings.Secure.UI_NIGHT_MODE_CUSTOM_TYPE,
-                UiModeManager.MODE_NIGHT_CUSTOM_TYPE_UNKNOWN);
-          }
+          setNightModeCustomType(UiModeManager.MODE_NIGHT_CUSTOM_TYPE_UNKNOWN);
+          break;
+        case UiModeManager.MODE_NIGHT_CUSTOM:
+          Preconditions.checkState(RuntimeEnvironment.getApiLevel() >= R);
+          currentNightMode = mode;
+          setNightModeCustomType(UiModeManager.MODE_NIGHT_CUSTOM_TYPE_UNKNOWN);
           break;
         default:
           currentNightMode = UiModeManager.MODE_NIGHT_AUTO;
-          if (resolver != null) {
-            Settings.Secure.putInt(
-                resolver, Settings.Secure.UI_NIGHT_MODE, UiModeManager.MODE_NIGHT_AUTO);
-          }
+      }
+      ContentResolver resolver = getContentResolver();
+      if (resolver != null) {
+        Settings.Secure.putInt(resolver, Settings.Secure.UI_NIGHT_MODE, currentNightMode);
       }
     }
   }

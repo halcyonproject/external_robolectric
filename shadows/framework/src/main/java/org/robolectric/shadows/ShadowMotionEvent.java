@@ -2,11 +2,14 @@ package org.robolectric.shadows;
 
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.P;
+import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_ORIENTATION;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_PRESSURE;
+import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_RELATIVE_X;
+import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_RELATIVE_Y;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_SIZE;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_TOOL_MAJOR;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_TOOL_MINOR;
@@ -49,7 +52,7 @@ import org.robolectric.versioning.AndroidVersions.V;
  *     the MotionEvent.obtain methods or via MotionEventBuilder.
  */
 @SuppressWarnings({"UnusedDeclaration"})
-@Implements(value = MotionEvent.class)
+@Implements(MotionEvent.class)
 public class ShadowMotionEvent extends ShadowInputEvent {
 
   private static final NativeObjRegistry<NativeInput.MotionEvent> nativeMotionEventRegistry =
@@ -119,6 +122,12 @@ public class ShadowMotionEvent extends ShadowInputEvent {
     outRawPointerCoords.setAxisValue(AMOTION_EVENT_AXIS_TOOL_MAJOR, pointerCoordsObj.toolMajor);
     outRawPointerCoords.setAxisValue(AMOTION_EVENT_AXIS_TOOL_MINOR, pointerCoordsObj.toolMinor);
     outRawPointerCoords.setAxisValue(AMOTION_EVENT_AXIS_ORIENTATION, pointerCoordsObj.orientation);
+    outRawPointerCoords.setAxisValue(
+        AMOTION_EVENT_AXIS_RELATIVE_X,
+        pointerCoordsObj.getAxisValue(AMOTION_EVENT_AXIS_RELATIVE_X));
+    outRawPointerCoords.setAxisValue(
+        AMOTION_EVENT_AXIS_RELATIVE_Y,
+        pointerCoordsObj.getAxisValue(AMOTION_EVENT_AXIS_RELATIVE_Y));
     long packedAxisBits = ReflectionHelpers.getField(pointerCoordsObj, "mPackedAxisBits");
     NativeBitSet64 bits = new NativeBitSet64(packedAxisBits);
     if (!bits.isEmpty()) {
@@ -134,61 +143,23 @@ public class ShadowMotionEvent extends ShadowInputEvent {
     return outRawPointerCoords;
   }
 
-  private static float[] obtainPackedAxisValuesArray(
-      int minSize, PointerCoords outPointerCoordsObj) {
-    float[] outValuesArray = ReflectionHelpers.getField(outPointerCoordsObj, "mPackedAxisValues");
-    if (outValuesArray != null) {
-      int size = outValuesArray.length;
-      if (minSize <= size) {
-        return outValuesArray;
-      }
-    }
-    int size = 8;
-    while (size < minSize) {
-      size *= 2;
-    }
-    outValuesArray = new float[size];
-    ReflectionHelpers.setField(outPointerCoordsObj, "mPackedAxisValues", outValuesArray);
-    return outValuesArray;
-  }
-
   private static void pointerCoordsFromNative(
       NativeInput.PointerCoords rawPointerCoords,
       float xOffset,
       float yOffset,
       PointerCoords outPointerCoordsObj) {
+    outPointerCoordsObj.clear();
+
     outPointerCoordsObj.x = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_X) + xOffset;
     outPointerCoordsObj.y = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_Y) + yOffset;
-    outPointerCoordsObj.pressure = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_PRESSURE);
-    outPointerCoordsObj.size = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_SIZE);
-    outPointerCoordsObj.touchMajor = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_TOUCH_MAJOR);
-    outPointerCoordsObj.touchMinor = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_TOUCH_MINOR);
-    outPointerCoordsObj.toolMajor = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_TOOL_MAJOR);
-    outPointerCoordsObj.toolMinor = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_TOOL_MINOR);
-    outPointerCoordsObj.orientation = rawPointerCoords.getAxisValue(AMOTION_EVENT_AXIS_ORIENTATION);
-    long outBits = 0;
     NativeBitSet64 bits = new NativeBitSet64(rawPointerCoords.getBits());
     bits.clearBit(AMOTION_EVENT_AXIS_X);
     bits.clearBit(AMOTION_EVENT_AXIS_Y);
-    bits.clearBit(AMOTION_EVENT_AXIS_PRESSURE);
-    bits.clearBit(AMOTION_EVENT_AXIS_SIZE);
-    bits.clearBit(AMOTION_EVENT_AXIS_TOUCH_MAJOR);
-    bits.clearBit(AMOTION_EVENT_AXIS_TOUCH_MINOR);
-    bits.clearBit(AMOTION_EVENT_AXIS_TOOL_MAJOR);
-    bits.clearBit(AMOTION_EVENT_AXIS_TOOL_MINOR);
-    bits.clearBit(AMOTION_EVENT_AXIS_ORIENTATION);
-    if (!bits.isEmpty()) {
-      int packedAxesCount = bits.count();
-      float[] outValuesArray = obtainPackedAxisValuesArray(packedAxesCount, outPointerCoordsObj);
-      float[] outValues = outValuesArray;
-      int index = 0;
-      do {
-        int axis = bits.clearFirstMarkedBit();
-        outBits |= NativeBitSet64.valueForBit(axis);
-        outValues[index++] = rawPointerCoords.getAxisValue(axis);
-      } while (!bits.isEmpty());
+
+    while (!bits.isEmpty()) {
+      int axis = bits.clearFirstMarkedBit();
+      outPointerCoordsObj.setAxisValue(axis, rawPointerCoords.getAxisValue(axis));
     }
-    ReflectionHelpers.setField(outPointerCoordsObj, "mPackedAxisBits", outBits);
   }
 
   @Implementation(maxSdk = P)
@@ -211,35 +182,17 @@ public class ShadowMotionEvent extends ShadowInputEvent {
       int pointerCount,
       PointerProperties[] pointerPropertiesObjArray,
       PointerCoords[] pointerCoordsObjArray) {
-
-    validatePointerCount(pointerCount);
-    validatePointerPropertiesArray(pointerPropertiesObjArray, pointerCount);
-    validatePointerCoordsObjArray(pointerCoordsObjArray, pointerCount);
-
-    NativeInput.MotionEvent event;
-    if (nativePtr > 0) {
-      event = nativeMotionEventRegistry.getNativeObject(nativePtr);
-    } else {
-      event = new NativeInput.MotionEvent();
-      nativePtr = nativeMotionEventRegistry.register(event);
-    }
-
-    NativeInput.PointerCoords[] rawPointerCoords = new NativeInput.PointerCoords[pointerCount];
-    for (int i = 0; i < pointerCount; i++) {
-      PointerCoords pointerCoordsObj = pointerCoordsObjArray[i];
-      requireNonNull(pointerCoordsObj);
-      rawPointerCoords[i] = pointerCoordsToNative(pointerCoordsObj, xOffset, yOffset);
-    }
-
-    event.initialize(
+    return nativeInitialize(
+        nativePtr,
         deviceId,
         source,
+        /* displayId= */ 0,
         action,
-        0,
         flags,
         edgeFlags,
         metaState,
         buttonState,
+        /* classification= */ 0,
         xOffset,
         yOffset,
         xPrecision,
@@ -248,8 +201,7 @@ public class ShadowMotionEvent extends ShadowInputEvent {
         eventTimeNanos,
         pointerCount,
         pointerPropertiesObjArray,
-        rawPointerCoords);
-    return nativePtr;
+        pointerCoordsObjArray);
   }
 
   // TODO(brettchabot): properly handle displayId
@@ -275,15 +227,35 @@ public class ShadowMotionEvent extends ShadowInputEvent {
       int pointerCount,
       PointerProperties[] pointerIds,
       PointerCoords[] pointerCoords) {
-    return nativeInitialize(
-        nativePtr,
+    validatePointerCount(pointerCount);
+    validatePointerPropertiesArray(pointerIds, pointerCount);
+    validatePointerCoordsObjArray(pointerCoords, pointerCount);
+
+    NativeInput.MotionEvent event;
+    if (nativePtr > 0) {
+      event = nativeMotionEventRegistry.getNativeObject(nativePtr);
+    } else {
+      event = new NativeInput.MotionEvent();
+      nativePtr = nativeMotionEventRegistry.register(event);
+    }
+
+    NativeInput.PointerCoords[] rawPointerCoords = new NativeInput.PointerCoords[pointerCount];
+    for (int i = 0; i < pointerCount; i++) {
+      PointerCoords pointerCoordsObj = pointerCoords[i];
+      requireNonNull(pointerCoordsObj);
+      rawPointerCoords[i] = pointerCoordsToNative(pointerCoordsObj, xOffset, yOffset);
+    }
+
+    event.initialize(
         deviceId,
         source,
         action,
+        0,
         flags,
         edgeFlags,
         metaState,
         buttonState,
+        classification,
         xOffset,
         yOffset,
         xPrecision,
@@ -292,7 +264,8 @@ public class ShadowMotionEvent extends ShadowInputEvent {
         eventTimeNanos,
         pointerCount,
         pointerIds,
-        pointerCoords);
+        rawPointerCoords);
+    return nativePtr;
   }
 
   @Implementation
@@ -600,6 +573,13 @@ public class ShadowMotionEvent extends ShadowInputEvent {
   protected static void nativeSetButtonState(long nativePtr, int buttonState) {
     NativeInput.MotionEvent event = getNativeMotionEvent(nativePtr);
     event.setButtonState(buttonState);
+  }
+
+  @Implementation(minSdk = Q)
+  @HiddenApi
+  protected static int nativeGetClassification(long nativePtr) {
+    NativeInput.MotionEvent event = getNativeMotionEvent(nativePtr);
+    return event.getClassification();
   }
 
   @Implementation

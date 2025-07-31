@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_BONDING;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -44,7 +45,7 @@ import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
 
 /** Shadow for {@link BluetoothDevice}. */
-@Implements(value = BluetoothDevice.class)
+@Implements(BluetoothDevice.class)
 public class ShadowBluetoothDevice {
   /**
    * Interceptor interface for {@link BluetoothGatt} objects. Tests that require configuration of
@@ -278,6 +279,9 @@ public class ShadowBluetoothDevice {
   @Implementation
   protected boolean createBond() {
     checkForBluetoothConnectPermission();
+    if (createdBond) {
+      bondState = BOND_BONDED;
+    }
     return createdBond;
   }
 
@@ -285,6 +289,9 @@ public class ShadowBluetoothDevice {
   @Implementation
   protected boolean createBond(int transport) {
     checkForBluetoothConnectPermission();
+    if (createdBond) {
+      bondState = BOND_BONDED;
+    }
     return createdBond;
   }
 
@@ -305,6 +312,9 @@ public class ShadowBluetoothDevice {
   protected boolean removeBond() {
     checkForBluetoothConnectPermission();
     boolean result = createdBond;
+    if (result) {
+      bondState = BOND_NONE;
+    }
     createdBond = false;
     return result;
   }

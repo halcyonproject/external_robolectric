@@ -7,7 +7,6 @@ import android.content.Context;
 import android.os.Build;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
-
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -32,12 +31,14 @@ public class ShadowSystemServiceRegistry {
   private static final String CACHED_SERVICE_FETCHER_CLASS_NAME =
       "android.app.SystemServiceRegistry$CachedServiceFetcher";
 
-  private static volatile BooleanSupplier isStaticServiceFetcherIsCachedPresent = () -> {
-    final boolean isFieldPresent = ReflectionHelpers.hasField(
-            classForName(STATIC_SERVICE_FETCHER_CLASS_NAME), IS_CACHED_FIELD_NAME);
-    isStaticServiceFetcherIsCachedPresent = () -> isFieldPresent;
-    return isFieldPresent;
-  };
+  private static volatile BooleanSupplier isStaticServiceFetcherIsCachedPresent =
+      () -> {
+        final boolean isFieldPresent =
+            ReflectionHelpers.hasField(
+                classForName(STATIC_SERVICE_FETCHER_CLASS_NAME), IS_CACHED_FIELD_NAME);
+        isStaticServiceFetcherIsCachedPresent = () -> isFieldPresent;
+        return isFieldPresent;
+      };
 
   @Resetter
   public static void reset() {
@@ -101,9 +102,9 @@ public class ShadowSystemServiceRegistry {
 
     default void clearInstance() {
       setCachedInstance(null);
-      if (this instanceof StaticServiceFetcherReflector staticSvcFetcher) {
+      if (this instanceof StaticServiceFetcherReflector) {
         if (isStaticServiceFetcherIsCachedPresent.getAsBoolean()) {
-          staticSvcFetcher.setIsCached(false);
+          ((StaticServiceFetcherReflector) this).setIsCached(false);
         }
       }
     }
@@ -115,10 +116,11 @@ public class ShadowSystemServiceRegistry {
    */
   @ForType(className = STATIC_SERVICE_FETCHER_CLASS_NAME)
   public interface StaticServiceFetcherReflector extends ServiceFetcherReflector {
+    @Override
     @Accessor("mCachedInstance")
     void setCachedInstance(Object o);
 
-    @Accessor(value = IS_CACHED_FIELD_NAME)
+    @Accessor(IS_CACHED_FIELD_NAME)
     void setIsCached(boolean isCached);
   }
 
@@ -128,6 +130,7 @@ public class ShadowSystemServiceRegistry {
    */
   @ForType(className = STATIC_CONTEXT_SERVICE_FETCHER_CLASS_NAME_M)
   public interface ServiceFetcherReflectorM extends ServiceFetcherReflector {
+    @Override
     @Accessor("mCachedInstance")
     void setCachedInstance(Object o);
   }
@@ -138,6 +141,7 @@ public class ShadowSystemServiceRegistry {
    */
   @ForType(className = STATIC_CONTEXT_SERVICE_FETCHER_CLASS_NAME_N)
   public interface ServiceFetcherReflectorN extends ServiceFetcherReflector {
+    @Override
     @Accessor("mCachedInstance")
     void setCachedInstance(Object o);
   }
