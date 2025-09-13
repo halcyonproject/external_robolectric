@@ -37,7 +37,7 @@ public class ShadowCallRedirectionService {
     try {
       binder.placeCall(
           ReflectionHelpers.createNullProxy(ICallRedirectionAdapter.class),
-          uri,
+          uri, uri,
           phoneAccountHandle,
           allowInteractiveResponse);
     } catch (RemoteException e) {
