@@ -16,6 +16,7 @@ import android.net.wifi.aware.SubscribeDiscoverySession;
 import android.net.wifi.aware.WifiAwareManager;
 import android.net.wifi.aware.WifiAwareSession;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
@@ -23,16 +24,20 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 
 /** Test for {@link ShadowWifiAwareManager} */
 @RunWith(AndroidJUnit4.class)
 @Config(minSdk = P)
 public final class ShadowWifiAwareManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
+
   private WifiAwareManager wifiAwareManager;
   private Binder binder;
   private Handler handler;
@@ -99,7 +104,7 @@ public final class ShadowWifiAwareManagerTest {
   }
 
   @Test
-  public void publish_shouldPublishServiceIfWifiAwareUnavailable() {
+  public void publish_shouldNotPublishServiceIfWifiAwareUnavailable() {
     int sessionId = 2;
     PublishConfig config = new PublishConfig.Builder().setServiceName("service").build();
     PublishDiscoverySession publishDiscoverySession =
@@ -169,6 +174,25 @@ public final class ShadowWifiAwareManagerTest {
     wifiAwareSession.close();
   }
 
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.S)
+  public void isDeviceAttached_shouldReturnTrueIfSessionAttached() {
+    shadowOf(wifiAwareManager).setSessionDetached(false);
+    assertThat(wifiAwareManager.isDeviceAttached()).isTrue();
+  }
+
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.S)
+  public void attachFromIdle_deviceIsAttached() {
+    shadowOf(wifiAwareManager).setAvailable(true);
+    shadowOf(wifiAwareManager).setSessionDetached(true);
+    TestAttachCallback testAttachCallback = new TestAttachCallback();
+    wifiAwareManager.attach(testAttachCallback, handler);
+    shadowMainLooper().idle();
+    assertThat(testAttachCallback.success).isTrue();
+    assertThat(wifiAwareManager.isDeviceAttached()).isTrue();
+  }
+
   private static class TestAttachCallback extends AttachCallback {
     private boolean success;
 
@@ -200,8 +224,8 @@ public final class ShadowWifiAwareManagerTest {
 
   @Test
   public void wifiAwareManager_activityContextEnabled_differentInstancesIsAvailable() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       WifiAwareManager applicationWifiAwareManager =
@@ -218,8 +242,6 @@ public final class ShadowWifiAwareManagerTest {
       boolean activityIsAvailable = activityWifiAwareManager.isAvailable();
 
       assertThat(activityIsAvailable).isEqualTo(applicationIsAvailable);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 }

@@ -1,7 +1,6 @@
 package org.robolectric.shadows;
 
 import static android.content.Context.TELEPHONY_SERVICE;
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
@@ -28,6 +27,7 @@ import static android.telephony.TelephonyManager.NETWORK_TYPE_EVDO_0;
 import static android.telephony.TelephonyManager.NETWORK_TYPE_LTE;
 import static android.telephony.emergency.EmergencyNumber.EMERGENCY_NUMBER_SOURCE_DATABASE;
 import static android.telephony.emergency.EmergencyNumber.EMERGENCY_SERVICE_CATEGORY_POLICE;
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static org.junit.Assert.assertEquals;
@@ -57,6 +57,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.PersistableBundle;
 import android.telecom.PhoneAccountHandle;
+import android.telephony.AvailableNetworkInfo;
 import android.telephony.CarrierRestrictionRules;
 import android.telephony.CellInfo;
 import android.telephony.CellLocation;
@@ -82,6 +83,7 @@ import android.telephony.emergency.EmergencyNumber;
 import android.telephony.gba.UaSecurityProtocolIdentifier;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -89,14 +91,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowSubscriptionManager.SubscriptionInfoBuilder;
 import org.robolectric.util.ReflectionHelpers;
@@ -104,11 +109,21 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowTelephonyManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
+
+  private static final int SUB_ID_1 = 1;
+
+  private static final String NETWORK_COUNTRY_ISO_US = "us";
+  private static final String NETWORK_COUNTRY_ISO_US_UPPERCASE =
+      Ascii.toUpperCase(NETWORK_COUNTRY_ISO_US);
 
   private TelephonyManager telephonyManager;
   private ShadowTelephonyManager shadowTelephonyManager;
   private TelephonyManager tmForSub5;
   private String defaultNetworkCountryIso;
+
+  private final ShadowApplication shadowApplication =
+      shadowOf((Application) getApplicationContext());
 
   @Before
   public void setUp() throws Exception {
@@ -182,6 +197,49 @@ public class ShadowTelephonyManagerTest {
     shadowOf(telephonyManager).setCallState(CALL_STATE_RINGING, "123");
 
     verifyNoMoreInteractions(callback);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void updateAvailableNetworks_failResult_invokesCallback_doesNotUpdateAvailableNetworks() {
+    shadowTelephonyManager.setUpdateAvailableNetworksCallbackResult(
+        TelephonyManager.UPDATE_AVAILABLE_NETWORKS_ABORTED);
+    AtomicInteger callbackResult = new AtomicInteger();
+
+    telephonyManager.updateAvailableNetworks(
+        ImmutableList.of(
+            new AvailableNetworkInfo(
+                SUB_ID_1,
+                AvailableNetworkInfo.PRIORITY_LOW,
+                /* mccMncs= */ ImmutableList.of(),
+                /* bands= */ ImmutableList.of())),
+        directExecutor(),
+        /* callback= */ callbackResult::set);
+
+    assertThat(callbackResult.get()).isEqualTo(TelephonyManager.UPDATE_AVAILABLE_NETWORKS_ABORTED);
+    assertThat(shadowTelephonyManager.getAvailableNetworks()).isEmpty();
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void updateAvailableNetworks_successResult_invokesCallback_updatesAvailableNetworks() {
+    AvailableNetworkInfo availableNetworkInfo =
+        new AvailableNetworkInfo(
+            SUB_ID_1,
+            AvailableNetworkInfo.PRIORITY_LOW,
+            /* mccMncs= */ ImmutableList.of(),
+            /* bands= */ ImmutableList.of());
+    shadowTelephonyManager.setUpdateAvailableNetworksCallbackResult(
+        TelephonyManager.UPDATE_AVAILABLE_NETWORKS_SUCCESS);
+    AtomicInteger callbackResult = new AtomicInteger();
+
+    telephonyManager.updateAvailableNetworks(
+        ImmutableList.of(availableNetworkInfo),
+        directExecutor(),
+        /* callback= */ callbackResult::set);
+
+    assertThat(callbackResult.get()).isEqualTo(TelephonyManager.UPDATE_AVAILABLE_NETWORKS_SUCCESS);
+    assertThat(shadowTelephonyManager.getAvailableNetworks()).containsExactly(availableNetworkInfo);
   }
 
   @Test
@@ -391,9 +449,82 @@ public class ShadowTelephonyManagerTest {
   }
 
   @Test
-  public void shouldGiveNetworkCountryIsoInLowercase() {
-    shadowOf(telephonyManager).setNetworkCountryIso("SomeIso");
-    assertEquals("someiso", telephonyManager.getNetworkCountryIso());
+  @Config(maxSdk = P)
+  public void
+      setNetworkCountryIso_untilSdkP_convertsToLowerCase_doesNotBroadcastNetworkCountryChanged() {
+    shadowOf(telephonyManager).setNetworkCountryIso(NETWORK_COUNTRY_ISO_US_UPPERCASE);
+
+    assertThat(telephonyManager.getNetworkCountryIso()).isEqualTo(NETWORK_COUNTRY_ISO_US);
+    List<Intent> intents = shadowApplication.getBroadcastIntents();
+    assertThat(intents).isEmpty();
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void setNetworkCountryIso_fromSdkQ_convertsToLowerCase_broadcastsNetworkCountryChanged() {
+    shadowOf(telephonyManager).setNetworkCountryIso(NETWORK_COUNTRY_ISO_US_UPPERCASE);
+
+    assertThat(telephonyManager.getNetworkCountryIso()).isEqualTo(NETWORK_COUNTRY_ISO_US);
+    List<Intent> intents = shadowApplication.getBroadcastIntents();
+    assertThat(intents).hasSize(1);
+    Intent intent = intents.get(0);
+    assertThat(intent.getAction()).isEqualTo(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
+    assertThat(intent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY))
+        .isEqualTo(NETWORK_COUNTRY_ISO_US);
+    if (Build.VERSION.SDK_INT >= R) {
+      assertThat(intent.getStringExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY))
+          .isEqualTo(NETWORK_COUNTRY_ISO_US);
+    } else {
+      assertThat(intent.hasExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY)).isFalse();
+    }
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void
+      setNetworkCountryIso_fromSdkQ_nullCountry_doesNotAttemptLowerCaseConversion_broadcastsNull() {
+    shadowOf(telephonyManager).setNetworkCountryIso(null);
+
+    assertThat(telephonyManager.getNetworkCountryIso()).isNull();
+    List<Intent> intents = shadowApplication.getBroadcastIntents();
+    assertThat(intents).hasSize(1);
+    Intent intent = intents.get(0);
+    assertThat(intent.getAction()).isEqualTo(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
+    assertThat(intent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY)).isNull();
+    if (Build.VERSION.SDK_INT >= R) {
+      // The last country is never set, so it should be empty.
+      assertThat(intent.getStringExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY))
+          .isEmpty();
+    } else {
+      assertThat(intent.hasExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY)).isFalse();
+    }
+  }
+
+  @Test
+  @Config(minSdk = R)
+  public void setNetworkCountryIso_fromSdkR_maintainsValidLastKnownNetworkCountry() {
+    // Start with a valid network country & validate it was set correctly.
+    shadowOf(telephonyManager).setNetworkCountryIso(NETWORK_COUNTRY_ISO_US_UPPERCASE);
+
+    // Ensure the initial broadcast sets both extras to the US.
+    List<Intent> intents = shadowApplication.getBroadcastIntents();
+    assertThat(intents).hasSize(1);
+    Intent intent = intents.get(0);
+    assertThat(intent.getAction()).isEqualTo(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
+    assertThat(intent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY))
+        .isEqualTo(NETWORK_COUNTRY_ISO_US);
+    assertThat(intent.getStringExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY))
+        .isEqualTo(NETWORK_COUNTRY_ISO_US);
+
+    // Now set an invalid country & validate the last known country is unchanged.
+    shadowOf(telephonyManager).setNetworkCountryIso(null);
+
+    assertThat(intents).hasSize(2);
+    Intent latestIntent = intents.get(1);
+    assertThat(latestIntent.getAction()).isEqualTo(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED);
+    assertThat(latestIntent.getStringExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY)).isNull();
+    assertThat(latestIntent.getStringExtra(TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY))
+        .isEqualTo(NETWORK_COUNTRY_ISO_US);
   }
 
   @Test
@@ -607,7 +738,6 @@ public class ShadowTelephonyManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
   public void shouldGiveVoiceCapableTrue() {
     shadowOf(telephonyManager).setVoiceCapable(true);
 
@@ -615,7 +745,6 @@ public class ShadowTelephonyManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
   public void shouldGiveVoiceCapableFalse() {
     shadowOf(telephonyManager).setVoiceCapable(false);
 
@@ -967,7 +1096,7 @@ public class ShadowTelephonyManagerTest {
 
   @Test
   @Config(minSdk = P)
-  public void shouldGetSimCarrierId() {
+  public void getCarrierId_valueConfigured_returnsCarrierId() {
     int expectedCarrierId = 132;
     shadowOf(telephonyManager).setSimCarrierId(expectedCarrierId);
 
@@ -975,12 +1104,25 @@ public class ShadowTelephonyManagerTest {
   }
 
   @Test
+  @Config(minSdk = P)
+  public void getCarrierId_valueNotConfigured_returnsUnknown() {
+    assertThat(telephonyManager.getSimCarrierId()).isEqualTo(TelephonyManager.UNKNOWN_CARRIER_ID);
+  }
+
+  @Test
   @Config(minSdk = Q)
-  public void shouldGetSimSpecificCarrierId() {
+  public void getSimSpecificCarrierId_valueConfigured_returnsCarrierId() {
     int expectedCarrierId = 132;
     shadowOf(telephonyManager).setSimSpecificCarrierId(expectedCarrierId);
 
     assertThat(telephonyManager.getSimSpecificCarrierId()).isEqualTo(expectedCarrierId);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void getSimSpecificCarrierId_valueNotConfigured_returnsUnknown() {
+    assertThat(telephonyManager.getSimSpecificCarrierId())
+        .isEqualTo(TelephonyManager.UNKNOWN_CARRIER_ID);
   }
 
   @Test
@@ -1295,6 +1437,87 @@ public class ShadowTelephonyManagerTest {
     assertThat(telephonyManager.getDataActivity()).isEqualTo(TelephonyManager.DATA_ACTIVITY_IN);
     shadowOf(telephonyManager).setDataActivity(TelephonyManager.DATA_ACTIVITY_OUT);
     assertThat(telephonyManager.getDataActivity()).isEqualTo(TelephonyManager.DATA_ACTIVITY_OUT);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void setPreferredOpportunisticDataSubscription_withoutCallback_setsPreferredSubId() {
+    shadowOf(telephonyManager)
+        .setPreferredOpportunisticDataSubscriptionCallbackResult(
+            SUB_ID_1, TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS);
+
+    telephonyManager.setPreferredOpportunisticDataSubscription(
+        SUB_ID_1, /* needValidation= */ false, directExecutor(), /* callback= */ null);
+
+    assertThat(telephonyManager.getPreferredOpportunisticDataSubscription()).isEqualTo(SUB_ID_1);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void
+      setPreferredOpportunisticDataSubscription_withCallback_callbackSuccessResult_setsPreferredSubId() {
+    shadowOf(telephonyManager)
+        .setPreferredOpportunisticDataSubscriptionCallbackResult(
+            SUB_ID_1, TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS);
+    AtomicInteger callbackResult = new AtomicInteger();
+
+    telephonyManager.setPreferredOpportunisticDataSubscription(
+        SUB_ID_1,
+        /* needValidation= */ false,
+        directExecutor(),
+        /* callback= */ callbackResult::set);
+
+    assertThat(callbackResult.get()).isEqualTo(TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS);
+    assertThat(telephonyManager.getPreferredOpportunisticDataSubscription()).isEqualTo(SUB_ID_1);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void
+      setPreferredOpportunisticDataSubscription_withCallback_callbackFailureResult_doesNotSetPreferredSubId() {
+    AtomicInteger callbackResult = new AtomicInteger();
+    shadowOf(telephonyManager)
+        .setPreferredOpportunisticDataSubscriptionCallbackResult(
+            SUB_ID_1, TelephonyManager.SET_OPPORTUNISTIC_SUB_INACTIVE_SUBSCRIPTION);
+
+    telephonyManager.setPreferredOpportunisticDataSubscription(
+        SUB_ID_1,
+        /* needValidation= */ false,
+        directExecutor(),
+        /* callback= */ callbackResult::set);
+
+    assertThat(callbackResult.get())
+        .isEqualTo(TelephonyManager.SET_OPPORTUNISTIC_SUB_INACTIVE_SUBSCRIPTION);
+    assertThat(telephonyManager.getPreferredOpportunisticDataSubscription())
+        .isEqualTo(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void
+      setPreferredOpportunisticDataSubscription_withCallback_callbackResultNotConfigured_callbackReturnsSuccess() {
+    AtomicInteger callbackResult = new AtomicInteger();
+
+    telephonyManager.setPreferredOpportunisticDataSubscription(
+        SUB_ID_1,
+        /* needValidation= */ false,
+        directExecutor(),
+        /* callback= */ callbackResult::set);
+
+    assertThat(callbackResult.get()).isEqualTo(TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS);
+    assertThat(telephonyManager.getPreferredOpportunisticDataSubscription()).isEqualTo(SUB_ID_1);
+  }
+
+  @Test
+  @Config(minSdk = Q)
+  public void
+      setPreferredOpportunisticDataSubscriptionCallbackResult_invalidResult_doesNotSetPreferredSubId() {
+    shadowOf(telephonyManager)
+        .setPreferredOpportunisticDataSubscriptionCallbackResult(
+            SUB_ID_1, /* result= */ Integer.MAX_VALUE);
+
+    assertThat(telephonyManager.getPreferredOpportunisticDataSubscription())
+        .isEqualTo(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID);
   }
 
   @Test
@@ -1709,8 +1932,8 @@ public class ShadowTelephonyManagerTest {
   @Test
   @Config(minSdk = O)
   public void telephonyManager_activityContextEnabled_differentInstancesRetrievePhoneCount() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       TelephonyManager applicationTelephonyManager =
@@ -1727,8 +1950,6 @@ public class ShadowTelephonyManagerTest {
       int activityPhoneCount = activityTelephonyManager.getPhoneCount();
 
       assertThat(activityPhoneCount).isEqualTo(applicationPhoneCount);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 

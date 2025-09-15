@@ -1,7 +1,6 @@
 package org.robolectric.shadows;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
@@ -34,6 +33,7 @@ import android.os.SystemProperties;
 import android.telecom.PhoneAccountHandle;
 import android.telephony.Annotation.NetworkType;
 import android.telephony.Annotation.OverrideNetworkType;
+import android.telephony.AvailableNetworkInfo;
 import android.telephony.CarrierRestrictionRules;
 import android.telephony.CellInfo;
 import android.telephony.CellLocation;
@@ -51,6 +51,8 @@ import android.telephony.TelephonyCallback.SignalStrengthsListener;
 import android.telephony.TelephonyDisplayInfo;
 import android.telephony.TelephonyManager;
 import android.telephony.TelephonyManager.CellInfoCallback;
+import android.telephony.TelephonyManager.SetOpportunisticSubscriptionResult;
+import android.telephony.TelephonyManager.UpdateAvailableNetworksResult;
 import android.telephony.VisualVoicemailSmsFilterSettings;
 import android.telephony.emergency.EmergencyNumber;
 import android.text.TextUtils;
@@ -71,6 +73,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.HiddenApi;
@@ -119,6 +122,15 @@ public class ShadowTelephonyManager {
   private String groupIdLevel1;
   private String networkOperatorName = "";
   private String networkCountryIso = "";
+
+  /**
+   * The last known valid network country, which is emitted by {@link
+   * TelephonyManager#EXTRA_LAST_KNOWN_NETWORK_COUNTRY}
+   *
+   * <p>This will be empty if it was never set or known.
+   */
+  private String lastKnownNetworkCountryIso = "";
+
   private String networkOperator = "";
   private String networkSpecifier = "";
   private Locale simLocale;
@@ -160,8 +172,8 @@ public class ShadowTelephonyManager {
       Collections.synchronizedMap(new LinkedHashMap<>());
   private static final Map<Integer, String> simCountryIsoMap =
       Collections.synchronizedMap(new LinkedHashMap<>());
-  private int simCarrierId;
-  private int simSpecificCarrierId;
+  private int simCarrierId = TelephonyManager.UNKNOWN_CARRIER_ID;
+  private int simSpecificCarrierId = TelephonyManager.UNKNOWN_CARRIER_ID;
   private CharSequence simCarrierIdName;
   private int carrierIdFromSimMccMnc;
   private String subscriberId;
@@ -190,6 +202,28 @@ public class ShadowTelephonyManager {
   private /*CarrierRestrictionRules*/ Object carrierRestrictionRules;
   private final AtomicInteger modemRebootCount = new AtomicInteger();
   private String iccAuthentication;
+
+  private List<AvailableNetworkInfo> availableNetworks = new ArrayList<>();
+  private int updateAvailableNetworksCallbackResult =
+      TelephonyManager.UPDATE_AVAILABLE_NETWORKS_SUCCESS;
+
+  /**
+   * The preferred opportunistic data subscription ID, which is configurable via {@link
+   * TelephonyManager#setPreferredOpportunisticDataSubscription}.
+   *
+   * <p>Note: The default value matches the default behaviour of the API, which returns {@link
+   * SubscriptionManager#DEFAULT_SUBSCRIPTION_ID} when a preferred subscription isn't set.
+   */
+  private int preferredOpportunisticDataSubscription = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID;
+
+  /**
+   * Result of a call for {@link TelephonyManager#setPreferredOpportunisticDataSubscription} for a
+   * specific sub ID.
+   *
+   * @see TelephonyManager#SET_OPPORTUNISTIC_SUB_* for possible results.
+   */
+  private final Map<Integer, Integer> setPreferredOpportunisticDataSubscriptionCallbackResult =
+      Collections.synchronizedMap(new LinkedHashMap<>());
 
   /**
    * Should be {@link TelephonyManager.BootstrapAuthenticationCallback} but this object was
@@ -343,6 +377,41 @@ public class ShadowTelephonyManager {
     return lastTelephonyCallback;
   }
 
+  /**
+   * Implementation of {@link TelephonyManager#updateAvailableNetworks}.
+   *
+   * <p>This will invoke the callback, which can be configured by {@link
+   * #setUpdateAvailableNetworksCallbackResult}. By default, it will emit {@link
+   * TelephonyManager#UPDATE_AVAILABLE_NETWORKS_SUCCESS}. If a fail result is configured, the
+   * available networks will not be updated.
+   */
+  @Implementation(minSdk = Q)
+  protected void updateAvailableNetworks(
+      List<AvailableNetworkInfo> availableNetworks, Executor executor, Consumer<Integer> callback) {
+    if (updateAvailableNetworksCallbackResult
+        == TelephonyManager.UPDATE_AVAILABLE_NETWORKS_SUCCESS) {
+      // We don't update the available networks if a failure result was configured in the callback.
+      this.availableNetworks = availableNetworks;
+    }
+    if (callback != null) {
+      executor.execute(() -> callback.accept(updateAvailableNetworksCallbackResult));
+    }
+  }
+
+  /** Sets the result of the callback passed to {@link #updateAvailableNetworks}. */
+  public void setUpdateAvailableNetworksCallbackResult(@UpdateAvailableNetworksResult int result) {
+    updateAvailableNetworksCallbackResult = result;
+  }
+
+  /**
+   * Returns the available networks configured by {@link #updateAvailableNetworks}.
+   *
+   * <p>There is currently no public API that provides this information to callers.
+   */
+  public List<AvailableNetworkInfo> getAvailableNetworks() {
+    return ImmutableList.copyOf(availableNetworks);
+  }
+
   /** Call state may be specified via {@link #setCallState(int)}. */
   @Implementation(minSdk = S)
   protected int getCallStateForSubscription() {
@@ -436,7 +505,7 @@ public class ShadowTelephonyManager {
     deviceSoftwareVersion = newDeviceSoftwareVersion;
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1, maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = U.SDK_INT)
   public void setNetworkOperatorName(String networkOperatorName) {
     this.networkOperatorName = networkOperatorName;
   }
@@ -512,9 +581,37 @@ public class ShadowTelephonyManager {
     return networkOperatorName;
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1, maxSdk = P)
+  /**
+   * Sets the network country ISO returned by {@link #getNetworkCountryIso()}.
+   *
+   * <p>This mirrors an internal Android API that was removed as the information is now fetched from
+   * {@link com.android.internal.telephony.LocaleTracker}.
+   *
+   * <p>Outside of the Android usage, this is intended as a general purpose setter. On SDK >Q, it
+   * will also broadcast {@link TelephonyManager#ACTION_NETWORK_COUNTRY_CHANGED}.
+   */
+  @Implementation(maxSdk = P)
   public void setNetworkCountryIso(String networkCountryIso) {
-    this.networkCountryIso = networkCountryIso;
+    String lowerCaseNetworkCountryIso = null;
+    if (networkCountryIso != null) {
+      lowerCaseNetworkCountryIso = Ascii.toLowerCase(networkCountryIso);
+      // Only update the "last known" country if the country is valid.
+      if (!lowerCaseNetworkCountryIso.isBlank() && lowerCaseNetworkCountryIso.length() == 2) {
+        lastKnownNetworkCountryIso = lowerCaseNetworkCountryIso;
+      }
+    }
+    this.networkCountryIso = lowerCaseNetworkCountryIso;
+    if (Build.VERSION.SDK_INT >= Q) {
+      Intent intent =
+          new Intent(TelephonyManager.ACTION_NETWORK_COUNTRY_CHANGED)
+              .putExtra(TelephonyManager.EXTRA_NETWORK_COUNTRY, lowerCaseNetworkCountryIso);
+      // The extra was made public on SDK U, but was actually added in SDK R (as @hide).
+      if (Build.VERSION.SDK_INT >= R) {
+        intent.putExtra(
+            TelephonyManager.EXTRA_LAST_KNOWN_NETWORK_COUNTRY, lastKnownNetworkCountryIso);
+      }
+      RuntimeEnvironment.getApplication().sendBroadcast(intent);
+    }
   }
 
   /**
@@ -523,7 +620,7 @@ public class ShadowTelephonyManager {
    */
   @Implementation
   protected String getNetworkCountryIso() {
-    return networkCountryIso == null ? null : Ascii.toLowerCase(networkCountryIso);
+    return networkCountryIso;
   }
 
   /** Sets the sim locale returned by {@link #getSimLocale()}. */
@@ -569,7 +666,7 @@ public class ShadowTelephonyManager {
     return simOperatorName;
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1, maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = U.SDK_INT)
   public void setSimOperatorName(String simOperatorName) {
     this.simOperatorName = simOperatorName;
   }
@@ -606,7 +703,7 @@ public class ShadowTelephonyManager {
     return simCountryIsoMap.get(subId);
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   public void setSimCountryIso(String simCountryIso) {
     setSimCountryIso(/* subId= */ 0, simCountryIso);
   }
@@ -735,7 +832,7 @@ public class ShadowTelephonyManager {
     return phoneType;
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1, maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = U.SDK_INT)
   public void setPhoneType(int phoneType) {
     this.phoneType = phoneType;
   }
@@ -786,7 +883,7 @@ public class ShadowTelephonyManager {
    * correspond to one of the {@code NETWORK_TYPE_*} constants defined on {@link TelephonyManager},
    * but this is not enforced.
    */
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   public void setDataNetworkType(int dataNetworkType) {
     this.dataNetworkType = dataNetworkType;
   }
@@ -1096,7 +1193,7 @@ public class ShadowTelephonyManager {
   /**
    * Returns {@code true} by default or the value specified via {@link #setVoiceCapable(boolean)}.
    */
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected boolean isVoiceCapable() {
     return voiceCapable;
   }
@@ -1531,6 +1628,73 @@ public class ShadowTelephonyManager {
       dataDisabledReasons.add(reason);
     }
     dataEnabled = dataDisabledReasons.isEmpty();
+  }
+
+  /**
+   * Implementation of {@link TelephonyManager#getPreferredOpportunisticDataSubscription} that
+   * returns the preferred opportunistic data subscription.
+   *
+   * <p>Like the public API, this will return {@link SubscriptionManager#DEFAULT_SUBSCRIPTION_ID} by
+   * default which indicates that the primary profile is the preferred data subscription.
+   */
+  @Implementation(minSdk = Build.VERSION_CODES.Q)
+  protected int getPreferredOpportunisticDataSubscription() {
+    return preferredOpportunisticDataSubscription;
+  }
+
+  /**
+   * Implementation for {@link TelephonyManager#setPreferredOpportunisticDataSubscription}.
+   *
+   * <p>By default, this will update the value returned by {@link
+   * #getPreferredOpportunisticDataSubscription()} and will invoke the callback (if provided) with a
+   * {@link TelephonyManager#SET_OPPORTUNISTIC_SUB_SUCCESS result}.
+   *
+   * <p>To configure a non-success result, use {@link
+   * #setPreferredOpportunisticDataSubscriptionCallbackResult(int, int)}. This will only affect the
+   * result in cases where a callback is provided. When no callback is provided, it will always set
+   * the given subscription.
+   *
+   * <p>Note: This won't actually mutate the state of subscriptions e.g., {@link
+   * SubscriptionManager} APIs won't return a different default data subscription.
+   */
+  @Implementation(minSdk = Build.VERSION_CODES.Q)
+  protected void setPreferredOpportunisticDataSubscription(
+      int subId, boolean needValidation, Executor executor, Consumer<Integer> callback) {
+    // If no callback is provided, we're just going to ignore any configuration related to the
+    // callback.
+    if (callback == null) {
+      preferredOpportunisticDataSubscription = subId;
+      return;
+    }
+
+    // By default, if no callback result is configured, we'll simply set the requested subscription
+    // and return a success result. Otherwise, we only set it if the callback was configured to
+    // return a success result.
+    Integer callbackResult =
+        setPreferredOpportunisticDataSubscriptionCallbackResult.getOrDefault(
+            subId, TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS);
+    if (callbackResult.equals(TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS)) {
+      preferredOpportunisticDataSubscription = subId;
+    }
+    executor.execute(() -> callback.accept(callbackResult));
+  }
+
+  /**
+   * Configures the result of the callback provided to {@link
+   * #setPreferredOpportunisticDataSubscription(int, boolean, Executor, Consumer)} for the given sub
+   * ID.
+   *
+   * <p>Note, if the provided a result isn't a valid TelephonyManager.SET_OPPORTUNISTIC_SUB_* value,
+   * it will be ignored and won't be set.
+   */
+  public void setPreferredOpportunisticDataSubscriptionCallbackResult(
+      int subId, @SetOpportunisticSubscriptionResult int result) {
+    // Check if it's within range (success=0, remote service exception=4).
+    if (result < TelephonyManager.SET_OPPORTUNISTIC_SUB_SUCCESS
+        || result > TelephonyManager.SET_OPPORTUNISTIC_SUB_REMOTE_SERVICE_EXCEPTION) {
+      return;
+    }
+    setPreferredOpportunisticDataSubscriptionCallbackResult.put(subId, result);
   }
 
   /**

@@ -53,7 +53,6 @@ public class ShadowNativeHardwareRenderer {
     HardwareRendererNatives.preload();
   }
 
-  
   @Implementation(minSdk = Baklava.SDK_INT)
   protected static void preInitBufferAllocator() {
     // no-op, this method isn't bound on host platforms.

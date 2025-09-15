@@ -7,11 +7,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.nfc.INfcCardEmulation;
 import android.nfc.cardemulation.CardEmulation;
+import android.nfc.cardemulation.CardEmulation.NfcEventCallback;
 import android.provider.Settings;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
@@ -28,10 +31,10 @@ import org.robolectric.versioning.AndroidVersions.V;
 public class ShadowCardEmulation {
 
   private static final Set<ComponentName> defaultObserveModeEnabledServices = new HashSet<>();
-  private static Map<String, ComponentName> defaultServiceForCategoryMap = new HashMap<>();
+  private static final Map<String, ComponentName> defaultServiceForCategoryMap = new HashMap<>();
   private static ComponentName preferredService = null;
-  private static Map<ComponentName, Map<String, Boolean>> pollingLoopPatternFiltersForService =
-      new HashMap<>();
+  private static final Map<ComponentName, Map<String, Boolean>>
+      pollingLoopPatternFiltersForService = new HashMap<>();
   private static String pollingLoopFilterAllowedCharactersRegex = "[a-fA-F0-9\\?\\.\\*]+";
 
   @RealObject CardEmulation cardEmulation;
@@ -143,11 +146,68 @@ public class ShadowCardEmulation {
     return pollingLoopPatternFiltersForService.get(service);
   }
 
+  /** Utility function that returns the list of currently registered NfcEventCallbacks. */
+  // TODO: use NfcEventCallback as key once min compile SDK is 36
+  public Map<Object /* CardEmulation.NfcEventCallback */, Executor> getNfcEventCallbackListeners() {
+    return reflector(CardEmulationReflector.class, cardEmulation).getNfcEventCallbacks();
+  }
+
+  /** Utility function that triggers NfcEventCallback listeners to call onRemoteFieldChanged. */
+  public void triggerOnRemoteFieldChanged(boolean isDetected) {
+    triggerNfcEventCallback(
+        callback -> ((NfcEventCallback) callback).onRemoteFieldChanged(isDetected));
+  }
+
+  /** Utility function that triggers NfcEventCallback listeners to call onNfcStateChanged. */
+  public void triggerOnNfcStateChanged(int state) {
+    triggerNfcEventCallback(callback -> ((NfcEventCallback) callback).onNfcStateChanged(state));
+  }
+
+  /** Utility function that triggers NfcEventCallback listeners to call onAidConflictOccurred. */
+  public void triggerOnAidConflictOccurred(String aid) {
+    triggerNfcEventCallback(callback -> ((NfcEventCallback) callback).onAidConflictOccurred(aid));
+  }
+
+  /** Utility function that triggers NfcEventCallback listeners to call OnAidNotRouted. */
+  public void triggerOnAidNotRouted(String aid) {
+    triggerNfcEventCallback(callback -> ((NfcEventCallback) callback).onAidNotRouted(aid));
+  }
+
+  /** Utility function that triggers NfcEventCallback listeners to call onInternalErrorReported. */
+  public void triggerOnInternalErrorReported(int error) {
+    triggerNfcEventCallback(
+        callback -> ((NfcEventCallback) callback).onInternalErrorReported(error));
+  }
+
+  /**
+   * Utility function that triggers NfcEventCallback listeners to call onPreferredServiceChanged.
+   */
+  public void triggerOnPreferredServiceChanged(boolean isPreferred) {
+    triggerNfcEventCallback(
+        callback -> ((NfcEventCallback) callback).onPreferredServiceChanged(isPreferred));
+  }
+
+  /**
+   * Utility function that triggers NfcEventCallback listeners to call onObserveModeStateChanged.
+   */
+  public void triggerOnObserveModeStateChanged(boolean isEnabled) {
+    triggerNfcEventCallback(
+        callback -> ((NfcEventCallback) callback).onObserveModeStateChanged(isEnabled));
+  }
+
+  private void triggerNfcEventCallback(Consumer<Object> callbackConsumer) {
+    getNfcEventCallbackListeners()
+        .forEach(
+            (callbackObj, executor) ->
+                executor.execute(() -> callbackConsumer.accept(callbackObj)));
+  }
+
   @Resetter
   public static void reset() {
-    defaultServiceForCategoryMap = new HashMap<>();
+    defaultObserveModeEnabledServices.clear();
+    defaultServiceForCategoryMap.clear();
     preferredService = null;
-    pollingLoopPatternFiltersForService = new HashMap<>();
+    pollingLoopPatternFiltersForService.clear();
     CardEmulationReflector reflector = reflector(CardEmulationReflector.class);
     reflector.setIsInitialized(false);
     reflector.setService(null);
@@ -170,5 +230,8 @@ public class ShadowCardEmulation {
     @Static
     @Accessor("sCardEmus")
     Map<Context, CardEmulation> getCardEmus();
+
+    @Accessor("mNfcEventCallbacks")
+    Map<Object, Executor> getNfcEventCallbacks();
   }
 }

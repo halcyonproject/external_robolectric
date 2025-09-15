@@ -1,5 +1,9 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
+import static org.robolectric.RuntimeEnvironment.getApiLevel;
+import static org.robolectric.util.reflector.Reflector.reflector;
+
 import android.content.Intent;
 import android.net.Uri;
 import android.os.RemoteException;
@@ -32,14 +36,25 @@ public class ShadowCallRedirectionService {
    */
   public void placeCall(
       Uri uri, PhoneAccountHandle phoneAccountHandle, boolean allowInteractiveResponse) {
-    ICallRedirectionService.Stub binder =
-        (ICallRedirectionService.Stub) callRedirectionService.onBind(new Intent());
+    ICallRedirectionService binder =
+        (ICallRedirectionService) callRedirectionService.onBind(new Intent());
+    ICallRedirectionServiceReflector binderReflector =
+        reflector(ICallRedirectionServiceReflector.class, binder);
     try {
-      binder.placeCall(
-          ReflectionHelpers.createNullProxy(ICallRedirectionAdapter.class),
-          uri, uri,
-          phoneAccountHandle,
-          allowInteractiveResponse);
+      if (getApiLevel() <= BAKLAVA) {
+        binderReflector.placeCall(
+            ReflectionHelpers.createNullProxy(ICallRedirectionAdapter.class),
+            uri,
+            phoneAccountHandle,
+            allowInteractiveResponse);
+      } else {
+        binderReflector.placeCall(
+            ReflectionHelpers.createNullProxy(ICallRedirectionAdapter.class),
+            uri,
+            uri,
+            phoneAccountHandle,
+            allowInteractiveResponse);
+      }
     } catch (RemoteException e) {
       throw new AssertionError(e);
     }
@@ -87,14 +102,35 @@ public class ShadowCallRedirectionService {
   @ForType(CallRedirectionService.class)
   private interface CallRedirectionServiceReflector {
     @Direct
-    public void redirectCall(
+    void redirectCall(
         Uri handle, PhoneAccountHandle initialPhoneAccount, boolean isInteractiveResponseAllowed);
 
     @Direct
-    public void placeCallUnmodified();
+    void placeCallUnmodified();
 
     @Direct
-    public void cancelCall();
+    void cancelCall();
+  }
+
+  @ForType(ICallRedirectionService.class)
+  private interface ICallRedirectionServiceReflector {
+
+    // For <= BAKLAVA
+    void placeCall(
+        ICallRedirectionAdapter nullProxy,
+        Uri uri,
+        PhoneAccountHandle phoneAccountHandle,
+        boolean allowInteractiveResponse)
+        throws RemoteException;
+
+    // For > BAKLAVA
+    void placeCall(
+        ICallRedirectionAdapter nullProxy,
+        Uri uri,
+        Uri uri2,
+        PhoneAccountHandle phoneAccountHandle,
+        boolean allowInteractiveResponse)
+        throws RemoteException;
   }
 
   /** The result of the redirection attempt. */

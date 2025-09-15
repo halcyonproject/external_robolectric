@@ -1,6 +1,7 @@
 package org.robolectric.shadows;
 
 import static android.bluetooth.BluetoothAdapter.STATE_ON;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.Q;
@@ -51,6 +52,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.InDevelopment;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.util.ReflectionHelpers;
@@ -171,11 +173,8 @@ public class ShadowBluetoothAdapter {
    */
   @Deprecated
   public void setBluetoothLeAdvertiser(BluetoothLeAdvertiser advertiser) {
-    if (RuntimeEnvironment.getApiLevel() <= VERSION_CODES.LOLLIPOP_MR1) {
-      reflector(BluetoothAdapterReflector.class, realAdapter).setSBluetoothLeAdvertiser(advertiser);
-    } else {
+
       reflector(BluetoothAdapterReflector.class, realAdapter).setBluetoothLeAdvertiser(advertiser);
-    }
   }
 
   @Implementation
@@ -571,7 +570,6 @@ public class ShadowBluetoothAdapter {
     if (proxy == null) {
       return false;
     } else {
-      listener.onServiceConnected(profile, proxy);
       List<BluetoothProfile.ServiceListener> profileListeners =
           bluetoothProfileServiceListeners.get(profile);
       if (profileListeners != null) {
@@ -579,6 +577,7 @@ public class ShadowBluetoothAdapter {
       } else {
         bluetoothProfileServiceListeners.put(profile, new ArrayList<>(ImmutableList.of(listener)));
       }
+      listener.onServiceConnected(profile, proxy);
       return true;
     }
   }
@@ -620,6 +619,22 @@ public class ShadowBluetoothAdapter {
       }
     }
     return null;
+  }
+
+  @Implementation(minSdk = BAKLAVA)
+  @InDevelopment
+  protected IBinder getProfile(
+      int profile, @ClassName("android.bluetooth.IBluetoothProfileCallback") Object callback) {
+    IBinder binder = getProfile(profile);
+    if (binder != null) {
+      reflector(IBluetoothProfileCallbackReflector.class, callback).getProfileReply(binder);
+    }
+    return binder;
+  }
+
+  @ForType(className = "android.bluetooth.IBluetoothProfileCallback")
+  private interface IBluetoothProfileCallbackReflector {
+    void getProfileReply(IBinder binder);
   }
 
   private static IInterface createBinderProfileProxy(int profile) {
@@ -791,7 +806,6 @@ public class ShadowBluetoothAdapter {
   }
 
   @Implementation(minSdk = Baklava.SDK_INT)
-  
   protected @ClassName("android.bluetooth.IBluetoothAdvertise") Object getBluetoothAdvertise() {
     if (ibluetoothAdvertise == null) {
       ibluetoothAdvertise = BluetoothAdvertiseProxyDelegate.createBluetoothAdvertiseProxy();

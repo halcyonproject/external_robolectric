@@ -3,7 +3,6 @@ package org.robolectric.shadows;
 import static android.app.admin.DevicePolicyManager.LOCK_TASK_FEATURE_HOME;
 import static android.app.admin.DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS;
 import static android.app.admin.DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW;
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.N_MR1;
@@ -26,10 +25,12 @@ import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.app.ApplicationPackageManager;
 import android.app.KeyguardManager;
+import android.app.admin.DeviceAdminReceiver;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.DevicePolicyManager.NearbyStreamingPolicy;
 import android.app.admin.DevicePolicyManager.PasswordComplexity;
 import android.app.admin.DevicePolicyManager.UserProvisioningState;
+import android.app.admin.DevicePolicyState;
 import android.app.admin.IDevicePolicyManager;
 import android.app.admin.SystemUpdateInfo;
 import android.app.admin.SystemUpdatePolicy;
@@ -392,12 +393,7 @@ public class ShadowDevicePolicyManager {
   @Implementation
   protected boolean isUninstallBlocked(@Nullable ComponentName admin, String packageName) {
     if (admin == null) {
-      // Starting from LOLLIPOP_MR1, the behavior of this API is changed such that passing null as
-      // the admin parameter will return if any admin has blocked the uninstallation. Before L MR1,
-      // passing null will cause a NullPointerException to be raised.
-      if (Build.VERSION.SDK_INT < LOLLIPOP_MR1) {
-        throw new NullPointerException("ComponentName is null");
-      }
+      // ignore
     } else {
       enforceActiveAdmin(admin);
     }
@@ -443,6 +439,14 @@ public class ShadowDevicePolicyManager {
   @Implementation
   protected String getDeviceOwner() {
     return deviceOwner != null ? deviceOwner.getPackageName() : null;
+  }
+
+  /**
+   * @see #getDeviceOwnerComponentOnAnyUser()
+   */
+  @Implementation(minSdk = N)
+  protected ComponentName getDeviceOwnerComponentOnAnyUser() {
+    return deviceOwner;
   }
 
   /**
@@ -905,7 +909,7 @@ public class ShadowDevicePolicyManager {
   public boolean isPermissionGranted(String packageName, String permission) {
     Boolean isGranted =
         appPermissionGrantedMap.get(new PackageAndPermission(packageName, permission));
-    return isGranted == null ? false : isGranted;
+    return Boolean.TRUE.equals(isGranted);
   }
 
   @Implementation(minSdk = VERSION_CODES.M)
@@ -927,10 +931,10 @@ public class ShadowDevicePolicyManager {
       }
       if (Arrays.asList(packageInfo.requestedPermissions).contains(permission)) {
         if (grantState == DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED) {
-          ShadowApplication.getInstance().grantPermissions(permission);
+          shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(permission);
         }
         if (grantState == DevicePolicyManager.PERMISSION_GRANT_STATE_DENIED) {
-          ShadowApplication.getInstance().denyPermissions(permission);
+          shadowOf(RuntimeEnvironment.getApplication()).denyPermissions(permission);
         }
       } else {
         // the app does not require this permission
@@ -1300,7 +1304,7 @@ public class ShadowDevicePolicyManager {
       case DevicePolicyManager.PASSWORD_QUALITY_BIOMETRIC_WEAK:
         return true;
       case DevicePolicyManager.PASSWORD_QUALITY_SOMETHING:
-        return password.length() > 0;
+        return !password.isEmpty();
       case DevicePolicyManager.PASSWORD_QUALITY_NUMERIC:
       case DevicePolicyManager.PASSWORD_QUALITY_NUMERIC_COMPLEX: // complexity not enforced
         return digit > 0 && password.length() >= passwordMinimumLength;
