@@ -1,6 +1,8 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static com.google.common.base.Preconditions.checkState;
 import static org.robolectric.RuntimeEnvironment.getApiLevel;
 import static org.robolectric.shadows.ShadowPausedLooper.shadowMsg;
@@ -28,10 +30,6 @@ import org.robolectric.util.Scheduler;
 import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
-import org.robolectric.util.reflector.Static;
-import org.robolectric.versioning.AndroidVersions;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.V;
 
 /**
  * The shadow {@link} MessageQueue} for {@link LooperMode.Mode#PAUSED}
@@ -81,19 +79,6 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
           updateListener();
         };
     ShadowPausedSystemClock.addStaticListener(clockListener);
-  }
-
-  /**
-   * This is temporary method intended to be used for Robolectric's own unit tests to force
-   * concurrent MessageQueue in the indevelopment Android SDK
-   */
-  @Implementation(minSdk = AndroidVersions.PostBaklava.SDK_INT)
-  protected static boolean computeUseConcurrent() {
-    String overrideprop = System.getProperty("robolectric.overrideUseConcurrentMessageQueue");
-    if (overrideprop != null) {
-      return Boolean.parseBoolean(overrideprop);
-    }
-    return reflector(MessageQueueReflector.class).computeUseConcurrent();
   }
 
   @Implementation
@@ -195,7 +180,7 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
    * thread is blocked (such as from poll())
    */
   private boolean hasExecutableMsg() {
-    if (getApiLevel() > Baklava.SDK_INT) {
+    if (getApiLevel() > BAKLAVA) {
       Long when = reflector(MessageQueueReflector.class, realQueue).peekWhenForTest();
       return when != null && when <= SystemClock.uptimeMillis();
     } else {
@@ -237,7 +222,7 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
   }
 
   Duration getLastScheduledTaskTime() {
-    if (getApiLevel() > Baklava.SDK_INT) {
+    if (getApiLevel() > BAKLAVA) {
       Message msg = reflector(MessageQueueReflector.class, realQueue).peekLastMessageForTest();
       if (msg == null) {
         return Duration.ZERO;
@@ -279,7 +264,7 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
     // The following logic won't work on the new MessageQueue implementation used on SDKs >
     // Baklava.
     checkState(
-        getApiLevel() <= Baklava.SDK_INT,
+        getApiLevel() <= BAKLAVA,
         "size() is not supported on SDKs > baklava. Consider using Handler.hasMessages or"
             + " hasCallbacks instead");
     int count = 0;
@@ -301,7 +286,7 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
   public void reset() {
     MessageQueueReflector msgQueue = reflector(MessageQueueReflector.class, realQueue);
     setUncaughtException(null);
-    if (getApiLevel() > Baklava.SDK_INT) {
+    if (getApiLevel() > BAKLAVA) {
       msgQueue.resetForTest();
     } else {
       synchronized (realQueue) {
@@ -312,7 +297,7 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
           msg = next;
         }
         reflector(MessageQueueReflector.class, realQueue).setMessages(null);
-        if (getApiLevel() >= V.SDK_INT) {
+        if (getApiLevel() >= VANILLA_ICE_CREAM) {
           reflector(MessageQueueReflector.class, realQueue).setLast(null);
           reflector(MessageQueueReflector.class, realQueue).setAsyncMessageCount(0);
         }
@@ -424,10 +409,6 @@ public class ShadowPausedMessageQueue extends ShadowMessageQueue {
 
     @Direct
     Message peekLastMessageForTest();
-
-    @Direct
-    @Static
-    boolean computeUseConcurrent();
 
     @Direct
     void removeSyncBarrier(int token);

@@ -21,6 +21,7 @@ import static android.content.pm.PackageManager.MATCH_DEFAULT_ONLY;
 import static android.content.pm.PackageManager.MATCH_DISABLED_COMPONENTS;
 import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
 import static android.content.pm.PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
@@ -34,6 +35,7 @@ import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static java.util.Objects.requireNonNull;
 import static org.robolectric.annotation.GetInstallerPackageNameMode.Mode.REALISTIC;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.Manifest.permission;
 import android.annotation.DrawableRes;
@@ -120,13 +122,11 @@ import org.robolectric.annotation.GetInstallerPackageNameMode;
 import org.robolectric.annotation.HiddenApi;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
-import org.robolectric.annotation.InDevelopment;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.config.ConfigurationRegistry;
 import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
-import org.robolectric.versioning.AndroidVersions.Baklava;
 
 /** Shadow for {@link ApplicationPackageManager}. */
 @Implements(value = ApplicationPackageManager.class, isInAndroidSdk = false)
@@ -1862,9 +1862,7 @@ public class ShadowApplicationPackageManager extends ShadowPackageManager {
   /**
    * Behaves as {@link #resolveActivity(Intent, int)} and currently ignores userId and resolvedType
    */
-  // TODO(brettchabot): this should be PostBaklava
-  @Implementation(minSdk = Baklava.SDK_INT)
-  @InDevelopment
+  @Implementation(minSdk = POST_BAKLAVA)
   protected ResolveInfo resolveActivityAsUser(
       Intent intent,
       String resolvedType,

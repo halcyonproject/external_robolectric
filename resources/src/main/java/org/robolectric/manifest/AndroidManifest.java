@@ -23,8 +23,7 @@ import org.robolectric.res.Fs;
 import org.robolectric.res.ResourcePath;
 import org.robolectric.res.ResourceTable;
 import org.robolectric.util.Logger;
-import org.robolectric.versioning.AndroidVersions;
-import org.robolectric.versioning.AndroidVersions.AndroidRelease;
+import org.robolectric.versioning.VersionCalculator;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -569,22 +568,7 @@ public class AndroidManifest implements UsesSdk {
       final Document doc, final String tag, final String attribute, final Integer defaultValue) {
     String valueString = getTagAttributeText(doc, tag, attribute);
     if (valueString != null) {
-      Integer result;
-      try {
-        result = Integer.parseInt(valueString);
-      } catch (NumberFormatException e) {
-        result = defaultValue;
-        // for unfinalized releases, try to parse the value as a string.
-        if (attribute.endsWith("minSdkVersion")
-            || attribute.endsWith("maxSdkVersion")
-            || attribute.endsWith("targetSdkVersion")) {
-          int sdkInt = AndroidVersions.computeSdkIntFromShortCode(valueString);
-          if (sdkInt != -1) {
-            result = sdkInt;
-          }
-        }
-      }
-      return result;
+      return Integer.parseInt(valueString);
     }
     return defaultValue;
   }
@@ -596,24 +580,7 @@ public class AndroidManifest implements UsesSdk {
       try {
         return Integer.parseInt(sdkString);
       } catch (NumberFormatException e) {
-        // for unfinalized releases, try to parse the value as a string.
-        List<AndroidRelease> releasedReleases = AndroidVersions.getReleases();
-        List<AndroidRelease> unreleasedReleases = AndroidVersions.getUnreleased();
-
-        // check the latest release
-        if (!releasedReleases.isEmpty()) {
-          AndroidRelease latestRelease = releasedReleases.get(releasedReleases.size() - 1);
-          if (latestRelease.getShortCode().equals(sdkString)) {
-            return latestRelease.getSdkInt();
-          }
-        } else {
-          // check the unreleased versions
-          for (AndroidRelease release : unreleasedReleases) {
-            if (release.getShortCode().equals(sdkString)) {
-              return release.getSdkInt();
-            }
-          }
-        }
+        return new VersionCalculator().getApiLevelForCodeName(sdkString);
       }
     }
     return null;

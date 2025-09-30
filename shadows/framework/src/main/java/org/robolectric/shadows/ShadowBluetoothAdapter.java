@@ -10,8 +10,10 @@ import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.S_V2;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.app.PendingIntent;
 import android.app.PendingIntent.CanceledException;
@@ -52,7 +54,6 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
-import org.robolectric.annotation.InDevelopment;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.util.ReflectionHelpers;
@@ -60,8 +61,6 @@ import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.V;
 
 @SuppressWarnings({"UnusedDeclaration"})
 @Implements(BluetoothAdapter.class)
@@ -608,7 +607,7 @@ public class ShadowBluetoothAdapter {
     }
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected IBinder getProfile(int profile) {
     if (isEnabled()) {
       IInterface localProxy = createBinderProfileProxy(profile);
@@ -621,15 +620,13 @@ public class ShadowBluetoothAdapter {
     return null;
   }
 
-  @Implementation(minSdk = BAKLAVA)
-  @InDevelopment
-  protected IBinder getProfile(
+  @Implementation(minSdk = POST_BAKLAVA)
+  protected void getProfile(
       int profile, @ClassName("android.bluetooth.IBluetoothProfileCallback") Object callback) {
     IBinder binder = getProfile(profile);
     if (binder != null) {
       reflector(IBluetoothProfileCallbackReflector.class, callback).getProfileReply(binder);
     }
-    return binder;
   }
 
   @ForType(className = "android.bluetooth.IBluetoothProfileCallback")
@@ -797,7 +794,7 @@ public class ShadowBluetoothAdapter {
 
   // TODO: remove this method as it shouldn't be necessary.
   //  Real android just calls IBluetoothManager.getBluetoothGatt
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected IBluetoothGatt getBluetoothGatt() {
     if (ibluetoothGatt == null) {
       ibluetoothGatt = BluetoothGattProxyDelegate.createBluetoothGattProxy();
@@ -805,7 +802,7 @@ public class ShadowBluetoothAdapter {
     return ibluetoothGatt;
   }
 
-  @Implementation(minSdk = Baklava.SDK_INT)
+  @Implementation(minSdk = BAKLAVA)
   protected @ClassName("android.bluetooth.IBluetoothAdvertise") Object getBluetoothAdvertise() {
     if (ibluetoothAdvertise == null) {
       ibluetoothAdvertise = BluetoothAdvertiseProxyDelegate.createBluetoothAdvertiseProxy();

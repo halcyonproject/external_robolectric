@@ -4,20 +4,17 @@ import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S_V2;
+import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
 import android.database.sqlite.SQLiteConnection;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
-import org.robolectric.annotation.InDevelopment;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.nativeruntime.DefaultNativeRuntimeLoader;
 import org.robolectric.nativeruntime.SQLiteConnectionNatives;
 import org.robolectric.util.PerfStatsCollector;
-import org.robolectric.util.ReflectionHelpers;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.T;
-import org.robolectric.versioning.AndroidVersions.U;
 
 /** Shadow for {@link SQLiteConnection} that is backed by native code */
 @Implements(
@@ -25,23 +22,13 @@ import org.robolectric.versioning.AndroidVersions.U;
     isInAndroidSdk = false,
     callNativeMethodsByDefault = true)
 public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
-  
-  /**
-   * TODO: rexhoffman@google.com delete when new .so is available.
-   */
-  @Implementation(maxSdk=U.SDK_INT)
-  protected static void nativeClose(long connectionPtr, boolean fast) {
-    PerfStatsCollector.getInstance()
-            .measure("androidsqlite", () -> SQLiteConnectionNatives.nativeClose(connectionPtr));
-  }
-
   @Implementation(maxSdk = O)
   protected static long nativeOpen(
       String path, int openFlags, String label, boolean enableTrace, boolean enableProfile) {
     return nativeOpen(path, openFlags, label, enableTrace, enableProfile, 0, 0);
   }
 
-  @Implementation(minSdk = O_MR1, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = O_MR1, maxSdk = UPSIDE_DOWN_CAKE)
   protected static long nativeOpen(
       String path,
       int openFlags,
@@ -65,13 +52,21 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     lookasideSlotCount));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeClose(long connectionPtr) {
     PerfStatsCollector.getInstance()
         .measure("androidsqlite", () -> SQLiteConnectionNatives.nativeClose(connectionPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
+  protected static long nativePrepareStatement(long connectionPtr, String sql) {
+    return PerfStatsCollector.getInstance()
+        .measure(
+            "androidsqlite",
+            () -> SQLiteConnectionNatives.nativePrepareStatement(connectionPtr, sql));
+  }
+
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeFinalizeStatement(long connectionPtr, long statementPtr) {
     PerfStatsCollector.getInstance()
         .measure(
@@ -79,7 +74,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeFinalizeStatement(connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nativeGetParameterCount(final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
         .measure(
@@ -87,7 +82,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeGetParameterCount(connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static boolean nativeIsReadOnly(final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
         .measure(
@@ -95,7 +90,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeIsReadOnly(connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static String nativeExecuteForString(
       final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
@@ -104,7 +99,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeExecuteForString(connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeRegisterLocalizedCollators(long connectionPtr, String locale) {
     PerfStatsCollector.getInstance()
         .measure(
@@ -112,7 +107,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeRegisterLocalizedCollators(connectionPtr, locale));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static long nativeExecuteForLong(final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
         .measure(
@@ -128,7 +123,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeExecute(connectionPtr, statementPtr, false));
   }
 
-  @Implementation(minSdk = T.SDK_INT, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = TIRAMISU, maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeExecute(
       final long connectionPtr, final long statementPtr, boolean isPragmaStmt) {
     PerfStatsCollector.getInstance()
@@ -137,7 +132,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeExecute(connectionPtr, statementPtr, isPragmaStmt));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nativeExecuteForChangedRowCount(
       final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
@@ -148,7 +143,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nativeGetColumnCount(final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
         .measure(
@@ -156,7 +151,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeGetColumnCount(connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static String nativeGetColumnName(
       final long connectionPtr, final long statementPtr, final int index) {
     return PerfStatsCollector.getInstance()
@@ -165,7 +160,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeGetColumnName(connectionPtr, statementPtr, index));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeBindNull(
       final long connectionPtr, final long statementPtr, final int index) {
     PerfStatsCollector.getInstance()
@@ -174,7 +169,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeBindNull(connectionPtr, statementPtr, index));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeBindLong(
       final long connectionPtr, final long statementPtr, final int index, final long value) {
     PerfStatsCollector.getInstance()
@@ -184,7 +179,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                 SQLiteConnectionNatives.nativeBindLong(connectionPtr, statementPtr, index, value));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeBindDouble(
       final long connectionPtr, final long statementPtr, final int index, final double value) {
     PerfStatsCollector.getInstance()
@@ -195,7 +190,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr, index, value));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeBindString(
       final long connectionPtr, final long statementPtr, final int index, final String value) {
     PerfStatsCollector.getInstance()
@@ -206,7 +201,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr, index, value));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeBindBlob(
       final long connectionPtr, final long statementPtr, final int index, final byte[] value) {
     PerfStatsCollector.getInstance()
@@ -216,7 +211,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                 SQLiteConnectionNatives.nativeBindBlob(connectionPtr, statementPtr, index, value));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeResetStatementAndClearBindings(
       final long connectionPtr, final long statementPtr) {
     PerfStatsCollector.getInstance()
@@ -227,7 +222,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static long nativeExecuteForLastInsertedRowId(
       final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
@@ -238,7 +233,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static long nativeExecuteForCursorWindow(
       final long connectionPtr,
       final long statementPtr,
@@ -254,7 +249,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr, windowPtr, startPos, requiredPos, countAllRows));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nativeExecuteForBlobFileDescriptor(
       final long connectionPtr, final long statementPtr) {
     return PerfStatsCollector.getInstance()
@@ -265,13 +260,13 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, statementPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeCancel(long connectionPtr) {
     PerfStatsCollector.getInstance()
         .measure("androidsqlite", () -> SQLiteConnectionNatives.nativeCancel(connectionPtr));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeResetCancel(long connectionPtr, boolean cancelable) {
     PerfStatsCollector.getInstance()
         .measure(
@@ -279,7 +274,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
             () -> SQLiteConnectionNatives.nativeResetCancel(connectionPtr, cancelable));
   }
 
-  @Implementation(minSdk = R, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = R, maxSdk = UPSIDE_DOWN_CAKE)
   @SuppressWarnings("AndroidJdkLibsChecker")
   protected static void nativeRegisterCustomScalarFunction(
       long connectionPtr, String name, UnaryOperator<String> function) {
@@ -291,7 +286,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, name, function));
   }
 
-  @Implementation(minSdk = R, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = R, maxSdk = UPSIDE_DOWN_CAKE)
   @SuppressWarnings("AndroidJdkLibsChecker")
   protected static void nativeRegisterCustomAggregateFunction(
       long connectionPtr, String name, BinaryOperator<String> function) {
@@ -303,7 +298,7 @@ public class ShadowNativeSQLiteConnection extends ShadowSQLiteConnection {
                     connectionPtr, name, function));
   }
 
-  @Implementation(maxSdk = U.SDK_INT)
+  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nativeGetDbLookaside(long connectionPtr) {
     return PerfStatsCollector.getInstance()
         .measure(
