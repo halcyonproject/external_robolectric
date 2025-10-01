@@ -98,7 +98,8 @@ public class ShadowLegacyLooper extends ShadowLooper {
 
   @Implementation
   protected void __constructor__(boolean quitAllowed) {
-    checkState(getApiLevel() <= BAKLAVA, "LEGACY LooperMode is not supported on SDKs > Baklava");
+    // TODO(b/448635747): Re-enable the check after the migration of LEGACY LooperMode usage.
+    // checkState(getApiLevel() <= BAKLAVA, "LEGACY LooperMode is not supported on SDKs > Baklava");
     invokeConstructor(Looper.class, realObject, from(boolean.class, quitAllowed));
     if (isMainThread()) {
       mainLooper = realObject;
