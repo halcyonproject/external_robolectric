@@ -145,6 +145,7 @@ java_library {
             "private_api_stubs",
             "sdk",
             "win_sdk",
+            "layoutlib",
         ],
         dest: "android-all-robolectric.jar",
     },
