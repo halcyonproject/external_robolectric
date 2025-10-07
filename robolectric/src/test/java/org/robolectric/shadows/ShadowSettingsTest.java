@@ -78,6 +78,15 @@ public class ShadowSettingsTest {
   }
 
   @Test
+  public void testSystemGetStringForUser() {
+    assertThat(Settings.System.getStringForUser(contentResolver, "property", 10)).isNull();
+
+    Settings.System.putStringForUser(contentResolver, "property", "value", 10);
+    assertThat(Settings.System.getStringForUser(
+          contentResolver, "property", 10)).isEqualTo("value");
+  }
+
+  @Test
   public void testSystemGetLong() throws Exception {
     assertThat(Settings.System.getLong(contentResolver, "property", 10L)).isEqualTo(10L);
     Settings.System.putLong(contentResolver, "property", 42L);
