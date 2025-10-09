@@ -75,6 +75,12 @@ public class ShadowSettings {
     }
 
     @Implementation
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
+    }
+
+    @Implementation
     protected static boolean putLong(ContentResolver cr, String name, long value) {
       return put(cr, name, value);
     }
