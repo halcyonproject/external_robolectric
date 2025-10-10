@@ -10,11 +10,15 @@ import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.bluetooth.IBluetoothProfileServiceConnection;
 import android.content.Context;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.util.reflector.ForType;
+import android.os.HandlerThread;
 import org.robolectric.util.reflector.Reflector;
 
 /** Holds fakes for the IBluetoothManager system service */
@@ -95,6 +99,40 @@ class IBluetoothManagerDelegates {
       } catch (RemoteException e) {
         // nothing to do
       }
+    }
+
+    public Messenger getServiceMessenger() {
+      var thread = new HandlerThread("BluetoothSystemServerMessenger");
+      thread.start();
+      Looper looper = thread.getLooper();
+
+      Handler handler =
+          new Handler(
+              looper,
+              msg -> {
+                if (msg.replyTo == null) {
+                  return true;
+                }
+                try {
+                  Object data = msg.obj;
+                  String requestClassName = data.getClass().getName();
+                  // SystemServiceMessage classes are not public, so we can't import them.
+                  // Instead, we rely on the naming convention of the reply class.
+                  Class<?> replyClass = Class.forName(requestClassName + "$Reply");
+                  Object replyData = replyClass.getConstructor().newInstance();
+
+                  // The default constructor will leave the IBluetooth field as null,
+                  // which simulates the Bluetooth-off state.
+
+                  android.os.Message replyMsg = android.os.Message.obtain();
+                  replyMsg.obj = replyData;
+                  msg.replyTo.send(replyMsg);
+                } catch (Exception e) {
+                  // Don't crash the test host.
+                }
+                return true;
+              });
+      return new Messenger(handler);
     }
   }
 }
