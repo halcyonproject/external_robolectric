@@ -70,14 +70,19 @@ public class ShadowSettings {
     }
 
     @Implementation
-    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return get(String.class, name).orElse(null);
-    }
-
-    @Implementation
     protected static boolean putStringForUser(
         ContentResolver cr, String name, String value, int userHandle) {
       return put(cr, name, value);
+    }
+
+    @Implementation
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = settings.getOrDefault(name, Optional.empty());
+      if (!optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
     }
 
     @Implementation
@@ -239,26 +244,6 @@ public class ShadowSettings {
     }
 
     @Implementation
-    protected static boolean putIntForUser(
-        ContentResolver cr, String name, int value, int userHandle) {
-      putInt(cr, name, value);
-      return true;
-    }
-
-    @Implementation
-    protected static int getIntForUser(ContentResolver cr, String name, int def, int userHandle) {
-      // ignore userhandle
-      return getInt(cr, name, def);
-    }
-
-    @Implementation
-    protected static int getIntForUser(ContentResolver cr, String name, int userHandle)
-        throws SettingNotFoundException {
-      // ignore userhandle
-      return getInt(cr, name);
-    }
-
-    @Implementation
     protected static int getInt(ContentResolver cr, String name) throws SettingNotFoundException {
       if (Settings.Secure.LOCATION_MODE.equals(name) && RuntimeEnvironment.getApiLevel() < P) {
         // Map from to underlying location provider storage API to location mode
@@ -289,8 +274,19 @@ public class ShadowSettings {
     }
 
     @Implementation
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
+    }
+
+    @Implementation
     protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return getString(cr, name);
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = dataMap.getOrDefault(name, Optional.empty());
+      if (!optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
     }
 
     @Implementation
@@ -382,9 +378,21 @@ public class ShadowSettings {
     }
 
     @Implementation
-    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return getString(cr, name);
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
     }
+
+    @Implementation
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = settings.getOrDefault(name, Optional.empty());
+      if (optionalValue == null || !optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
+    }
+
 
     @Implementation
     protected static boolean putLong(ContentResolver cr, String name, long value) {
