@@ -228,44 +228,43 @@ public class AndroidManifestTest {
     assertThat(newConfigWith("minsdk7.xml", "android:minSdkVersion=\"7\"").getTargetSdkVersion())
         .isEqualTo(7);
     assertThat(newConfigWith("noattributes.xml", "").getTargetSdkVersion())
-        .isEqualTo(VERSION_CODES.LOLLIPOP);
+        .isEqualTo(VERSION_CODES.M);
   }
 
   @Test
-  public void shouldReadMinSdkVersionFromAndroidManifestOrDefaultToLollipop() throws Exception {
+  public void shouldReadMinSdkVersionFromAndroidManifestOrDefaultToM() throws Exception {
     assertThat(newConfigWith("minsdk17.xml", "android:minSdkVersion=\"17\"").getMinSdkVersion())
         .isEqualTo(17);
-    assertThat(newConfigWith("noattributes.xml", "").getMinSdkVersion())
-        .isEqualTo(VERSION_CODES.LOLLIPOP);
+    assertThat(newConfigWith("noattributes.xml", "").getMinSdkVersion()).isEqualTo(VERSION_CODES.M);
   }
 
   @Test
-  public void shouldReadUnfinlizedSdkVersionFromAndroidManifest() throws Exception {
+  public void shouldReadUnfinalizedSdkVersionFromAndroidManifest() throws Exception {
     assertThat(
             newConfigWith("minSdkBaklavaShortNameSdk.xml", "android:minSdkVersion=\"Baklava\"")
                 .getMinSdkVersion())
-        .isEqualTo(36);
+        .isEqualTo(10000);
     assertThat(
             newConfigWith(
                     "targetSdkBaklavaShortNameSdk.xml", "android:targetSdkVersion=\"Baklava\"")
                 .getTargetSdkVersion())
-        .isEqualTo(36);
+        .isEqualTo(10000);
     assertThat(
             newConfigWith("maxSdkBaklavaShortNameSdk.xml", "android:maxSdkVersion=\"Baklava\"")
                 .getMaxSdkVersion())
-        .isEqualTo(36);
+        .isEqualTo(10000);
   }
 
   @Test
-  public void shouldReadUnknownSdkVersionFromAndroidManifestDefaultToLollipop() throws Exception {
+  public void shouldReadUnknownSdkVersionFromAndroidManifestDefaultToM() throws Exception {
     assertThat(
             newConfigWith("UnknownStringMinSdk.xml", "android:minSdkVersion=\"Unknown\"")
                 .getMinSdkVersion())
-        .isEqualTo(VERSION_CODES.LOLLIPOP);
+        .isEqualTo(VERSION_CODES.M);
     assertThat(
             newConfigWith("UnknownStringTargetSdk.xml", "android:targetSdkVersion=\"Unknown\"")
                 .getTargetSdkVersion())
-        .isEqualTo(VERSION_CODES.LOLLIPOP);
+        .isEqualTo(VERSION_CODES.M);
   }
 
   @Test

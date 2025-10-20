@@ -1,6 +1,6 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N_MR1;
 import static android.os.Build.VERSION_CODES.O;
@@ -8,6 +8,7 @@ import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.os.MessageQueue;
@@ -31,8 +32,6 @@ import org.robolectric.util.reflector.Constructor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.WithType;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.U;
 
 /**
  * Shadow of {@link DisplayEventReceiver}. The {@link Choreographer} is a subclass of {@link
@@ -68,12 +67,6 @@ public class ShadowDisplayEventReceiver {
     return nativeObjRegistry.register(new NativeDisplayEventReceiver(receiver));
   }
 
-  @Implementation(maxSdk = LOLLIPOP_MR1)
-  protected static long nativeInit(DisplayEventReceiver receiver, MessageQueue msgQueue) {
-    return nativeObjRegistry.register(
-        new NativeDisplayEventReceiver(new WeakReference<>(receiver)));
-  }
-
   @Implementation(minSdk = R, maxSdk = TIRAMISU)
   protected static long nativeInit(
       WeakReference<DisplayEventReceiver> receiver,
@@ -83,7 +76,7 @@ public class ShadowDisplayEventReceiver {
     return nativeInit(receiver, msgQueue);
   }
 
-  @Implementation(minSdk = U.SDK_INT)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
   protected static long nativeInit(
       WeakReference<DisplayEventReceiver> receiver,
       WeakReference<Object> vsyncEventData,
@@ -253,7 +246,7 @@ public class ShadowDisplayEventReceiver {
                   int.class,
                   long.class,
                   int.class);
-          if (RuntimeEnvironment.getApiLevel() < Baklava.SDK_INT || !baklavaConstructor) {
+          if (RuntimeEnvironment.getApiLevel() < BAKLAVA || !baklavaConstructor) {
             return vsyncEventDataReflector.newVsyncEventData(
                 timelineArray,
                 /* preferredFrameTimelineIndex= */ 0,

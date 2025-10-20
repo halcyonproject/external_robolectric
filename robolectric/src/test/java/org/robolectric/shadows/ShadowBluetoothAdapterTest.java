@@ -14,6 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +49,6 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
-import org.robolectric.versioning.AndroidVersions.U;
 
 /** Unit tests for {@link ShadowBluetoothAdapter} */
 @RunWith(AndroidJUnit4.class)
@@ -624,6 +623,26 @@ public class ShadowBluetoothAdapterTest {
   }
 
   @Test
+  public void closeProfileProxy_duringServiceConnectedCallback_notified() {
+    BluetoothProfile mockProxy = mock(BluetoothProfile.class);
+    BluetoothProfile.ServiceListener mockServiceListener =
+        mock(BluetoothProfile.ServiceListener.class);
+    shadowOf(bluetoothAdapter).setProfileProxy(MOCK_PROFILE1, mockProxy);
+
+    doAnswer(
+            invocation -> {
+              bluetoothAdapter.closeProfileProxy(MOCK_PROFILE1, mockProxy);
+              return null;
+            })
+        .when(mockServiceListener)
+        .onServiceConnected(anyInt(), any());
+
+    bluetoothAdapter.getProfileProxy(
+        RuntimeEnvironment.getApplication(), mockServiceListener, MOCK_PROFILE1);
+    verify(mockServiceListener).onServiceDisconnected(MOCK_PROFILE1);
+  }
+
+  @Test
   @Config(minSdk = O)
   public void getLeMaximumAdvertisingDataLength_nonZero() {
     assertThat(bluetoothAdapter.getLeMaximumAdvertisingDataLength()).isEqualTo(1650);
@@ -823,13 +842,13 @@ public class ShadowBluetoothAdapterTest {
         .isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
   }
 
-  @Config(minSdk = U.SDK_INT)
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
   @Test
   public void getProfileProxy_serviceListenerInvoked() throws Exception {
     shadowOf((Application) getApplicationContext()).grantPermissions(permission.BLUETOOTH);
     bluetoothAdapter.enable();
-    LinkedBlockingQueue<Integer> profileQueue = new LinkedBlockingQueue<>();
-    LinkedBlockingQueue<BluetoothProfile> proxyQueue = new LinkedBlockingQueue<>();
+    List<Integer> profileQueue = new ArrayList<>();
+    List<BluetoothProfile> proxyQueue = new ArrayList<>();
     BluetoothProfile.ServiceListener listener =
         new ServiceListener() {
           @Override
@@ -848,11 +867,13 @@ public class ShadowBluetoothAdapterTest {
         .isTrue();
     shadowOf(Looper.getMainLooper()).idle();
 
-    assertThat(profileQueue.take()).isEqualTo(BluetoothProfile.HEADSET);
-    assertThat(proxyQueue.take()).isInstanceOf(BluetoothHeadset.class);
+    assertThat(profileQueue).hasSize(1);
+    assertThat(proxyQueue).hasSize(1);
+    assertThat(profileQueue.getFirst()).isEqualTo(BluetoothProfile.HEADSET);
+    assertThat(proxyQueue.getFirst()).isInstanceOf(BluetoothHeadset.class);
   }
 
-  @Config(minSdk = U.SDK_INT)
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
   @Test
   public void getProfileProxy_adapterDisabled_serviceListenerNotInvoked() {
     bluetoothAdapter.disable();
@@ -866,13 +887,13 @@ public class ShadowBluetoothAdapterTest {
     verify(listener, never()).onServiceConnected(anyInt(), any(BluetoothProfile.class));
   }
 
-  @Config(minSdk = U.SDK_INT)
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
   @Test
   public void disconnectProfileProxy_serviceListenerInvoked() throws Exception {
     shadowOf((Application) getApplicationContext()).grantPermissions(permission.BLUETOOTH);
     bluetoothAdapter.enable();
-    LinkedBlockingQueue<Integer> profileQueue = new LinkedBlockingQueue<>();
-    LinkedBlockingQueue<BluetoothHeadset> headsetProxies = new LinkedBlockingQueue<>();
+    List<Integer> profileQueue = new ArrayList<>();
+    List<BluetoothHeadset> headsetProxies = new ArrayList<>();
     BluetoothProfile.ServiceListener listener =
         new ServiceListener() {
           @Override
@@ -888,10 +909,10 @@ public class ShadowBluetoothAdapterTest {
 
     bluetoothAdapter.getProfileProxy(getApplicationContext(), listener, BluetoothProfile.HEADSET);
     shadowOf(Looper.getMainLooper()).idle();
-    bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, headsetProxies.take());
+    bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, headsetProxies.getFirst());
     shadowOf(Looper.getMainLooper()).idle();
 
-    assertThat(profileQueue.take()).isEqualTo(BluetoothProfile.HEADSET);
+    assertThat(profileQueue.getFirst()).isEqualTo(BluetoothProfile.HEADSET);
   }
 
   private PendingIntent createTestPendingIntent(Intent intent) {

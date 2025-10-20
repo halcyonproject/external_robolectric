@@ -1,7 +1,11 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
@@ -26,6 +30,7 @@ import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.RealObject;
@@ -36,9 +41,6 @@ import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.Constructor;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.WithType;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.U;
-import org.robolectric.versioning.AndroidVersions.V;
 
 /** Shadow class for {@link CameraManager} */
 @Implements(CameraManager.class)
@@ -114,7 +116,7 @@ public class ShadowCameraManager {
     }
   }
 
-  @Implementation(minSdk = U.SDK_INT, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE, maxSdk = UPSIDE_DOWN_CAKE)
   protected CameraDevice openCameraDeviceUserAsync(
       String cameraId,
       CameraDevice.StateCallback callback,
@@ -125,7 +127,7 @@ public class ShadowCameraManager {
     return openCameraDeviceUserAsync(cameraId, callback, executor, uid, oomScoreOffset);
   }
 
-  @Implementation(minSdk = V.SDK_INT, maxSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM, maxSdk = VANILLA_ICE_CREAM)
   protected CameraDevice openCameraDeviceUserAsync(
       String cameraId,
       CameraDevice.StateCallback callback,
@@ -136,12 +138,10 @@ public class ShadowCameraManager {
     return openCameraDeviceUserAsync(cameraId, callback, executor, uid, oomScoreOffset);
   }
 
-  // in development API has reverted back to the T signature. Just use a different method name
+  // Baklava API has reverted back to the T signature. Just use a different method name
   // to avoid conflicts.
-  // TODO: increment this to  minSdk next-SDK-after-V once V is fully released
-  @Implementation(methodName = "openCameraDeviceUserAsync", minSdk = Baklava.SDK_INT)
-  
-  protected CameraDevice openCameraDeviceUserAsyncPostV(
+  @Implementation(methodName = "openCameraDeviceUserAsync", minSdk = BAKLAVA, maxSdk = BAKLAVA)
+  protected CameraDevice openCameraDeviceUserAsyncBaklava(
       String cameraId,
       CameraDevice.StateCallback callback,
       Executor executor,
@@ -150,6 +150,17 @@ public class ShadowCameraManager {
       boolean unused) {
     return openCameraDeviceUserAsync(
         cameraId, callback, executor, unusedClientUid, unusedOomScoreOffset);
+  }
+
+  @Implementation(minSdk = POST_BAKLAVA)
+  protected CameraDevice openCameraDeviceUserAsync(
+      String cameraId,
+      CameraDevice.StateCallback callback,
+      Executor executor,
+      int unusedOomScoreOffset,
+      @ClassName("android.content.res.CameraCompatibilityInfo") Object unusedCompatibilityInfo,
+      boolean unusedSharedMode) {
+    return openCameraDeviceUserAsync(cameraId, callback, executor, 0, unusedOomScoreOffset);
   }
 
   @Implementation(minSdk = Build.VERSION_CODES.S, maxSdk = Build.VERSION_CODES.TIRAMISU)
@@ -287,7 +298,7 @@ public class ShadowCameraManager {
       CameraCharacteristics characteristics,
       Context context) {
     Map<String, CameraCharacteristics> cameraCharacteristicsMap = Collections.emptyMap();
-    if (RuntimeEnvironment.getApiLevel() >= Baklava.SDK_INT) {
+    if (RuntimeEnvironment.getApiLevel() >= BAKLAVA) {
       return reflector(ReflectorCameraDeviceImpl.class)
           .newCameraDeviceImplPostV(
               cameraId,
@@ -300,7 +311,7 @@ public class ShadowCameraManager {
               null,
               false);
 
-    } else if (RuntimeEnvironment.getApiLevel() == V.SDK_INT) {
+    } else if (RuntimeEnvironment.getApiLevel() == VANILLA_ICE_CREAM) {
       return reflector(ReflectorCameraDeviceImpl.class)
           .newCameraDeviceImplV(
               cameraId,
@@ -452,9 +463,7 @@ public class ShadowCameraManager {
   }
 
   /** Shadow class for internal class CameraManager$CameraManagerGlobal */
-  @Implements(
-      className = "android.hardware.camera2.CameraManager$CameraManagerGlobal",
-      minSdk = VERSION_CODES.LOLLIPOP_MR1)
+  @Implements(className = "android.hardware.camera2.CameraManager$CameraManagerGlobal")
   public static class ShadowCameraManagerGlobal {
 
     /**

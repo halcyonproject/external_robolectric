@@ -7,6 +7,8 @@ import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
+import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.annotation.AnimRes;
@@ -77,7 +79,6 @@ import org.robolectric.shadows.ShadowLoadedApk.LoadedApkReflector;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.WithType;
-import org.robolectric.versioning.AndroidVersions.V;
 
 @SuppressWarnings("NewApi")
 @Implements(Activity.class)
@@ -439,7 +440,7 @@ public class ShadowActivity extends ShadowContextThemeWrapper {
   @Implementation
   protected void runOnUiThread(Runnable action) {
     if (ShadowLooper.looperMode() == LooperMode.Mode.LEGACY) {
-      ShadowApplication.getInstance().getForegroundThreadScheduler().post(action);
+      RuntimeEnvironment.getMasterScheduler().post(action);
     } else {
       reflector(DirectActivityReflector.class, realActivity).runOnUiThread(action);
     }
@@ -848,7 +849,7 @@ public class ShadowActivity extends ShadowContextThemeWrapper {
         .requestPermissions(permissions, requestCode);
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected void requestPermissions(String[] permissions, int requestCode, int deviceId) {
     lastRequestedPermission = new PermissionsRequest(permissions, requestCode, deviceId);
     reflector(DirectActivityReflector.class, realActivity)
@@ -989,6 +990,7 @@ public class ShadowActivity extends ShadowContextThemeWrapper {
           parcel.setDataPosition(0);
           List<DirectAction> output = new ArrayList<>();
           parcel.readParcelableList(output, DirectAction.class.getClassLoader());
+          parcel.recycle();
           callback.accept(output);
         });
   }
@@ -1071,10 +1073,6 @@ public class ShadowActivity extends ShadowContextThemeWrapper {
         }
       }
     }
-  }
-
-  private ShadowPackageManager shadowOf(PackageManager packageManager) {
-    return Shadow.extract(packageManager);
   }
 
   @ForType(value = Activity.class, direct = true)

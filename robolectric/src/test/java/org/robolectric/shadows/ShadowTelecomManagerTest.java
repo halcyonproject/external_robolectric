@@ -1,6 +1,5 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
@@ -43,11 +42,13 @@ import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.android.controller.ServiceController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.ShadowTelecomManager.CallRequestMode;
 import org.robolectric.shadows.testing.TestConnectionService;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowTelecomManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -128,7 +129,7 @@ public class ShadowTelecomManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  
   public void clearAccountsForPackage() {
     PhoneAccountHandle accountHandle1 = createHandle("a.package", "OtherConnectionService", "id1");
     telecomService.registerPhoneAccount(
@@ -222,7 +223,7 @@ public class ShadowTelecomManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  
   public void getPhoneAccountsForPackage() {
     PhoneAccountHandle handleInThisApplicationsPackage = createHandle("id1");
     telecomService.registerPhoneAccount(
@@ -673,7 +674,7 @@ public class ShadowTelecomManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  
   public void getLine1Number() {
     // Check initial state
     PhoneAccountHandle phoneAccountHandle = createHandle("id1");
@@ -689,7 +690,7 @@ public class ShadowTelecomManagerTest {
   }
 
   @Test
-  @Config(minSdk = LOLLIPOP_MR1)
+  
   public void getLine1Number_noPermission_throwsSecurityException() {
     shadowOf(telecomService).setReadPhoneStatePermission(false);
 
@@ -754,8 +755,8 @@ public class ShadowTelecomManagerTest {
   @Test
   @Config(minSdk = Build.VERSION_CODES.O)
   public void telecomManager_activityContextEnabled_differentInstancesRetrieveDefaultDialer() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       TelecomManager applicationTelecomManager =
@@ -770,8 +771,6 @@ public class ShadowTelecomManagerTest {
       String activityDefaultDialer = activityTelecomManager.getDefaultDialerPackage();
 
       assertThat(activityDefaultDialer).isEqualTo(applicationDefaultDialer);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 }

@@ -21,7 +21,9 @@ import static android.os.Build.VERSION_CODES.R;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.robolectric.Shadows.shadowOf;
@@ -33,6 +35,7 @@ import android.app.AppOpsManager;
 import android.app.AppOpsManager.OnOpChangedListener;
 import android.app.AppOpsManager.OpEntry;
 import android.app.AppOpsManager.PackageOps;
+import android.app.AsyncNotedAppOp;
 import android.app.SyncNotedAppOp;
 import android.content.Context;
 import android.media.AudioAttributes;
@@ -44,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -51,6 +55,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.ShadowAppOpsManager.ModeAndException;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
@@ -58,6 +63,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 /** Unit tests for {@link ShadowAppOpsManager}. */
 @RunWith(AndroidJUnit4.class)
 public class ShadowAppOpsManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private static final String PACKAGE_NAME1 = "com.company1.pkg1";
   private static final String PACKAGE_NAME2 = "com.company2.pkg2";
@@ -605,6 +611,41 @@ public class ShadowAppOpsManagerTest {
     assertThat(captor.getValue().getAttributionTag()).isEqualTo("tag");
   }
 
+  @Test
+  @Config(minSdk = VERSION_CODES.BAKLAVA)
+  public void setOnOpNotedCallback_withIgnoreAsyncFlag_togglesAsyncNotifications() {
+    ShadowAppOpsManager shadowAppOps = shadowOf(appOps);
+    AppOpsManager.OnOpNotedCallback callback = mock(AppOpsManager.OnOpNotedCallback.class);
+
+    // Test WITH the IGNORE_ASYNC flag
+    int flagsWithIgnore = AppOpsManager.OP_NOTED_CALLBACK_FLAG_IGNORE_ASYNC;
+    appOps.setOnOpNotedCallback(directExecutor(), callback, flagsWithIgnore);
+
+    AsyncNotedAppOp asyncOp =
+        new AsyncNotedAppOp(
+            AppOpsManager.OP_RECORD_AUDIO,
+            UID_1,
+            "asyncRecordTag",
+            "testMessage",
+            System.currentTimeMillis());
+
+    shadowAppOps.simulateAsyncOpNoted(asyncOp);
+
+    verify(callback, never())
+        .onAsyncNoted(any()); // Should not receive async op since IGNORE_ASYNC is set.
+
+    // Unset the callback
+    appOps.setOnOpNotedCallback(null, null, 0);
+
+    // Test WITHOUT the IGNORE_ASYNC flag
+    int flagsWithoutIgnore = 0;
+
+    appOps.setOnOpNotedCallback(directExecutor(), callback, flagsWithoutIgnore);
+    shadowAppOps.simulateAsyncOpNoted(asyncOp);
+
+    verify(callback).onAsyncNoted(asyncOp);
+  }
+
   @Config(minSdk = Q)
   @Test
   public void getPackageForOpsStr_setNone_getEmptyList() {
@@ -773,8 +814,8 @@ public class ShadowAppOpsManagerTest {
   @Test
   @Config(minSdk = O)
   public void appOpsManager_activityContextEnabled_differentInstancesRetrieveOps() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       // Get the AppOpsManager instances
@@ -796,8 +837,6 @@ public class ShadowAppOpsManagerTest {
       List<PackageOps> activityPackageOpsList = shadowActivityAppOpsManager.getPackagesForOps(ops);
 
       assertThat(activityPackageOpsList).isEqualTo(applicationPackageOpsList);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 }

@@ -1,6 +1,6 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.M;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -63,7 +63,6 @@ import org.robolectric.annotation.LooperMode;
 import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.testing.TestActivity;
 import org.robolectric.util.Scheduler;
-import org.robolectric.versioning.AndroidVersions.Baklava;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowApplicationTest {
@@ -148,14 +147,12 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  @Config(minSdk = M)
   public void shouldProvideServicesIntroducedInLollipopMr1() {
     assertThat(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
         .isInstanceOf(SubscriptionManager.class);
   }
 
   @Test
-  @Config(minSdk = M)
   public void shouldProvideServicesIntroducedMarshmallow() {
     assertThat(context.getSystemService(Context.FINGERPRINT_SERVICE))
         .isInstanceOf(FingerprintManager.class);
@@ -932,29 +929,16 @@ public class ShadowApplicationTest {
   }
 
   @Test
-  public void getForegroundThreadScheduler_shouldMatchRobolectricValue() {
-    assertThat(Shadows.shadowOf(context).getForegroundThreadScheduler())
-        .isSameInstanceAs(Robolectric.getForegroundThreadScheduler());
-  }
-
-  @Test
   @LooperMode(LEGACY)
-  @Config(maxSdk = Baklava.SDK_INT)
+  @Config(maxSdk = BAKLAVA)
   public void getBackgroundThreadScheduler_shouldMatchRobolectricValue() {
     assertThat(Shadows.shadowOf(context).getBackgroundThreadScheduler())
         .isSameInstanceAs(Robolectric.getBackgroundThreadScheduler());
   }
 
   @Test
-  public void getForegroundThreadScheduler_shouldMatchRuntimeEnvironment() {
-    Scheduler s = new Scheduler();
-    RuntimeEnvironment.setMasterScheduler(s);
-    assertThat(Shadows.shadowOf(context).getForegroundThreadScheduler()).isSameInstanceAs(s);
-  }
-
-  @Test
   @LooperMode(LEGACY)
-  @Config(maxSdk = Baklava.SDK_INT)
+  @Config(maxSdk = BAKLAVA)
   public void getBackgroundThreadScheduler_shouldDifferFromRuntimeEnvironment_byDefault() {
     Scheduler s = new Scheduler();
     RuntimeEnvironment.setMasterScheduler(s);
@@ -964,7 +948,7 @@ public class ShadowApplicationTest {
 
   @Test
   @LooperMode(LEGACY)
-  @Config(maxSdk = Baklava.SDK_INT)
+  @Config(maxSdk = BAKLAVA)
   public void
       getBackgroundThreadScheduler_shouldDifferFromRuntimeEnvironment_withAdvancedScheduling() {
     Scheduler s = new Scheduler();

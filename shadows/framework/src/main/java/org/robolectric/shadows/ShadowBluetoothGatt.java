@@ -190,6 +190,20 @@ public class ShadowBluetoothGatt {
   }
 
   /**
+   * Overrides {@link BluetoothGatt#setPreferredPhy} to always fail before {@link
+   * ShadowBluetoothGatt#setGattCallback} is called, and always succeed after.
+   */
+  @Implementation(minSdk = O)
+  protected void setPreferredPhy(int txPhy, int rxPhy, int phyOptions) {
+    if (this.bluetoothGattCallback == null) {
+      return;
+    }
+
+    this.bluetoothGattCallback.onPhyUpdate(
+        this.realBluetoothGatt, txPhy, rxPhy, BluetoothGatt.GATT_SUCCESS);
+  }
+
+  /**
    * Overrides {@link BluetoothGatt#discoverServices} to always return false unless there are
    * discoverable services made available by {@link ShadowBluetoothGatt#addDiscoverableService}
    *
@@ -253,6 +267,10 @@ public class ShadowBluetoothGatt {
 
   @Implementation(minSdk = O)
   protected boolean writeDescriptor(BluetoothGattDescriptor descriptor) {
+    return writeDescriptorInternal(descriptor);
+  }
+
+  private boolean writeDescriptorInternal(BluetoothGattDescriptor descriptor) {
     if (this.getGattCallback() == null) {
       throw new IllegalStateException(NULL_CALLBACK_MSG);
     }

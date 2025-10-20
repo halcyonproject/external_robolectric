@@ -1,7 +1,6 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.L;
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.N_MR1;
@@ -9,6 +8,8 @@ import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.Q;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static org.robolectric.annotation.TextLayoutMode.Mode.REALISTIC;
 
 import android.graphics.ColorFilter;
@@ -26,9 +27,7 @@ import org.robolectric.annotation.TextLayoutMode;
 import org.robolectric.config.ConfigurationRegistry;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
-import org.robolectric.versioning.AndroidVersions;
-import org.robolectric.versioning.AndroidVersions.U;
-import org.robolectric.versioning.AndroidVersions.V;
+
 
 @SuppressWarnings({"UnusedDeclaration"})
 @Implements(Paint.class)
@@ -210,8 +209,7 @@ public class ShadowPaint {
     return typeface;
   }
 
-  @Implementation(minSdk = AndroidVersions.Baklava.SDK_INT)
-  
+  @Implementation(minSdk = BAKLAVA, maxSdk = BAKLAVA)
   protected Typeface setTypefaceWithoutWarning(Typeface typeface) {
     this.typeface = typeface;
     return typeface;
@@ -247,12 +245,12 @@ public class ShadowPaint {
     this.textSkewX = skewX;
   }
 
-  @Implementation(minSdk = L)
+  @Implementation
   protected float getLetterSpacing() {
     return letterSpacing;
   }
 
-  @Implementation(minSdk = L)
+  @Implementation
   protected void setLetterSpacing(float letterSpacing) {
     this.letterSpacing = letterSpacing;
   }
@@ -481,13 +479,13 @@ public class ShadowPaint {
     return text.length();
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected static int nGetFontMetricsInt(
       long paintPtr, FontMetricsInt fmi, /* Ignored */ boolean useLocale) {
     return nGetFontMetricsInt(paintPtr, fmi);
   }
 
-  @Implementation(minSdk = P, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = P, maxSdk = UPSIDE_DOWN_CAKE)
   protected static int nGetFontMetricsInt(long paintPtr, FontMetricsInt fmi) {
     if (ConfigurationRegistry.get(TextLayoutMode.Mode.class) == REALISTIC) {
       // TODO: hack, just set values to those we see on emulator
@@ -543,7 +541,7 @@ public class ShadowPaint {
     return 0f;
   }
 
-  @Implementation(minSdk = U.SDK_INT, maxSdk = U.SDK_INT)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE, maxSdk = UPSIDE_DOWN_CAKE)
   protected static float nGetRunCharacterAdvance(
       long paintPtr,
       char[] text,
@@ -558,8 +556,7 @@ public class ShadowPaint {
     return nGetRunAdvance(paintPtr, text, start, end, contextStart, contextEnd, isRtl, offset);
   }
 
-  @Implementation(minSdk = V.SDK_INT)
-  
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected static float nGetRunCharacterAdvance(
       long paintPtr,
       char[] text,
@@ -614,34 +611,4 @@ public class ShadowPaint {
     return nGetRunAdvance(0, text, start, end, contextStart, contextEnd, isRtl, offset);
   }
 
-  @Implementation(maxSdk = LOLLIPOP_MR1)
-  protected static float native_getTextRunAdvances(
-      long nativeObject,
-      long nativeTypeface,
-      char[] text,
-      int index,
-      int count,
-      int contextIndex,
-      int contextCount,
-      boolean isRtl,
-      float[] advances,
-      int advancesIndex) {
-    return nGetRunAdvance(
-        0, text, index, index + count, contextIndex, contextIndex + contextCount, isRtl, index);
-  }
-
-  @Implementation(maxSdk = LOLLIPOP_MR1)
-  protected static float native_getTextRunAdvances(
-      long nativeObject,
-      long nativeTypeface,
-      String text,
-      int start,
-      int end,
-      int contextStart,
-      int contextEnd,
-      boolean isRtl,
-      float[] advances,
-      int advancesIndex) {
-    return nGetRunAdvance(0, text.toCharArray(), start, end, contextStart, contextEnd, isRtl, 0);
-  }
 }

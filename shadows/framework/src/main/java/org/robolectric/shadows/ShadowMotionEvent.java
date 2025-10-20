@@ -4,6 +4,7 @@ import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.robolectric.shadows.NativeAndroidInput.AMOTION_EVENT_AXIS_ORIENTATION;
@@ -33,7 +34,6 @@ import org.robolectric.annotation.RealObject;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.res.android.NativeObjRegistry;
 import org.robolectric.util.ReflectionHelpers;
-import org.robolectric.versioning.AndroidVersions.V;
 
 /**
  * Shadow of MotionEvent.
@@ -591,7 +591,6 @@ public class ShadowMotionEvent extends ShadowInputEvent {
 
   @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   @HiddenApi
-  
   protected static float nativeGetXOffset(long nativePtr) {
     NativeInput.MotionEvent event = getNativeMotionEvent(nativePtr);
     return event.getXOffset();
@@ -599,28 +598,25 @@ public class ShadowMotionEvent extends ShadowInputEvent {
 
   @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   @HiddenApi
-  
   protected static float nativeGetYOffset(long nativePtr) {
     NativeInput.MotionEvent event = getNativeMotionEvent(nativePtr);
     return event.getYOffset();
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected final MotionEvent split(int idBits) {
     NativeInput.MotionEvent event = getNativeMotionEvent();
     return event.nativeSplit(idBits);
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   @HiddenApi
-  
   protected static float nativeGetRawXOffset(long nativePtr) {
     return getNativeMotionEvent(nativePtr).getXOffset();
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   @HiddenApi
-  
   protected static float nativeGetRawYOffset(long nativePtr) {
     return getNativeMotionEvent(nativePtr).getYOffset();
   }

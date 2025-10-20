@@ -15,10 +15,10 @@ java_library_host {
     name: "Robolectric_utils_reflector",
     static_libs: [
         "Robolectric_utils",
-        "asm-9.6",
-        "asm-commons-9.6",
-        "asm-tree-9.6",
-        "asm-util-9.6",
+        "ow2-asm",
+        "ow2-asm-commons",
+        "ow2-asm-tree",
+        "ow2-asm-util",
     ],
     srcs: ["src/main/java/**/*.java"],
 }

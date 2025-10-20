@@ -47,10 +47,10 @@ java_library {
         "robolectric-accessibility-test-framework-2.1",
         "robolectric-javax.annotation-api-1.2",
         "robolectric-sqlite4java-0.282",
-        "asm-commons-9.6",
         "guava",
-        "asm-tree-9.6",
-        "asm-9.6",
+        "ow2-asm",
+        "ow2-asm-commons",
+        "ow2-asm-tree",
         //standard tools
         "error_prone_annotations",
         // aar files that make up android and jetpack
@@ -59,8 +59,8 @@ java_library {
         "robolectric-host-androidx-test-monitor",
     ],
     plugins: [
-        "auto_value_plugin_1.9",
-        "auto_value_builder_plugin_1.9",
+        "auto_value_plugin",
+        "auto_value_builder_plugin",
         "Robolectric_processor",
     ],
     errorprone: {

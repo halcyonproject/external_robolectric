@@ -12,6 +12,7 @@ import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
+import static org.robolectric.shadows.ShadowUserManager.FLAG_MAIN;
 
 import android.Manifest.permission;
 import android.app.Activity;
@@ -37,16 +38,19 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowUserManager.UserState;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowUserManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private UserManager userManager;
   private Context context;
@@ -1215,8 +1219,8 @@ public class ShadowUserManagerTest {
   @Test
   @Config(minSdk = O)
   public void userManager_activityContextEnabled_consistentAcrossContexts() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       UserManager applicationUserManager =
@@ -1232,8 +1236,15 @@ public class ShadowUserManagerTest {
       boolean isAdminActivity = activityUserManager.isAdminUser();
 
       assertThat(isAdminActivity).isEqualTo(isAdminApplication);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
+  }
+
+  @Test
+  @Config(minSdk = UPSIDE_DOWN_CAKE) // isMainUser introduced in U
+  public void isMainUser() {
+    shadowOf(userManager).addUser(123, "main_user", FLAG_MAIN);
+    shadowOf(userManager).switchUser(123);
+
+    assertThat(userManager.isMainUser()).isTrue();
   }
 }

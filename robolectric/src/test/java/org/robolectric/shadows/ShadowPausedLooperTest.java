@@ -7,13 +7,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.shadows.ShadowLooper.shadowMainLooper;
-import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
@@ -24,7 +24,6 @@ import android.os.SystemClock;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.common.util.concurrent.SettableFuture;
 import java.time.Duration;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -37,13 +36,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.res.android.Ref;
 import org.robolectric.shadow.api.Shadow;
-import org.robolectric.util.reflector.Direct;
-import org.robolectric.util.reflector.ForType;
 
 @RunWith(AndroidJUnit4.class)
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -156,14 +152,14 @@ public class ShadowPausedLooperTest {
 
   @Test
   public void postedDelayedBackgroundLooperTasksAreExecutedOnlyWhenSystemClockAdvanced() {
-    Runnable mockRunnable = mock(Runnable.class);
-    new Handler(handlerThread.getLooper()).postDelayed(mockRunnable, 10);
+    AtomicBoolean wasRun = new AtomicBoolean(false);
+    new Handler(handlerThread.getLooper()).postDelayed(() -> wasRun.set(true), 10);
     ShadowPausedLooper shadowLooper = Shadow.extract(handlerThread.getLooper());
     shadowLooper.idle();
-    verify(mockRunnable, times(0)).run();
+    assertThat(wasRun.get()).isFalse();
     ShadowSystemClock.advanceBy(Duration.ofMillis(100));
     shadowLooper.idle();
-    verify(mockRunnable, times(1)).run();
+    assertThat(wasRun.get()).isTrue();
   }
 
   @Test
@@ -171,20 +167,15 @@ public class ShadowPausedLooperTest {
     ExecutorService executorService = newSingleThreadExecutor();
     Future<Boolean> result =
         executorService.submit(
-            new Callable<Boolean>() {
-              @Override
-              public Boolean call() throws Exception {
-                shadowMainLooper().idle();
-                return true;
-              }
+            () -> {
+              shadowMainLooper().idle();
+              return true;
             });
     try {
       result.get();
       fail("idling main looper from background thread unexpectedly succeeded.");
-    } catch (InterruptedException e) {
-      throw e;
     } catch (ExecutionException e) {
-      assertThat(e.getCause()).isInstanceOf(UnsupportedOperationException.class);
+      assertThat(e).hasCauseThat().isInstanceOf(IllegalStateException.class);
     } finally {
       executorService.shutdown();
     }
@@ -414,8 +405,7 @@ public class ShadowPausedLooperTest {
 
   @Before
   public void assertMainLooperEmpty() {
-    ShadowPausedMessageQueue queue = Shadow.extract(getMainLooper().getQueue());
-    assertThat(queue.isIdle()).isTrue();
+    assertThat(getMainLooper().getQueue().isIdle()).isTrue();
   }
 
   @Test
@@ -625,6 +615,100 @@ public class ShadowPausedLooperTest {
   }
 
   @Test
+  public void poll_with_syncBarrier() {
+    int barrier = Looper.getMainLooper().getQueue().postSyncBarrier();
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    long startTime = System.nanoTime();
+    shadowPausedLooper.poll(10);
+    Duration elapsedTime = Duration.ofNanos(System.nanoTime() - startTime);
+    assertThat(elapsedTime.toMillis()).isAtLeast(10);
+    Looper.getMainLooper().getQueue().removeSyncBarrier(barrier);
+  }
+
+  @Test
+  public void poll_notIdle() {
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    new Handler(Looper.getMainLooper()).post(() -> {});
+    // should return immediately. Checking elapsed time here would be flaky
+    shadowPausedLooper.poll(0);
+  }
+
+  @Test
+  public void poll_future_msg() {
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    new Handler(Looper.getMainLooper()).postDelayed(() -> {}, 10);
+    long startTime = System.nanoTime();
+    // poll should wait the full 10 ms, as the posted message is not executable yet
+    shadowPausedLooper.poll(10);
+    Duration elapsedTime = Duration.ofNanos(System.nanoTime() - startTime);
+    assertThat(elapsedTime.toMillis()).isAtLeast(10);
+  }
+
+  @Test
+  public void poll_future_msg_clock_advanced() {
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    new Handler(Looper.getMainLooper()).postDelayed(() -> {}, 10);
+    new Handler(handlerThread.getLooper())
+        .post(
+            () -> {
+              try {
+                // give time for poll to block
+                Thread.sleep(10);
+              } catch (InterruptedException e) {
+                // ignore
+              }
+              ShadowSystemClock.advanceBy(Duration.ofMillis(10));
+            });
+    // should not block forever
+    shadowPausedLooper.poll(0);
+  }
+
+  @Test
+  public void poll_removeSyncBarrier() {
+    int barrier = Looper.getMainLooper().getQueue().postSyncBarrier();
+    // post a message blocked by a sync barrier
+    new Handler(Looper.getMainLooper()).post(() -> {});
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    new Handler(handlerThread.getLooper())
+        .post(
+            () -> {
+              try {
+                // give time for poll to block
+                Thread.sleep(10);
+              } catch (InterruptedException e) {
+                // ignore
+              }
+              Looper.getMainLooper().getQueue().removeSyncBarrier(barrier);
+            });
+
+    // should not block forever
+    shadowPausedLooper.poll(0);
+  }
+
+  @Test
+  public void poll_new_message_blocked_by_sync() {
+    ShadowPausedLooper shadowPausedLooper = Shadow.extract(Looper.getMainLooper());
+    int token = Looper.getMainLooper().getQueue().postSyncBarrier();
+    new Handler(handlerThread.getLooper())
+        .post(
+            () -> {
+              try {
+                // try to make poll block first
+                Thread.sleep(1);
+              } catch (InterruptedException e) {
+              }
+              new Handler(Looper.getMainLooper()).post(() -> {});
+            });
+
+    // should wait the entire time
+    long startTime = System.nanoTime();
+    shadowPausedLooper.poll(20);
+    long elapsedMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
+    assertThat(elapsedMs).isAtLeast(20);
+    Looper.getMainLooper().getQueue().removeSyncBarrier(token);
+  }
+
+  @Test
   @Config(minSdk = VERSION_CODES.M)
   public void runOneTask_ignoreSyncBarrier() {
     int barrier = Looper.getMainLooper().getQueue().postSyncBarrier();
@@ -669,7 +753,8 @@ public class ShadowPausedLooperTest {
                 } catch (InterruptedException e) {
                   Thread.currentThread().interrupt();
                 }
-              });
+              },
+              "looper_customThread_unPauseAfterQuit-" + i);
       t.start();
       Looper looper = future.get();
       shadowOf(looper).pause();
@@ -713,7 +798,7 @@ public class ShadowPausedLooperTest {
     AtomicBoolean wasRun = new AtomicBoolean(false);
     handler.post(
         () -> {
-          token.set(postSyncBarrierCompat(handlerThread.getLooper()));
+          token.set(handlerThread.getLooper().getQueue().postSyncBarrier());
           handler.post(() -> wasRun.set(true));
         });
     shadowLooper.idle();
@@ -722,7 +807,13 @@ public class ShadowPausedLooperTest {
     // should be effectively a no-op and not deadlock
     shadowLooper.idle();
     // remove sync barriers messages need to get posted as async
-    asyncHandler.post(() -> removeSyncBarrierCompat(handlerThread.getLooper(), token.get()));
+    asyncHandler.post(
+        () -> {
+          Looper looper = handlerThread.getLooper();
+          int token1 = token.get();
+
+          looper.getQueue().removeSyncBarrier(token1);
+        });
     shadowLooper.idle();
     assertThat(wasRun.get()).isTrue();
   }
@@ -738,7 +829,7 @@ public class ShadowPausedLooperTest {
     AtomicBoolean wasRun = new AtomicBoolean(false);
     handler.post(
         () -> {
-          token.set(postSyncBarrierCompat(handlerThread.getLooper()));
+          token.set(handlerThread.getLooper().getQueue().postSyncBarrier());
           handler.post(() -> wasRun.set(true));
         });
     shadowLooper.idle();
@@ -747,9 +838,47 @@ public class ShadowPausedLooperTest {
     // should be effectively a no-op and not deadlock
     shadowLooper.idle();
     // remove sync barriers messages need to get posted as async
-    asyncHandler.post(() -> removeSyncBarrierCompat(handlerThread.getLooper(), token.get()));
+    asyncHandler.post(
+        () -> {
+          Looper looper = handlerThread.getLooper();
+          int token1 = token.get();
+
+          looper.getQueue().removeSyncBarrier(token1);
+        });
     shadowLooper.idle();
     assertThat(wasRun.get()).isTrue();
+  }
+
+  /** Verifies unpause of an already unpaused looper is ignored */
+  @Test
+  public void unpause_ignored() {
+    ShadowPausedLooper shadowLooper = Shadow.extract(handlerThread.getLooper());
+    assertThat(shadowLooper.isPaused()).isFalse();
+    shadowLooper.unPause();
+  }
+
+  @Test
+  public void unpause_mainLooper() {
+    ShadowPausedLooper shadowLooper = Shadow.extract(getMainLooper());
+    assertThat(shadowLooper.isPaused()).isTrue();
+    assertThrows(UnsupportedOperationException.class, shadowLooper::unPause);
+  }
+
+  @Test
+  public void runUntilEmpty() {
+    final Handler mainHandler = new Handler();
+
+    long origTime = SystemClock.uptimeMillis();
+    Runnable mockRunnable = mock(Runnable.class);
+    Runnable postingRunnable = () -> mainHandler.postDelayed(mockRunnable, 100);
+    mainHandler.post(mockRunnable);
+    mainHandler.post(postingRunnable);
+
+    verify(mockRunnable, never()).run();
+
+    shadowMainLooper().runUntilEmpty();
+    verify(mockRunnable, times(2)).run();
+    assertThat(SystemClock.uptimeMillis() - origTime).isEqualTo(100);
   }
 
   private static class BlockingRunnable implements Runnable {
@@ -770,28 +899,4 @@ public class ShadowPausedLooperTest {
     handler.post(() -> {});
   }
 
-  private static int postSyncBarrierCompat(Looper looper) {
-    if (RuntimeEnvironment.getApiLevel() >= 23) {
-      return looper.getQueue().postSyncBarrier();
-    } else {
-      return reflector(LooperReflector.class, looper).postSyncBarrier();
-    }
-  }
-
-  private static void removeSyncBarrierCompat(Looper looper, int token) {
-    if (RuntimeEnvironment.getApiLevel() >= 23) {
-      looper.getQueue().removeSyncBarrier(token);
-    } else {
-      reflector(LooperReflector.class, looper).removeSyncBarrier(token);
-    }
-  }
-
-  @ForType(Looper.class)
-  private interface LooperReflector {
-    @Direct
-    int postSyncBarrier();
-
-    @Direct
-    void removeSyncBarrier(int token);
-  }
 }

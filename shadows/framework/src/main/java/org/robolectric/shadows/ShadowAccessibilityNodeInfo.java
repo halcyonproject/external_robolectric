@@ -1,10 +1,10 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.R;
-import static org.robolectric.RuntimeEnvironment.getApiLevel;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.util.Pair;
 import android.view.View;
@@ -26,7 +26,6 @@ import org.robolectric.util.reflector.Constructor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
-import org.robolectric.versioning.AndroidVersions.U;
 
 /**
  * Properties of {@link android.view.accessibility.AccessibilityNodeInfo} that are normally locked
@@ -54,6 +53,8 @@ public class ShadowAccessibilityNodeInfo {
   private AccessibilityNodeInfo labelFor;
 
   private AccessibilityNodeInfo labeledBy;
+
+  private List<AccessibilityNodeInfo> labeledByList;
 
   private View view;
 
@@ -99,6 +100,7 @@ public class ShadowAccessibilityNodeInfo {
     newShadow.parent = shadowInfo.parent;
     newShadow.labelFor = (shadowInfo.labelFor == null) ? null : obtain(shadowInfo.labelFor);
     newShadow.labeledBy = (shadowInfo.labeledBy == null) ? null : obtain(shadowInfo.labeledBy);
+    newShadow.labeledByList = shadowInfo.labeledByList;
     newShadow.view = shadowInfo.view;
     newShadow.actionListener = shadowInfo.actionListener;
 
@@ -111,12 +113,10 @@ public class ShadowAccessibilityNodeInfo {
 
     newShadow.refreshReturnValue = shadowInfo.refreshReturnValue;
 
-    if (getApiLevel() >= LOLLIPOP_MR1) {
-      newShadow.traversalAfter =
-          (shadowInfo.traversalAfter == null) ? null : obtain(shadowInfo.traversalAfter);
-      newShadow.traversalBefore =
-          (shadowInfo.traversalBefore == null) ? null : obtain(shadowInfo.traversalBefore);
-    }
+    newShadow.traversalAfter =
+        (shadowInfo.traversalAfter == null) ? null : obtain(shadowInfo.traversalAfter);
+    newShadow.traversalBefore =
+        (shadowInfo.traversalBefore == null) ? null : obtain(shadowInfo.traversalBefore);
     if (shadowInfo.accessibilityWindowInfo != null) {
       newShadow.accessibilityWindowInfo =
           ShadowAccessibilityWindowInfo.obtain(shadowInfo.accessibilityWindowInfo);
@@ -211,14 +211,19 @@ public class ShadowAccessibilityNodeInfo {
     if (labeledBy != null) {
       labeledBy.recycle();
     }
-    if (getApiLevel() >= LOLLIPOP_MR1) {
-      if (traversalAfter != null) {
-        traversalAfter.recycle();
-      }
 
-      if (traversalBefore != null) {
-        traversalBefore.recycle();
+    if (labeledByList != null) {
+      for (AccessibilityNodeInfo labeledBy : labeledByList) {
+        labeledBy.recycle();
       }
+    }
+
+    if (traversalAfter != null) {
+      traversalAfter.recycle();
+    }
+
+    if (traversalBefore != null) {
+      traversalBefore.recycle();
     }
   }
 
@@ -336,7 +341,73 @@ public class ShadowAccessibilityNodeInfo {
     labeledBy = obtain(info);
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  /**
+   * Adds a node that labels this node.
+   *
+   * <p>If {@link #useRealAni()} returns true, this method adds the given view that labels this node
+   * to the real {@code AccessibilityNodeInfo}. Otherwise, it adds the ANI node of the given view to
+   * `labeledByList`.
+   *
+   * <p>If one wishes to use a real ANI node in a test, which is a recommended practice, below is a
+   * test snippet:
+   *
+   * {@snippet :
+   *  Activity activity = Robolectric.buildActivity(Activity.class).setup().get();
+   *  LinearLayout layout = new LinearLayout(activity);
+   *  layout.setOrientation(LinearLayout.VERTICAL);
+   *  TextView label1 = new TextView(activity);
+   *  label1.setText("Label 1");
+   *  layout.addView(label1);
+   *  TextView label2 = new TextView(activity);
+   *  label2.setText("Label 2");
+   *  layout.addView(label2);
+   *  activity.setContentView(layout);
+   *  View view = activity.getWindow().getDecorView();
+   *  AccessibilityNodeInfo node = new AccessibilityNodeInfo();
+   *  node.setQueryFromAppProcessEnabled(view, true);
+   *  node.addLabeledBy(label1);
+   *  node.addLabeledBy(label2);
+   *  List<AccessibilityNodeInfo> labeledByList = node.getLabeledByList();
+   * }
+   *
+   * @see #getLabeledByList()
+   */
+  @Implementation(minSdk = VERSION_CODES.BAKLAVA)
+  protected void addLabeledBy(View label) {
+    if (useRealAni()) {
+      accessibilityNodeInfoReflector.addLabeledBy(label);
+      return;
+    }
+
+    if (labeledByList == null) {
+      labeledByList = new ArrayList<>();
+    }
+
+    labeledByList.add(label.createAccessibilityNodeInfo());
+  }
+
+  /**
+   * Returns the list of nodes that label this node.
+   *
+   * <p>If {@link #useRealAni()} returns true, this method returns the list of nodes that label this
+   * node from the real {@code AccessibilityNodeInfo}. Otherwise, returns `labeledByList`.
+   *
+   * @see #addLabeledBy(View)
+   */
+  @Implementation(minSdk = VERSION_CODES.BAKLAVA)
+  protected List<AccessibilityNodeInfo> getLabeledByList() {
+    if (useRealAni()) {
+      return accessibilityNodeInfoReflector.getLabeledByList();
+    }
+
+    if (labeledByList == null) {
+      labeledByList = new ArrayList<>();
+    }
+
+    return labeledByList;
+  }
+
+  @Implementation
   protected AccessibilityNodeInfo getTraversalAfter() {
     if (useRealAni()) {
       return accessibilityNodeInfoReflector.getTraversalAfter();
@@ -348,7 +419,7 @@ public class ShadowAccessibilityNodeInfo {
     return obtain(traversalAfter);
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected void setTraversalAfter(View view, int virtualDescendantId) {
     if (useRealAni()) {
       accessibilityNodeInfoReflector.setTraversalAfter(view, virtualDescendantId);
@@ -379,7 +450,7 @@ public class ShadowAccessibilityNodeInfo {
     this.traversalAfter = obtain(info);
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected AccessibilityNodeInfo getTraversalBefore() {
     if (useRealAni()) {
       return accessibilityNodeInfoReflector.getTraversalBefore();
@@ -391,7 +462,7 @@ public class ShadowAccessibilityNodeInfo {
     return obtain(traversalBefore);
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected void setTraversalBefore(View info, int virtualDescendantId) {
     if (useRealAni()) {
       accessibilityNodeInfoReflector.setTraversalBefore(info, virtualDescendantId);
@@ -576,7 +647,7 @@ public class ShadowAccessibilityNodeInfo {
    * will have direct access to the real {@link AccessibilityNodeInfo} hierarchy, so we want all
    * future interactions with ANI to use the real object.
    */
-  @Implementation(minSdk = U.SDK_INT)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
   protected void setQueryFromAppProcessEnabled(View view, boolean enabled) {
     accessibilityNodeInfoReflector.setQueryFromAppProcessEnabled(view, enabled);
     if (enabled) {
@@ -641,7 +712,13 @@ public class ShadowAccessibilityNodeInfo {
     AccessibilityNodeInfo getLabelFor();
 
     @Direct
+    void addLabeledBy(View label);
+
+    @Direct
     AccessibilityNodeInfo getLabeledBy();
+
+    @Direct
+    List<AccessibilityNodeInfo> getLabeledByList();
 
     @Direct
     AccessibilityNodeInfo getTraversalAfter();

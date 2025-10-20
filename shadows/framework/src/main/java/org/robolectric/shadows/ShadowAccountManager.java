@@ -1,6 +1,5 @@
 package org.robolectric.shadows;
 
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
 import static android.os.Build.VERSION_CODES.O;
 
 import android.accounts.Account;
@@ -34,7 +33,6 @@ import javax.annotation.Nullable;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
-import org.robolectric.util.Scheduler.IdleState;
 
 @Implements(AccountManager.class)
 public class ShadowAccountManager {
@@ -198,7 +196,7 @@ public class ShadowAccountManager {
    * Removes the account unless {@link #setRemoveAccountIntent} has been set. If set, the future
    * Bundle will include the Intent and {@link AccountManager#KEY_BOOLEAN_RESULT} will be false.
    */
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected AccountManagerFuture<Bundle> removeAccount(
       Account account,
       Activity activity,
@@ -224,7 +222,7 @@ public class ShadowAccountManager {
         });
   }
 
-  @Implementation(minSdk = LOLLIPOP_MR1)
+  @Implementation
   protected boolean removeAccountExplicitly(Account account) {
     passwords.remove(account);
     userData.remove(account);
@@ -263,9 +261,12 @@ public class ShadowAccountManager {
       @Nullable Handler handler,
       boolean updateImmediately,
       @Nullable String[] accountTypes) {
-    // TODO: Match real method behavior by throwing IllegalStateException.
+    if (listener == null) {
+      throw new IllegalArgumentException("the listener is null");
+    }
+
     if (listeners.containsKey(listener)) {
-      return;
+      throw new IllegalStateException("this listener is already added");
     }
 
     Set<String> types = null;
@@ -765,6 +766,46 @@ public class ShadowAccountManager {
     }
 
     return result.toArray(new Account[0]);
+  }
+
+  @Implementation
+  protected AccountManagerFuture<Bundle> confirmCredentials(
+      final Account account,
+      final Bundle options,
+      final Activity activity,
+      final AccountManagerCallback<Bundle> callback,
+      final Handler handler) {
+    if (account == null) {
+      throw new IllegalArgumentException("account is null");
+    }
+    return start(
+        new BaseRoboAccountManagerFuture<Bundle>(callback, handler) {
+          @Override
+          public Bundle doWork() throws AuthenticatorException {
+            Bundle result = new Bundle();
+            if (!authenticators.containsKey(account.type)) {
+              throw new AuthenticatorException("No authenticator specified for " + account.type);
+            }
+            String password = null;
+            if (options != null) {
+              password = options.getString(AccountManager.KEY_PASSWORD);
+            }
+            if (activity == null && password == null) {
+              result.putParcelable(AccountManager.KEY_INTENT, new Intent());
+            } else {
+              result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
+              result.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
+              if (password != null) {
+                result.putBoolean(
+                    AccountManager.KEY_BOOLEAN_RESULT, password.equals(passwords.get(account)));
+              } else {
+                result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, true);
+              }
+              result.putLong(AccountManager.KEY_LAST_AUTHENTICATED_TIME, -1);
+            }
+            return result;
+          }
+        });
   }
 
   /**

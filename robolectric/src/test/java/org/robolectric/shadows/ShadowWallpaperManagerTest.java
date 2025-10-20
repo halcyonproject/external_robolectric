@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
 import static android.os.Build.VERSION_CODES.O;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -38,11 +40,13 @@ import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
 import org.robolectric.annotation.GraphicsMode.Mode;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.ShadowWallpaperManager.WallpaperCommandRecord;
 
 @RunWith(AndroidJUnit4.class)
 @GraphicsMode(Mode.LEGACY)
 public class ShadowWallpaperManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private static final Bitmap TEST_IMAGE_1 = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
 
@@ -340,6 +344,24 @@ public class ShadowWallpaperManagerTest {
   }
 
   @Test
+  @Config(minSdk = BAKLAVA)
+  public void setBitmap_shouldUpdateBackupEligibility() throws Exception {
+    manager.setBitmap(
+        TEST_IMAGE_1,
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ true,
+        WallpaperManager.FLAG_SYSTEM);
+    manager.setBitmap(
+        TEST_IMAGE_2,
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ true,
+        WallpaperManager.FLAG_LOCK);
+
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_SYSTEM)).isTrue();
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_LOCK)).isTrue();
+  }
+
+  @Test
   @Config(minSdk = N)
   public void getWallpaperFile_flagSystem_nothingCached_shouldReturnNull() {
     assertThat(manager.getWallpaperFile(WallpaperManager.FLAG_SYSTEM)).isNull();
@@ -389,6 +411,22 @@ public class ShadowWallpaperManagerTest {
   @Config(minSdk = N)
   public void getWallpaperFile_unsupportedFlag_shouldReturnNull() {
     assertThat(manager.getWallpaperFile(UNSUPPORTED_FLAG)).isNull();
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void getWallpaperFile_getCropped_shouldReturnParcelFileDescriptor() throws Exception {
+    manager.setBitmap(
+        TEST_IMAGE_1,
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ false,
+        WallpaperManager.FLAG_SYSTEM);
+
+    try (ParcelFileDescriptor parcelFileDescriptor =
+        manager.getWallpaperFile(WallpaperManager.FLAG_SYSTEM, /* getCropped= */ true)) {
+      assertThat(getBytesFromFileDescriptor(parcelFileDescriptor.getFileDescriptor()))
+          .isEqualTo(getBytesFromBitmap(TEST_IMAGE_1));
+    }
   }
 
   @Test
@@ -511,6 +549,24 @@ public class ShadowWallpaperManagerTest {
     assertThat(shadowOf(manager).getBitmap(WallpaperManager.FLAG_LOCK)).isNull();
     assertThat(shadowOf(manager).getBitmap(WallpaperManager.FLAG_SYSTEM)).isNull();
     assertThat(shadowOf(manager).getBitmap(UNSUPPORTED_FLAG)).isNull();
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void setStream_shouldUpdateBackupEligibility() throws Exception {
+    manager.setStream(
+        new ByteArrayInputStream(getBytesFromBitmap(TEST_IMAGE_1)),
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ true,
+        WallpaperManager.FLAG_SYSTEM);
+    manager.setStream(
+        new ByteArrayInputStream(getBytesFromBitmap(TEST_IMAGE_2)),
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ true,
+        WallpaperManager.FLAG_LOCK);
+
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_SYSTEM)).isTrue();
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_LOCK)).isTrue();
   }
 
   @Test
@@ -689,8 +745,8 @@ public class ShadowWallpaperManagerTest {
   @Test
   @Config(minSdk = O)
   public void wallpaperManager_activityContextEnabled_retrievesSameWallpaper() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       Activity activity = controller.get();
@@ -706,8 +762,31 @@ public class ShadowWallpaperManagerTest {
       WallpaperInfo activityWallpaper = activityWallpaperManager.getWallpaperInfo();
 
       assertThat(activityWallpaper).isEqualTo(applicationWallpaper);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void isWallpaperBackupEligible_neverSetBitmap_returnsFalse() throws Exception {
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_SYSTEM)).isFalse();
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_LOCK)).isFalse();
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void isWallpaperBackupEligible_notAllowBackup_returnsFalse() throws Exception {
+    manager.setBitmap(
+        TEST_IMAGE_1,
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ false,
+        WallpaperManager.FLAG_SYSTEM);
+    manager.setBitmap(
+        TEST_IMAGE_2,
+        /* visibleCropHint= */ null,
+        /* allowBackup= */ false,
+        WallpaperManager.FLAG_SYSTEM);
+
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_SYSTEM)).isFalse();
+    assertThat(manager.isWallpaperBackupEligible(WallpaperManager.FLAG_LOCK)).isFalse();
   }
 }

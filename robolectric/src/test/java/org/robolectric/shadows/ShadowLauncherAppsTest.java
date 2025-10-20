@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.L;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.N;
@@ -44,18 +45,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
 import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.ForType;
-import org.robolectric.versioning.AndroidVersions;
 
 /** Robolectric test for {@link ShadowLauncherApps}. */
 @RunWith(AndroidJUnit4.class)
@@ -65,6 +67,9 @@ public class ShadowLauncherAppsTest {
   private static final String TEST_PACKAGE_NAME_2 = "test-package2";
   private static final String TEST_PACKAGE_NAME_3 = "test-package3";
   private static final UserHandle USER_HANDLE = UserHandle.CURRENT;
+
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
+
   private LauncherApps launcherApps;
 
   private static class DefaultCallback extends LauncherApps.Callback {
@@ -205,7 +210,7 @@ public class ShadowLauncherAppsTest {
   }
 
   @Test
-  @Config(minSdk = L)
+  @Config(minSdk = Config.OLDEST_SDK)
   public void testIsActivityEnabled() {
     ComponentName c1 = new ComponentName(ApplicationProvider.getApplicationContext(), "Activity1");
     ComponentName c2 = new ComponentName(ApplicationProvider.getApplicationContext(), "Activity2");
@@ -440,7 +445,7 @@ public class ShadowLauncherAppsTest {
           ClassParameter.from(Context.class, ApplicationProvider.getApplicationContext()),
           ClassParameter.from(UserHandle.class, userHandle),
           ClassParameter.from(LauncherActivityInfoInternal.class, launcherActivityInfoInternal));
-    } else if (RuntimeEnvironment.getApiLevel() >= AndroidVersions.Baklava.SDK_INT) {
+    } else if (RuntimeEnvironment.getApiLevel() >= BAKLAVA) {
       boolean supportsMultiInstanceSystemUi = false;
       try {
         supportsMultiInstanceSystemUi =
@@ -482,8 +487,7 @@ public class ShadowLauncherAppsTest {
   @Test
   @Config(minSdk = O)
   public void launcherApps_activityContextEnabled_differentInstancesRetrieveProfiles() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
 
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
@@ -501,8 +505,6 @@ public class ShadowLauncherAppsTest {
       assertThat(activityProfiles).isNotEmpty();
 
       assertThat(activityProfiles).isEqualTo(applicationProfiles);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 }

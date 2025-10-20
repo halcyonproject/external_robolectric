@@ -1,6 +1,7 @@
 package org.robolectric.shadows;
 
 import static android.bluetooth.BluetoothAdapter.STATE_ON;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.M;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.Q;
@@ -9,8 +10,10 @@ import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.S_V2;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.app.PendingIntent;
 import android.app.PendingIntent.CanceledException;
@@ -58,8 +61,6 @@ import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
-import org.robolectric.versioning.AndroidVersions.Baklava;
-import org.robolectric.versioning.AndroidVersions.V;
 
 @SuppressWarnings({"UnusedDeclaration"})
 @Implements(BluetoothAdapter.class)
@@ -171,11 +172,8 @@ public class ShadowBluetoothAdapter {
    */
   @Deprecated
   public void setBluetoothLeAdvertiser(BluetoothLeAdvertiser advertiser) {
-    if (RuntimeEnvironment.getApiLevel() <= VERSION_CODES.LOLLIPOP_MR1) {
-      reflector(BluetoothAdapterReflector.class, realAdapter).setSBluetoothLeAdvertiser(advertiser);
-    } else {
+
       reflector(BluetoothAdapterReflector.class, realAdapter).setBluetoothLeAdvertiser(advertiser);
-    }
   }
 
   @Implementation
@@ -571,7 +569,6 @@ public class ShadowBluetoothAdapter {
     if (proxy == null) {
       return false;
     } else {
-      listener.onServiceConnected(profile, proxy);
       List<BluetoothProfile.ServiceListener> profileListeners =
           bluetoothProfileServiceListeners.get(profile);
       if (profileListeners != null) {
@@ -579,6 +576,7 @@ public class ShadowBluetoothAdapter {
       } else {
         bluetoothProfileServiceListeners.put(profile, new ArrayList<>(ImmutableList.of(listener)));
       }
+      listener.onServiceConnected(profile, proxy);
       return true;
     }
   }
@@ -609,7 +607,7 @@ public class ShadowBluetoothAdapter {
     }
   }
 
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected IBinder getProfile(int profile) {
     if (isEnabled()) {
       IInterface localProxy = createBinderProfileProxy(profile);
@@ -620,6 +618,20 @@ public class ShadowBluetoothAdapter {
       }
     }
     return null;
+  }
+
+  @Implementation(minSdk = POST_BAKLAVA)
+  protected void getProfile(
+      int profile, @ClassName("android.bluetooth.IBluetoothProfileCallback") Object callback) {
+    IBinder binder = getProfile(profile);
+    if (binder != null) {
+      reflector(IBluetoothProfileCallbackReflector.class, callback).getProfileReply(binder);
+    }
+  }
+
+  @ForType(className = "android.bluetooth.IBluetoothProfileCallback")
+  private interface IBluetoothProfileCallbackReflector {
+    void getProfileReply(IBinder binder);
   }
 
   private static IInterface createBinderProfileProxy(int profile) {
@@ -782,7 +794,7 @@ public class ShadowBluetoothAdapter {
 
   // TODO: remove this method as it shouldn't be necessary.
   //  Real android just calls IBluetoothManager.getBluetoothGatt
-  @Implementation(minSdk = V.SDK_INT)
+  @Implementation(minSdk = VANILLA_ICE_CREAM)
   protected IBluetoothGatt getBluetoothGatt() {
     if (ibluetoothGatt == null) {
       ibluetoothGatt = BluetoothGattProxyDelegate.createBluetoothGattProxy();
@@ -790,8 +802,7 @@ public class ShadowBluetoothAdapter {
     return ibluetoothGatt;
   }
 
-  @Implementation(minSdk = Baklava.SDK_INT)
-  
+  @Implementation(minSdk = BAKLAVA)
   protected @ClassName("android.bluetooth.IBluetoothAdvertise") Object getBluetoothAdvertise() {
     if (ibluetoothAdvertise == null) {
       ibluetoothAdvertise = BluetoothAdvertiseProxyDelegate.createBluetoothAdvertiseProxy();

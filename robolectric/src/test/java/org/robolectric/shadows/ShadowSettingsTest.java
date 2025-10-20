@@ -3,6 +3,7 @@ package org.robolectric.shadows;
 import static android.location.LocationManager.GPS_PROVIDER;
 import static android.location.LocationManager.NETWORK_PROVIDER;
 import static android.os.Build.VERSION_CODES.O;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static android.provider.Settings.Secure.LOCATION_MODE;
 import static android.provider.Settings.Secure.LOCATION_MODE_BATTERY_SAVING;
 import static android.provider.Settings.Secure.LOCATION_MODE_HIGH_ACCURACY;
@@ -28,7 +29,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
-import org.robolectric.versioning.AndroidVersions.U;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowSettingsTest {
@@ -75,6 +75,15 @@ public class ShadowSettingsTest {
 
     Settings.System.putString(contentResolver, "property", "value");
     assertThat(Settings.System.getString(contentResolver, "property")).isEqualTo("value");
+  }
+
+  @Test
+  public void testSystemGetStringForUser() {
+    assertThat(Settings.System.getStringForUser(contentResolver, "property", 10)).isNull();
+
+    Settings.System.putStringForUser(contentResolver, "property", "value", 10);
+    assertThat(Settings.System.getStringForUser(
+          contentResolver, "property", 10)).isEqualTo("value");
   }
 
   @Test
@@ -331,7 +340,7 @@ public class ShadowSettingsTest {
         .isEqualTo(0);
   }
 
-  @Config(minSdk = U.SDK_INT)
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
   @Test
   public void testConfig_putAndGetString() {
     assertThat(Settings.Config.putString("namespace", "key", "value", false)).isTrue();
@@ -340,12 +349,49 @@ public class ShadowSettingsTest {
     assertThat(Settings.Config.getString("missing_namespace/key")).isEqualTo(null);
   }
 
-  @Config(minSdk = U.SDK_INT)
+  @Config(minSdk = UPSIDE_DOWN_CAKE)
   @Test
   public void testConfig_putAndGetStrings() {
     assertThat(Settings.Config.putString("namespace", "key", "value", false)).isTrue();
     assertThat(Settings.Config.getString("namespace/key")).isEqualTo("value");
     assertThat(Settings.Config.getString("namespace/missing_key")).isEqualTo(null);
     assertThat(Settings.Config.getString("missing_namespace/key")).isEqualTo(null);
+  }
+
+  /** These are not public APIs, but they may be used by system apps in the Android platform. */
+  @Test
+  public void putStringForUser_variants() throws Exception {
+    boolean success = Settings.Secure.putStringForUser(contentResolver, "property", "value", 1);
+    assertThat(success).isTrue();
+    assertThat(Settings.Secure.getStringForUser(contentResolver, "property", 1)).isEqualTo("value");
+    assertThat(Settings.Secure.getString(contentResolver, "property")).isEqualTo("value");
+
+    success = Settings.System.putStringForUser(contentResolver, "property", "value", 1);
+    assertThat(success).isTrue();
+    assertThat(Settings.System.getStringForUser(contentResolver, "property", 1)).isEqualTo("value");
+    assertThat(Settings.System.getString(contentResolver, "property")).isEqualTo("value");
+
+    success = Settings.Global.putStringForUser(contentResolver, "property", "value", 1);
+    assertThat(success).isTrue();
+    assertThat(Settings.Global.getStringForUser(contentResolver, "property", 1)).isEqualTo("value");
+    assertThat(Settings.Global.getString(contentResolver, "property")).isEqualTo("value");
+  }
+
+  /** These are not public APIs, but they may be used by system apps in the Android platform. */
+  @Test
+  public void putIntForUser_variants() throws Exception {
+    boolean success = Settings.Secure.putIntForUser(contentResolver, "property", 1, 1);
+    assertThat(success).isTrue();
+    assertThat(Settings.Secure.getIntForUser(contentResolver, "property", 1)).isEqualTo(1);
+    assertThat(Settings.Secure.getInt(contentResolver, "property", 1)).isEqualTo(1);
+
+    success = Settings.System.putIntForUser(contentResolver, "property", 1, 1);
+    assertThat(success).isTrue();
+    assertThat(Settings.System.getIntForUser(contentResolver, "property", 1)).isEqualTo(1);
+    assertThat(Settings.System.getInt(contentResolver, "property", 1)).isEqualTo(1);
+
+    Settings.Secure.putInt(contentResolver, Settings.Secure.ODI_CAPTIONS_ENABLED, 1);
+    assertThat(Settings.Secure.getIntForUser(contentResolver, Secure.ODI_CAPTIONS_ENABLED, 0, 1))
+        .isEqualTo(1);
   }
 }

@@ -5,6 +5,7 @@ import static android.app.usage.UsageStatsManager.INTERVAL_WEEKLY;
 import static android.content.Context.USAGE_STATS_SERVICE;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.robolectric.Shadows.shadowOf;
@@ -31,20 +32,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.shadows.ShadowUsageStatsManager.AppUsageLimitObserver;
 import org.robolectric.shadows.ShadowUsageStatsManager.AppUsageObserver;
 import org.robolectric.shadows.ShadowUsageStatsManager.UsageSessionObserver;
 import org.robolectric.shadows.ShadowUsageStatsManager.UsageStatsBuilder;
-import org.robolectric.versioning.AndroidVersions.V;
 
 /** Test for {@link ShadowUsageStatsManager}. */
 @RunWith(AndroidJUnit4.class)
 public class ShadowUsageStatsManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private static final String TEST_PACKAGE_NAME1 = "com.company1.pkg1";
   private static final String TEST_PACKAGE_NAME2 = "com.company2.pkg2";
@@ -1040,8 +1043,8 @@ public class ShadowUsageStatsManagerTest {
   @Test
   @Config(minSdk = 28)
   public void usageStatsManager_activityContextEnabled_differentInstancesRetrieveBuckets() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       UsageStatsManager applicationUsageStatsManager =
@@ -1059,13 +1062,11 @@ public class ShadowUsageStatsManagerTest {
       int activityBucket = activityUsageStatsManager.getAppStandbyBucket();
 
       assertThat(applicationBucket).isEqualTo(activityBucket);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 
   @Test
-  @Config(minSdk = V.SDK_INT)
+  @Config(minSdk = VANILLA_ICE_CREAM)
   public void testQueryEvents_newApiV_shouldReturn() {
     // These events should be returned.
     shadowOf(usageStatsManager)

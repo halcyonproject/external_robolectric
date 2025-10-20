@@ -1,6 +1,7 @@
 package org.robolectric.shadows;
 
 import static android.content.Context.ACCESSIBILITY_SERVICE;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.Q;
@@ -22,15 +23,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.junit.rules.SetSystemPropertyRule;
 import org.robolectric.util.ReflectionHelpers;
 
 @RunWith(AndroidJUnit4.class)
 public class ShadowAccessibilityManagerTest {
+  @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
 
   private AccessibilityManager accessibilityManager;
 
@@ -124,6 +128,23 @@ public class ShadowAccessibilityManagerTest {
     shadowOf(accessibilityManager).setInstalledAccessibilityServiceList(new ArrayList<>());
 
     assertThat(listenerCalled[0]).isTrue();
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void getAccessibilityShortcutTargets_shouldReturnEmptyListByDefault() {
+    assertThat(accessibilityManager.getAccessibilityShortcutTargets(0)).isEmpty();
+  }
+
+  @Test
+  @Config(minSdk = BAKLAVA)
+  public void setAccessibilityShortcutTargets_shouldReturnExpectedTargets() {
+    List<String> expected = new ArrayList<>();
+    expected.add("com.example.app/MyService");
+
+    shadowOf(accessibilityManager).setAccessibilityShortcutTargets(expected);
+
+    assertThat(accessibilityManager.getAccessibilityShortcutTargets(0)).isEqualTo(expected);
   }
 
   @Test
@@ -304,8 +325,8 @@ public class ShadowAccessibilityManagerTest {
   @Test
   @Config(minSdk = O)
   public void accessibilityManager_activityContextEnabled_differentInstancesHaveSameServices() {
-    String originalProperty = System.getProperty("robolectric.createActivityContexts", "");
-    System.setProperty("robolectric.createActivityContexts", "true");
+    setSystemPropertyRule.set("robolectric.createActivityContexts", "true");
+
     try (ActivityController<Activity> controller =
         Robolectric.buildActivity(Activity.class).setup()) {
       AccessibilityManager applicationAccessibilityManager =
@@ -324,8 +345,6 @@ public class ShadowAccessibilityManagerTest {
           activityAccessibilityManager.getInstalledAccessibilityServiceList();
 
       assertThat(activityServices).isEqualTo(applicationServices);
-    } finally {
-      System.setProperty("robolectric.createActivityContexts", originalProperty);
     }
   }
 }

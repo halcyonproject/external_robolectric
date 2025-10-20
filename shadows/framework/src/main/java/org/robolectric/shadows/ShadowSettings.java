@@ -5,6 +5,7 @@ import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static android.provider.Settings.Secure.LOCATION_MODE_OFF;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
@@ -32,7 +33,6 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.Resetter;
 import org.robolectric.util.reflector.ForType;
 import org.robolectric.util.reflector.Static;
-import org.robolectric.versioning.AndroidVersions.U;
 
 @SuppressWarnings({"UnusedDeclaration"})
 @Implements(Settings.class)
@@ -70,8 +70,19 @@ public class ShadowSettings {
     }
 
     @Implementation
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
+    }
+
+    @Implementation
     protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return get(String.class, name).orElse(null);
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = settings.getOrDefault(name, Optional.empty());
+      if (!optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
     }
 
     @Implementation
@@ -233,26 +244,6 @@ public class ShadowSettings {
     }
 
     @Implementation
-    protected static boolean putIntForUser(
-        ContentResolver cr, String name, int value, int userHandle) {
-      putInt(cr, name, value);
-      return true;
-    }
-
-    @Implementation
-    protected static int getIntForUser(ContentResolver cr, String name, int def, int userHandle) {
-      // ignore userhandle
-      return getInt(cr, name, def);
-    }
-
-    @Implementation
-    protected static int getIntForUser(ContentResolver cr, String name, int userHandle)
-        throws SettingNotFoundException {
-      // ignore userhandle
-      return getInt(cr, name);
-    }
-
-    @Implementation
     protected static int getInt(ContentResolver cr, String name) throws SettingNotFoundException {
       if (Settings.Secure.LOCATION_MODE.equals(name) && RuntimeEnvironment.getApiLevel() < P) {
         // Map from to underlying location provider storage API to location mode
@@ -283,8 +274,19 @@ public class ShadowSettings {
     }
 
     @Implementation
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
+    }
+
+    @Implementation
     protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return getString(cr, name);
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = dataMap.getOrDefault(name, Optional.empty());
+      if (!optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
     }
 
     @Implementation
@@ -376,9 +378,21 @@ public class ShadowSettings {
     }
 
     @Implementation
-    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
-      return getString(cr, name);
+    protected static boolean putStringForUser(
+        ContentResolver cr, String name, String value, int userHandle) {
+      return put(cr, name, value);
     }
+
+    @Implementation
+    protected static String getStringForUser(ContentResolver cr, String name, int userHandle) {
+      // In real Android, all settings types are stored as Strings.
+      Optional<Object> optionalValue = settings.getOrDefault(name, Optional.empty());
+      if (optionalValue == null || !optionalValue.isPresent()) {
+        return null;
+      }
+      return String.valueOf(optionalValue.get());
+    }
+
 
     @Implementation
     protected static boolean putLong(ContentResolver cr, String name, long value) {
@@ -574,7 +588,7 @@ public class ShadowSettings {
       return put(key, value);
     }
 
-    @Implementation(minSdk = U.SDK_INT)
+    @Implementation(minSdk = UPSIDE_DOWN_CAKE)
     protected static boolean putString(
         String namespace, String name, String value, boolean makeDefault) {
       String key = reflector(SettingsConfigReflector.class).createCompositeName(namespace, name);
@@ -586,7 +600,7 @@ public class ShadowSettings {
       return get(name);
     }
 
-    @Implementation(minSdk = U.SDK_INT)
+    @Implementation(minSdk = UPSIDE_DOWN_CAKE)
     protected static String getString(String name) {
       return get(name);
     }
@@ -632,7 +646,7 @@ public class ShadowSettings {
       return true;
     }
 
-    @Implementation(minSdk = U.SDK_INT)
+    @Implementation(minSdk = UPSIDE_DOWN_CAKE)
     protected static boolean deleteString(String namespace, String name) {
       String key = reflector(SettingsConfigReflector.class).createCompositeName(namespace, name);
       settings.remove(key);

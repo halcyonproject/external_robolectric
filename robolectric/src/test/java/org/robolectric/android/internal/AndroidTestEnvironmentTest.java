@@ -1,5 +1,6 @@
 package org.robolectric.android.internal;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.Q;
 import static com.google.common.truth.Truth.assertThat;
@@ -17,10 +18,8 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Process;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import java.io.File;
 import java.security.GeneralSecurityException;
@@ -42,6 +41,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.BootstrapDeferringRobolectricTestRunner;
 import org.robolectric.BootstrapDeferringRobolectricTestRunner.BootstrapWrapperI;
 import org.robolectric.BootstrapDeferringRobolectricTestRunner.RoboInject;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.DeviceConfig;
 import org.robolectric.android.DeviceConfig.ScreenSize;
@@ -52,21 +52,16 @@ import org.robolectric.annotation.experimental.LazyApplication;
 import org.robolectric.annotation.experimental.LazyApplication.LazyLoad;
 import org.robolectric.internal.ShadowProvider;
 import org.robolectric.junit.rules.SetSystemPropertyRule;
-import org.robolectric.manifest.AndroidManifest;
-import org.robolectric.manifest.RoboNotFoundException;
 import org.robolectric.pluginapi.TestEnvironmentLifecyclePlugin;
 import org.robolectric.plugins.HierarchicalConfigurationStrategy.ConfigurationImpl;
 import org.robolectric.plugins.StubSdk;
-import org.robolectric.res.ResourceTable;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowLooper;
-import org.robolectric.shadows.testing.TestActivity;
-import org.robolectric.versioning.AndroidVersions.Baklava;
 
 @RunWith(BootstrapDeferringRobolectricTestRunner.class)
 @LooperMode(LEGACY)
-@Config(maxSdk = Baklava.SDK_INT)
+@Config(maxSdk = BAKLAVA)
 public class AndroidTestEnvironmentTest {
 
   @Rule public SetSystemPropertyRule setSystemPropertyRule = new SetSystemPropertyRule();
@@ -80,7 +75,7 @@ public class AndroidTestEnvironmentTest {
     assertThat(RuntimeEnvironment.getMasterScheduler())
         .isSameInstanceAs(ShadowLooper.getShadowMainLooper().getScheduler());
     assertThat(RuntimeEnvironment.getMasterScheduler())
-        .isSameInstanceAs(ShadowApplication.getInstance().getForegroundThreadScheduler());
+        .isSameInstanceAs(Robolectric.getForegroundThreadScheduler());
   }
 
   @Test
@@ -92,7 +87,7 @@ public class AndroidTestEnvironmentTest {
     final ShadowApplication shadowApplication =
         Shadow.extract(ApplicationProvider.getApplicationContext());
     assertThat(shadowApplication.getBackgroundThreadScheduler())
-        .isSameInstanceAs(shadowApplication.getForegroundThreadScheduler());
+        .isSameInstanceAs(Robolectric.getForegroundThreadScheduler());
     assertThat(RuntimeEnvironment.getMasterScheduler())
         .isSameInstanceAs(RuntimeEnvironment.getMasterScheduler());
   }
@@ -103,7 +98,7 @@ public class AndroidTestEnvironmentTest {
     final ShadowApplication shadowApplication =
         Shadow.extract(ApplicationProvider.getApplicationContext());
     assertThat(shadowApplication.getBackgroundThreadScheduler())
-        .isNotSameInstanceAs(shadowApplication.getForegroundThreadScheduler());
+        .isNotSameInstanceAs(Robolectric.getForegroundThreadScheduler());
   }
 
   @Test
@@ -241,24 +236,6 @@ public class AndroidTestEnvironmentTest {
     assertThat(events).containsExactly("terminated");
   }
 
-  /** Can't use Mockito for classloader issues */
-  static class ThrowingManifest extends AndroidManifest {
-    public ThrowingManifest(AndroidManifest androidManifest) {
-      super(
-          androidManifest.getAndroidManifestFile(),
-          androidManifest.getResDirectory(),
-          androidManifest.getAssetsDirectory(),
-          androidManifest.getLibraryManifests(),
-          null,
-          androidManifest.getApkFile());
-    }
-
-    @Override
-    public void initMetaData(ResourceTable resourceTable) throws RoboNotFoundException {
-      throw new RoboNotFoundException("This is just a test");
-    }
-  }
-
   @Test
   @Config(qualifiers = "b+fr+Cyrl+UK")
   public void localeIsSet() {
@@ -389,21 +366,6 @@ public class AndroidTestEnvironmentTest {
     assertThat(getExternalImageCount(context)).isEqualTo(0);
     bootstrapWrapper.resetState();
     assertThat(getExternalImageCount(context)).isEqualTo(-1);
-  }
-
-  @Test
-  public void testUid_uidMatchesApplicationUid() {
-    bootstrapWrapper.callSetUpApplicationState();
-    try (ActivityScenario<TestActivity> scenario = ActivityScenario.launch(TestActivity.class)) {
-      scenario.onActivity(
-          activity -> {
-            assertThat(activity.getApplicationInfo().uid).isEqualTo(Process.myUid());
-            assertThat(RuntimeEnvironment.getApplication().getApplicationInfo().uid)
-                .isEqualTo(Process.myUid());
-            assertThat(ApplicationProvider.getApplicationContext().getApplicationInfo().uid)
-                .isEqualTo(Process.myUid());
-          });
-    }
   }
 
   private int getExternalImageCount(Context context) {

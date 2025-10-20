@@ -1,10 +1,13 @@
 package org.robolectric.android.internal;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.robolectric.RuntimeEnvironment.getApiLevel;
 
 import android.os.Handler;
 import android.os.SystemClock;
@@ -66,6 +69,7 @@ public class LooperDelegatingSchedulerTest {
 
   @Test
   public void size() {
+    assumeTrue(getApiLevel() <= BAKLAVA);
     assertThat(scheduler.size()).isEqualTo(0);
 
     Runnable runnable = mock(Runnable.class);

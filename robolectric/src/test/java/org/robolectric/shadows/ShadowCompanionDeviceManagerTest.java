@@ -1,6 +1,7 @@
 package org.robolectric.shadows;
 
 import static android.Manifest.permission.ASSOCIATE_COMPANION_DEVICES;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static com.google.common.truth.Truth.assertThat;
@@ -17,6 +18,10 @@ import android.content.IntentSender;
 import android.net.MacAddress;
 import android.os.Build.VERSION_CODES;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
 import org.junit.Before;
@@ -25,7 +30,6 @@ import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.ReflectionHelpers.ClassParameter;
-import org.robolectric.versioning.AndroidVersions.Baklava;
 
 /** Unit test for ShadowCompanionDeviceManager. */
 @RunWith(AndroidJUnit4.class)
@@ -152,6 +156,7 @@ public class ShadowCompanionDeviceManagerTest {
     assertThat(companionDeviceManager.getAssociations()).isEmpty();
     shadowCompanionDeviceManager.addAssociation(info);
     assertThat(companionDeviceManager.getMyAssociations()).contains(expectedInfo);
+    assertThat(companionDeviceManager.getAllAssociations()).contains(expectedInfo);
   }
 
   @Test
@@ -209,6 +214,7 @@ public class ShadowCompanionDeviceManagerTest {
     assertThat(companionDeviceManager.getAssociations()).isEmpty();
     shadowCompanionDeviceManager.addAssociation(info);
     assertThat(companionDeviceManager.getMyAssociations()).contains(info);
+    assertThat(companionDeviceManager.getAllAssociations()).contains(info);
   }
 
   @Test
@@ -226,6 +232,7 @@ public class ShadowCompanionDeviceManagerTest {
     companionDeviceManager.disassociate(1);
     assertThat(companionDeviceManager.getAssociations()).isEmpty();
     assertThat(companionDeviceManager.getMyAssociations()).isEmpty();
+    assertThat(companionDeviceManager.getAllAssociations()).isEmpty();
   }
 
   @Test
@@ -367,7 +374,7 @@ public class ShadowCompanionDeviceManagerTest {
   }
 
   @Test
-  @Config(minSdk = Baklava.SDK_INT)
+  @Config(minSdk = BAKLAVA)
   public void testRemoveBond_returnsTrueWhenPreSpecified() {
     shadowCompanionDeviceManager.addAssociation(MAC_ADDRESS);
     int id = shadowCompanionDeviceManager.getMyAssociations().get(0).getId();
@@ -380,7 +387,7 @@ public class ShadowCompanionDeviceManagerTest {
   }
 
   @Test
-  @Config(minSdk = Baklava.SDK_INT)
+  @Config(minSdk = BAKLAVA)
   public void testRemoveBond_returnsFalseWhenPreSpecified() {
     shadowCompanionDeviceManager.addAssociation(MAC_ADDRESS);
     int id = shadowCompanionDeviceManager.getMyAssociations().get(0).getId();
@@ -393,7 +400,7 @@ public class ShadowCompanionDeviceManagerTest {
   }
 
   @Test
-  @Config(minSdk = Baklava.SDK_INT)
+  @Config(minSdk = BAKLAVA)
   public void testRemoveBond_returnsFalseIfNoAssociation() {
     shadowCompanionDeviceManager.markAssociationBondRemovable(1);
 
@@ -404,13 +411,13 @@ public class ShadowCompanionDeviceManagerTest {
   }
 
   @Test
-  @Config(minSdk = Baklava.SDK_INT)
+  @Config(minSdk = BAKLAVA)
   public void testGetLastRemoveBondAssociationBeforeCalled() {
     assertThat(shadowCompanionDeviceManager.getLastRemoveBondAssociationId()).isEqualTo(-1);
   }
 
   @Test
-  @Config(minSdk = Baklava.SDK_INT)
+  @Config(minSdk = BAKLAVA)
   public void testRemoveBond_returnsFalseIfNoValuePreSpecified() {
     shadowCompanionDeviceManager.addAssociation(MAC_ADDRESS);
     int id = shadowCompanionDeviceManager.getMyAssociations().get(0).getId();
@@ -419,6 +426,36 @@ public class ShadowCompanionDeviceManagerTest {
 
     assertThat(result).isFalse();
     assertThat(shadowCompanionDeviceManager.getLastRemoveBondAssociationId()).isEqualTo(id);
+  }
+
+  @Test
+  @Config(minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  public void testAttachSystemDataTransport_updatesShadow() {
+    shadowCompanionDeviceManager.addAssociation(MAC_ADDRESS);
+    int id = shadowCompanionDeviceManager.getMyAssociations().get(0).getId();
+    InputStream inputStream = new ByteArrayInputStream(new byte[] {0x01});
+    OutputStream outputStream = new ByteArrayOutputStream();
+
+    companionDeviceManager.attachSystemDataTransport(id, inputStream, outputStream);
+
+    assertThat(shadowCompanionDeviceManager.getAttachedInputStream(id))
+        .isSameInstanceAs(inputStream);
+    assertThat(shadowCompanionDeviceManager.getAttachedOutputStream(id))
+        .isSameInstanceAs(outputStream);
+
+    companionDeviceManager.detachSystemDataTransport(id);
+    assertThat(shadowCompanionDeviceManager.getAttachedInputStream(id)).isNull();
+    assertThat(shadowCompanionDeviceManager.getAttachedOutputStream(id)).isNull();
+  }
+
+  @Test
+  public void testGetAttachedInputStream_returnsNullIfNoTransportAttached() {
+    assertThat(shadowCompanionDeviceManager.getAttachedInputStream(1)).isNull();
+  }
+
+  @Test
+  public void testGetAttachedOutputStream_returnsNullIfNoTransportAttached() {
+    assertThat(shadowCompanionDeviceManager.getAttachedOutputStream(1)).isNull();
   }
 
   private CompanionDeviceManager.Callback createCallback() {

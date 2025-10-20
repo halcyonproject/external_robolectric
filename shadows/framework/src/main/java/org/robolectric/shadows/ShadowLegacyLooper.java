@@ -1,10 +1,13 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static com.google.common.base.Preconditions.checkState;
 import static org.robolectric.RuntimeEnvironment.getApiLevel;
 import static org.robolectric.RuntimeEnvironment.isMainThread;
 import static org.robolectric.shadow.api.Shadow.invokeConstructor;
 import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
+import static org.robolectric.util.Scheduler.IdleState.CONSTANT_IDLE;
+import static org.robolectric.util.Scheduler.IdleState.UNPAUSED;
 
 import android.os.Looper;
 import android.os.MessageQueue;
@@ -25,7 +28,6 @@ import org.robolectric.annotation.Resetter;
 import org.robolectric.config.ConfigurationRegistry;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.Scheduler;
-import org.robolectric.versioning.AndroidVersions.Baklava;
 
 /**
  * The shadow Looper implementation for {@link LooperMode.Mode#LEGACY}.
@@ -96,8 +98,7 @@ public class ShadowLegacyLooper extends ShadowLooper {
 
   @Implementation
   protected void __constructor__(boolean quitAllowed) {
-    checkState(
-        getApiLevel() <= Baklava.SDK_INT, "LEGACY LooperMode is not supported on SDKs > Baklava");
+    checkState(getApiLevel() <= BAKLAVA, "LEGACY LooperMode is not supported on SDKs > Baklava");
     invokeConstructor(Looper.class, realObject, from(boolean.class, quitAllowed));
     if (isMainThread()) {
       mainLooper = realObject;
@@ -198,7 +199,7 @@ public class ShadowLegacyLooper extends ShadowLooper {
 
   @Override
   public void idleConstantly(boolean shouldIdleConstantly) {
-    getScheduler().idleConstantly(shouldIdleConstantly);
+    getScheduler().setIdleState(shouldIdleConstantly ? CONSTANT_IDLE : UNPAUSED);
   }
 
   @Override
@@ -268,6 +269,11 @@ public class ShadowLegacyLooper extends ShadowLooper {
   @Override
   public Duration getLastScheduledTaskTime() {
     return getScheduler().getLastScheduledTaskTime();
+  }
+
+  @Override
+  public void runUntilEmpty() {
+    throw new UnsupportedOperationException("not supported in legacy Looper");
   }
 
   @Override

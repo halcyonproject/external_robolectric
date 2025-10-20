@@ -14,7 +14,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
-import static org.robolectric.annotation.Config.NONE;
 
 import android.accounts.Account;
 import android.annotation.SuppressLint;
@@ -1228,12 +1227,11 @@ public class ShadowContentResolverTest {
       provider.getIContentProvider().getType(uri); // should not throw
     } else {
       // just call validateIncomingUri directly
-      provider.validateIncomingUri(uri);
+      assertThat(provider.validateIncomingUri(uri)).isNotNull();
     }
   }
 
   @Test
-  @Config(manifest = NONE)
   @SuppressWarnings("RobolectricSystemContext") // preexisting when check was enabled
   public void getProvider_shouldNotReturnAnyProviderWhenManifestIsNull() {
     Application application = new Application();
