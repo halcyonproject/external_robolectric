@@ -81,7 +81,6 @@ java_test_host {
         "hamcrest-library",
         "robolectric-sqlite4java-0.282",
         "ow2-asm-commons",
-        "robolectric-diffutils-1.3.0",
         "guava",
         "objenesis",
         "robolectric-xstream-1.4.8",
