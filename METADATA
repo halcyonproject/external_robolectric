@@ -9,11 +9,11 @@ third_party {
   last_upgrade_date {
     year: 2025
     month: 10
-    day: 17
+    day: 23
   }
   identifier {
     type: "Git"
     value: "https://github.com/robolectric/robolectric/tree/google"
-    version: "266024287a2cbfc994167994ad121b47d3b945b1"
+    version: "7ac441c458ec551783616525d5f45117b147d9ec"
   }
 }
