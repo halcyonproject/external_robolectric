@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.R;
@@ -54,6 +55,7 @@ public class ShadowBluetoothGatt {
   @ReflectorObject protected BluetoothGattReflector bluetoothGattReflector;
 
   @SuppressLint("PrivateApi")
+  @SuppressWarnings("ReturnValueIgnored") // getDeclaredConstructor is only used to check presence
   public static BluetoothGatt newInstance(BluetoothDevice device) {
     try {
       Class<?> iBluetoothGattClass =
@@ -61,7 +63,87 @@ public class ShadowBluetoothGatt {
 
       BluetoothGatt bluetoothGatt;
       int apiLevel = RuntimeEnvironment.getApiLevel();
-      if (apiLevel > R) {
+      if (apiLevel > BAKLAVA) {
+          bluetoothGatt =
+              Shadow.newInstance(
+                  BluetoothGatt.class,
+                  new Class<?>[] {
+                    iBluetoothGattClass,
+                    BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
+                    android.content.AttributionSource.class,
+                    boolean.class,
+                    BluetoothGattCallback.class,
+                    android.os.Handler.class
+                  },
+                  new Object[] {
+                    ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
+                    device,
+                    0,
+                    false,
+                    0,
+                    null,
+                    false,
+                    null,
+                    null
+                  });
+      } else if (apiLevel == BAKLAVA) {
+        // During Baklava_1, BluetoothGatt changed it's internal constructor to take some new
+        // parameters and use the bluetoothGatt that can no longer be null.
+        // Depending on which Baklava_1 device, the constructor may or may not be present
+        try {
+          // check if BluetoothGatt has the old constructor
+          BluetoothGatt.class.getDeclaredConstructor(
+              iBluetoothGattClass,
+                    BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
+                    android.content.AttributionSource.class);
+          bluetoothGatt =
+              Shadow.newInstance(
+                  BluetoothGatt.class,
+                  new Class<?>[] {
+                    iBluetoothGattClass,
+                    BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
+                    android.content.AttributionSource.class,
+                  },
+                  new Object[] {null, device, 0, false, 0, null});
+
+        } catch (NoSuchMethodException e) {
+          // Use the new constructor when the old constructor does not exist
+          bluetoothGatt =
+              Shadow.newInstance(
+                  BluetoothGatt.class,
+                  new Class<?>[] {
+                    iBluetoothGattClass,
+                    BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
+                    android.content.AttributionSource.class,
+                    boolean.class,
+                    BluetoothGattCallback.class,
+                    android.os.Handler.class
+                  },
+                  new Object[] {
+                    ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
+                    device,
+                    0,
+                    false,
+                    0,
+                    null,
+                    false,
+                    null,
+                    null
+                  });
+        }
+      } else if (apiLevel > R) {
         bluetoothGatt =
             Shadow.newInstance(
                 BluetoothGatt.class,
