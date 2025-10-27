@@ -88,6 +88,7 @@ func (b *buildProps) GenerateAndroidBuildActions(ctx android.ModuleContext) {
 	b.output = android.PathForModuleGen(ctx, "build.prop")
 
 	rule := android.NewRuleBuilder(pctx, ctx)
+	rule.SandboxDisabled()
 
 	rule.Command().Text("rm").Flag("-f").Output(b.output)
 	for _, l := range lines {
