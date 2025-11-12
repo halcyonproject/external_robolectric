@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothManagerCallback;
-import android.bluetooth.IBluetoothProfileServiceConnection;
 import android.content.Context;
 import android.os.Handler;
 import android.os.IBinder;
@@ -71,34 +70,18 @@ class IBluetoothManagerDelegates {
 
     private IBluetoothManagerDelegate() {}
 
-    /**
-     * Allows the internal BluetoothProfileConnector associated with a {@link BluetoothProfile} to
-     * automatically invoke the service connected callback.
-     */
-    public boolean bindBluetoothProfileService(
-        int bluetoothProfile, String serviceName, IBluetoothProfileServiceConnection proxy) {
+    /** invoke the service connected callback. */
+    boolean bindBluetoothProfileService(BluetoothProfile proxy) {
       if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
         return false;
       }
-      try {
-        proxy.onServiceConnected(null, null);
-      } catch (RemoteException e) {
-        return false;
-      }
+      proxy.onServiceConnected(null);
       return true;
     }
 
-    /**
-     * Allows the internal BluetoothProfileConnector associated with a {@link BluetoothProfile} to
-     * automatically invoke the service disconnected callback.
-     */
-    public void unbindBluetoothProfileService(
-        int bluetoothProfile, IBluetoothProfileServiceConnection proxy) {
-      try {
-        proxy.onServiceDisconnected(null);
-      } catch (RemoteException e) {
-        // nothing to do
-      }
+    /** invoke the service disconnected callback. */
+    void unbindBluetoothProfileService(BluetoothProfile proxy) {
+      proxy.onServiceDisconnected();
     }
 
     public Messenger getServiceMessenger() {
