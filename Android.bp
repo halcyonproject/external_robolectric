@@ -234,6 +234,7 @@ java_host_for_device {
         "//frameworks/libs/systemui/iconloaderlib/tests:__pkg__",
         "//frameworks/libs/systemui/tracinglib/robolectric:__pkg__",
         "//frameworks/opt/car/setupwizard/library/main/tests/robotests:__pkg__",
+        "//frameworks/opt/displayoffload/libs/ambient/robotests:__pkg__",
         "//frameworks/opt/localepicker/tests:__pkg__",
         "//frameworks/opt/net/wifi/libs/WifiTrackerLib/tests:__pkg__",
         "//frameworks/opt/net/wifi/libs/WifiTrackerLib/tests:__pkg__",
