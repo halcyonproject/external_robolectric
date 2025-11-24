@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattConnectionSettings;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
@@ -20,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
@@ -70,24 +72,18 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
                     android.content.AttributionSource.class,
-                    boolean.class,
+                    BluetoothGattConnectionSettings.class,
                     BluetoothGattCallback.class,
-                    android.os.Handler.class
+                    Executor.class,
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
-                    0,
-                    false,
-                    0,
                     null,
-                    false,
+                    new BluetoothGattConnectionSettings.Builder().build(),
                     null,
-                    null
+                    null,
                   });
       } else if (apiLevel == BAKLAVA) {
         // During Baklava_1, BluetoothGatt changed it's internal constructor to take some new
@@ -123,24 +119,18 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
                     android.content.AttributionSource.class,
-                    boolean.class,
+                    BluetoothGattConnectionSettings.class,
                     BluetoothGattCallback.class,
-                    android.os.Handler.class
+                    Executor.class,
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
-                    0,
-                    false,
-                    0,
                     null,
-                    false,
+                    new BluetoothGattConnectionSettings.Builder().build(),
                     null,
-                    null
+                    null,
                   });
         }
       } else if (apiLevel > R) {
