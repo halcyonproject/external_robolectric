@@ -244,6 +244,12 @@ public class ShadowSettings {
     }
 
     @Implementation
+    protected static boolean putIntForUser(
+        ContentResolver cr, String name, int value, int userHandle) {
+      return putInt(cr, name, value);
+    }
+
+    @Implementation
     protected static int getInt(ContentResolver cr, String name) throws SettingNotFoundException {
       if (Settings.Secure.LOCATION_MODE.equals(name) && RuntimeEnvironment.getApiLevel() < P) {
         // Map from to underlying location provider storage API to location mode
