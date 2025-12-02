@@ -18,6 +18,7 @@ import android.os.Handler;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
@@ -45,6 +47,9 @@ public class ShadowCompanionDeviceManager {
   private final Set<Integer> specifiedRemovableIds = new HashSet<>();
   private final Map<Integer, InputStream> attachedInputStreams = new ConcurrentHashMap<>();
   private final Map<Integer, OutputStream> attachedOutputStreams = new ConcurrentHashMap<>();
+  private final Map<Integer, Set<BiConsumer<Integer, byte[]>>> messageReceivedListeners =
+      new ConcurrentHashMap<>();
+  private final Map<Integer, Integer> systemDataSyncFlags = new ConcurrentHashMap<>();
   private int lastRemoveBondAssociationId = -1;
   private ComponentName lastRequestedNotificationAccess;
   private AssociationRequest lastAssociationRequest;
@@ -167,6 +172,12 @@ public class ShadowCompanionDeviceManager {
     throw new DeviceNotAssociatedException("Association does not exist");
   }
 
+  @Implementation(minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
+  protected void enableSystemDataSyncForTypes(int associationId, int flags) {
+    systemDataSyncFlags.put(
+        associationId, systemDataSyncFlags.getOrDefault(associationId, 0) | flags);
+  }
+
   /**
    * This method will return the last {@link AssociationRequest} passed to {@code
    * CompanionDeviceManager#associate(AssociationRequest, CompanionDeviceManager.Callback, Handler)}
@@ -245,6 +256,15 @@ public class ShadowCompanionDeviceManager {
     return lastObservingDevicePresenceDeviceAddress;
   }
 
+  /**
+   * Returns the system data sync flags passed to {@code
+   * CompanionDeviceManager#enableSystemDataSyncForTypes(int, int)} for the given association, or 0
+   * if no such association exists.
+   */
+  public int getSystemDataSyncFlags(int associationId) {
+    return systemDataSyncFlags.getOrDefault(associationId, 0);
+  }
+
   private void checkHasAssociation() {
     if (associations.isEmpty()) {
       throw new IllegalStateException("App must have an association before calling this API");
@@ -306,6 +326,43 @@ public class ShadowCompanionDeviceManager {
       return false;
     }
     return specifiedRemovableIds.contains(associationId);
+  }
+
+  /**
+   * This method will return the registered listeners passed to {@code
+   * CompanionDeviceManager#addOnMessageReceivedListener(Executor, int, BiConsumer)} for the given
+   * {@code messageType}.
+   */
+  public ImmutableSet<BiConsumer<Integer, byte[]>> getMessageReceivedListeners(int messageType) {
+    return ImmutableSet.copyOf(messageReceivedListeners.getOrDefault(messageType, new HashSet<>()));
+  }
+
+  @Implementation(minSdk = VERSION_CODES.VANILLA_ICE_CREAM)
+  protected void addOnMessageReceivedListener(
+      Executor executor, int messageType, BiConsumer<Integer, byte[]> listener) {
+    messageReceivedListeners.putIfAbsent(messageType, new HashSet<>());
+    messageReceivedListeners.get(messageType).add(listener);
+  }
+
+  @Implementation(minSdk = VERSION_CODES.VANILLA_ICE_CREAM)
+  protected void removeOnMessageReceivedListener(
+      int messageType, BiConsumer<Integer, byte[]> listener) {
+    if (messageReceivedListeners.containsKey(messageType)) {
+      messageReceivedListeners.get(messageType).remove(listener);
+    }
+  }
+
+  @Implementation(minSdk = VERSION_CODES.VANILLA_ICE_CREAM)
+  protected void sendMessage(int messageType, byte[] data, int[] associationIds) {
+    if (!messageReceivedListeners.containsKey(messageType) || associations.isEmpty()) {
+      return;
+    }
+
+    for (BiConsumer<Integer, byte[]> listener : messageReceivedListeners.get(messageType)) {
+      for (RoboAssociationInfo association : associations) {
+        listener.accept(association.id(), data);
+      }
+    }
   }
 
   /** Convert {@link RoboAssociationInfo} to actual {@link AssociationInfo}. */

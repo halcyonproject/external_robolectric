@@ -59,11 +59,10 @@ public class ShadowNativeSurface {
     return SurfaceNatives.nativeCreateFromSurfaceControl(surfaceControlNativeObject);
   }
 
-  @Implementation(minSdk = Q, maxSdk = UPSIDE_DOWN_CAKE)
+  @Implementation(minSdk = Q)
   protected static long nativeGetFromSurfaceControl(
       long surfaceObject, long surfaceControlNativeObject) {
-    DefaultNativeRuntimeLoader.injectAndLoad();
-    return SurfaceNatives.nativeGetFromSurfaceControl(surfaceObject, surfaceControlNativeObject);
+    return 0;
   }
 
   @Implementation(minSdk = P, maxSdk = P)
@@ -104,15 +103,13 @@ public class ShadowNativeSurface {
     return SurfaceNatives.nativeIsConsumerRunningBehind(nativeObject);
   }
 
-  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
+  @Implementation
   protected static long nativeReadFromParcel(long nativeObject, Parcel source) {
-    return SurfaceNatives.nativeReadFromParcel(nativeObject, source);
+    return 0;
   }
 
-  @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
-  protected static void nativeWriteToParcel(long nativeObject, Parcel dest) {
-    SurfaceNatives.nativeWriteToParcel(nativeObject, dest);
-  }
+  @Implementation
+  protected static void nativeWriteToParcel(long nativeObject, Parcel dest) {}
 
   @Implementation(maxSdk = UPSIDE_DOWN_CAKE)
   protected static void nativeAllocateBuffers(long nativeObject) {

@@ -4,6 +4,7 @@ import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.R;
+import static org.robolectric.util.reflector.Reflector.reflector;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
@@ -14,6 +15,8 @@ import android.bluetooth.BluetoothGattConnectionSettings;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.IBluetoothGatt;
+import android.content.AttributionSource;
 import android.content.Context;
 import android.os.Build;
 import java.util.ArrayList;
@@ -30,8 +33,11 @@ import org.robolectric.annotation.RealObject;
 import org.robolectric.annotation.ReflectorObject;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.PerfStatsCollector;
+import org.robolectric.util.ReflectionHelpers;
+import org.robolectric.util.reflector.Constructor;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
+import org.robolectric.util.reflector.WithType;
 
 /** Shadow implementation of {@link BluetoothGatt}. */
 @Implements(BluetoothGatt.class)
@@ -72,18 +78,24 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
                     android.content.AttributionSource.class,
-                    BluetoothGattConnectionSettings.class,
+                    boolean.class,
                     BluetoothGattCallback.class,
-                    Executor.class,
+                    android.os.Handler.class
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
+                    0,
+                    false,
+                    0,
                     null,
-                    new BluetoothGattConnectionSettings.Builder().build(),
+                    false,
                     null,
-                    null,
+                    null
                   });
       } else if (apiLevel == BAKLAVA) {
         // During Baklava_1, BluetoothGatt changed it's internal constructor to take some new
@@ -119,18 +131,24 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
+                    int.class,
+                    boolean.class,
+                    int.class,
                     android.content.AttributionSource.class,
-                    BluetoothGattConnectionSettings.class,
+                    boolean.class,
                     BluetoothGattCallback.class,
-                    Executor.class,
+                    android.os.Handler.class
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
+                    0,
+                    false,
+                    0,
                     null,
-                    new BluetoothGattConnectionSettings.Builder().build(),
+                    false,
                     null,
-                    null,
+                    null
                   });
         }
       } else if (apiLevel > R) {
@@ -536,10 +554,26 @@ public class ShadowBluetoothGatt {
   @ForType(BluetoothGatt.class)
   private interface BluetoothGattReflector {
 
+    @Constructor
+    BluetoothGatt newInstance(
+        IBluetoothGatt iGatt,
+        BluetoothDevice device,
+        AttributionSource source,
+        @WithType("android.bluetooth.BluetoothGattConnectionSettings")
+            Object gattConnectionSettings);
+
     @Direct
     void disconnect();
 
     @Direct
     void close();
+  }
+
+  @ForType(className = "android.bluetooth.BluetoothGattConnectionSettings$Builder")
+  private interface BluetoothGattConnectionSettingsBuilderReflector {
+    @Constructor
+    Object newInstance();
+
+    Object build();
   }
 }

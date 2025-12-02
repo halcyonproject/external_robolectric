@@ -59,6 +59,7 @@ import android.location.ICountryDetector;
 import android.location.ILocationManager;
 import android.media.IAudioService;
 import android.media.IMediaRouterService;
+import android.media.metrics.IMediaMetricsManager;
 import android.media.session.ISessionManager;
 import android.net.IConnectivityManager;
 import android.net.IIpSecService;
@@ -197,7 +198,16 @@ public class ShadowServiceManager {
     private IInterface createBinderImplementation() {
       switch (binderType) {
         case NULL_PROXY:
-          return ReflectionHelpers.createNullProxy(clazz);
+          // This creates a proxy that returns null or zero for all methods, with the exception of
+          // asBinder(), which returns the cached binder.
+          return ReflectionHelpers.createDelegatingProxy(
+              clazz,
+              new Object() {
+                @SuppressWarnings("unused")
+                IBinder asBinder() {
+                  return cachedBinder;
+                }
+              });
         case DEEP_PROXY:
           return ReflectionHelpers.createDeepProxy(clazz);
         case DELEGATING_PROXY:
@@ -359,6 +369,7 @@ public class ShadowServiceManager {
           binderServices, Context.TRANSLATION_MANAGER_SERVICE, ITranslationManager.class);
       addBinderService(binderServices, Context.SENSOR_PRIVACY_SERVICE, ISensorPrivacyManager.class);
       addBinderService(binderServices, Context.VPN_MANAGEMENT_SERVICE, IVpnManager.class);
+      addBinderService(binderServices, Context.MEDIA_METRICS_SERVICE, IMediaMetricsManager.class);
     }
     if (RuntimeEnvironment.getApiLevel() >= TIRAMISU) {
       addBinderService(

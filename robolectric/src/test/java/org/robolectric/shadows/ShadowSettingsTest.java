@@ -401,4 +401,26 @@ public class ShadowSettingsTest {
     assertThat(Settings.Secure.getIntForUser(contentResolver, Secure.ODI_CAPTIONS_ENABLED, 0, 1))
         .isEqualTo(1);
   }
+
+  @Test
+  public void settings_storedAsStrings() {
+    Settings.Global.putFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f);
+    assertThat(Settings.Global.getString(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE))
+        .isEqualTo("1.0");
+
+    Settings.Global.putString(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, "2.0");
+    assertThat(
+            Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f))
+        .isEqualTo(2.0f);
+  }
+
+  @Test
+  public void settingsSecure_int_storedAsStrings() {
+    Settings.Secure.putInt(contentResolver, "property", 3);
+    assertThat(Settings.Secure.getString(contentResolver, "property")).isEqualTo("3");
+
+    Settings.Secure.putString(contentResolver, "property", "2");
+    assertThat(Settings.Secure.getInt(contentResolver, "property", -1)).isEqualTo(2);
+    assertThat(Settings.Secure.getIntForUser(contentResolver, "property", -1, 0)).isEqualTo(2);
+  }
 }
