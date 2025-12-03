@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothSocketSettings;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.le.BluetoothLeAdvertiser;
@@ -36,6 +37,7 @@ import android.os.IInterface;
 import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
+import android.util.Pair;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.time.Duration;
@@ -91,7 +93,7 @@ public class ShadowBluetoothAdapter {
 
   private static boolean isBluetoothSupported = true;
 
-  private static final Map<String, BluetoothDevice> deviceCache = new HashMap<>();
+  private static final Map<Pair<String, Integer>, BluetoothDevice> deviceCache = new HashMap<>();
   private Set<BluetoothDevice> bondedDevices = new HashSet<>();
   private List<BluetoothDevice> mostRecentlyConnectedDevices = new ArrayList<>();
   private final Set<LeScanCallback> leScanCallbacks = new HashSet<>();
@@ -108,6 +110,7 @@ public class ShadowBluetoothAdapter {
   private boolean isLeExtendedAdvertisingSupported = true;
   private boolean isLeCodedPhySupported = true;
   private boolean isLe2MPhySupported = true;
+  private boolean isFixedPsmSupported = false;
   private boolean isOverridingProxyBehavior;
   private final Map<Integer, Integer> profileConnectionStateData = new HashMap<>();
   private final Map<Integer, BluetoothProfile> profileProxies = new HashMap<>();
@@ -173,17 +176,29 @@ public class ShadowBluetoothAdapter {
   @Deprecated
   public void setBluetoothLeAdvertiser(BluetoothLeAdvertiser advertiser) {
 
-      reflector(BluetoothAdapterReflector.class, realAdapter).setBluetoothLeAdvertiser(advertiser);
+    reflector(BluetoothAdapterReflector.class, realAdapter).setBluetoothLeAdvertiser(advertiser);
   }
 
   @Implementation
   protected synchronized BluetoothDevice getRemoteDevice(String address) {
-    if (!deviceCache.containsKey(address)) {
+    Pair<String, Integer> key = Pair.create(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+    if (!deviceCache.containsKey(key)) {
       deviceCache.put(
-          address,
-          reflector(BluetoothAdapterReflector.class, realAdapter).getRemoteDevice(address));
+          key, reflector(BluetoothAdapterReflector.class, realAdapter).getRemoteDevice(address));
     }
-    return deviceCache.get(address);
+    return deviceCache.get(key);
+  }
+
+  @Implementation(minSdk = TIRAMISU)
+  protected synchronized BluetoothDevice getRemoteLeDevice(String address, int addressType) {
+    Pair<String, Integer> key = Pair.create(address, addressType);
+    if (!deviceCache.containsKey(key)) {
+      deviceCache.put(
+          key,
+          reflector(BluetoothAdapterReflector.class, realAdapter)
+              .getRemoteLeDevice(address, addressType));
+    }
+    return deviceCache.get(key);
   }
 
   public void setMostRecentlyConnectedDevices(List<BluetoothDevice> devices) {
@@ -233,6 +248,42 @@ public class ShadowBluetoothAdapter {
   protected BluetoothServerSocket listenUsingL2capChannel() throws IOException {
     return ShadowBluetoothServerSocket.newInstance(
         BluetoothSocket.TYPE_L2CAP, /* auth= */ false, /* encrypt= */ true, /* uuid= */ null);
+  }
+
+  @Implementation(minSdk = BAKLAVA)
+  protected BluetoothServerSocket listenUsingSocketSettings(
+      // ClassName can be replaced with a direct reference once minimum supported compileSdkVersion
+      // is 36.
+      @ClassName("android.bluetooth.BluetoothSocketSettings") Object settingsObject)
+      throws IOException {
+    BluetoothSocketSettings settings = (BluetoothSocketSettings) settingsObject;
+    if (settings.getSocketType() == BluetoothSocket.TYPE_LE) {
+      int psm = 0x80;
+      if (isFixedPsmSupported && settings.getL2capPsm() != 0) {
+        psm = settings.getL2capPsm();
+      }
+      return ShadowBluetoothServerSocket.newInstance(
+          BluetoothSocket.TYPE_LE,
+          settings.isAuthenticationRequired(),
+          settings.isEncryptionRequired(),
+          psm);
+    }
+    return ShadowBluetoothServerSocket.newInstance(
+        settings.getSocketType(),
+        settings.isAuthenticationRequired(),
+        settings.isEncryptionRequired(),
+        new ParcelUuid(settings.getRfcommUuid()));
+  }
+
+  /**
+   * Sets whether fixed PSM is supported for L2CAP connections in tests.
+   *
+   * @param isFixedPsmSupported If true, {@link #listenUsingSocketSettings} will produce a server
+   *     socket using the requested PSM via {@link BluetoothSocketSettings#getL2capPsm()}. If false,
+   *     the server socket will use a default PSM value (without simulating PSM allocation process).
+   */
+  public void setIsFixedPsmSupported(boolean isFixedPsmSupported) {
+    this.isFixedPsmSupported = isFixedPsmSupported;
   }
 
   @Implementation
@@ -841,6 +892,9 @@ public class ShadowBluetoothAdapter {
 
     @Direct
     BluetoothDevice getRemoteDevice(String address);
+
+    @Direct
+    BluetoothDevice getRemoteLeDevice(String address, int addressType);
 
     @Accessor("sAdapter")
     @Static
