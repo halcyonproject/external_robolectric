@@ -10,6 +10,8 @@ import static android.os.Build.VERSION_CODES.R;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+import static android.os.Build.VERSION_CODES.BAKLAVA;
+import static android.os.Build.VERSION_CODES.CINNAMON_BUN;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.robolectric.shadow.api.Shadow.directlyOn;
@@ -332,7 +334,7 @@ public class ShadowAudioTrack {
     return AudioTrack.SUCCESS;
   }
 
-  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE, maxSdk = BAKLAVA)
   protected int native_setup(
       Object /*WeakReference<AudioTrack>*/ audioTrack,
       Object /*AudioAttributes*/ attributes,
@@ -349,6 +351,33 @@ public class ShadowAudioTrack {
       int encapsulationMode,
       Object tunerConfiguration,
       @Nonnull String opPackageName) {
+    // If offload, AudioTrack.Builder.build() has checked offload support via AudioSystem.
+    if (!offload && !isPcm(audioFormat) && !allowedNonPcmEncodings.contains(audioFormat)) {
+      return AUDIOTRACK_ERROR_SETUP_NATIVEINITFAILED;
+    }
+    setBufferSizeInFrames(buffSizeInBytes);
+    return AudioTrack.SUCCESS;
+  }
+
+  /** Shadow for native_setup. */
+  @Implementation(minSdk = CINNAMON_BUN)
+  protected int native_setup(
+      Object /*WeakReference<AudioTrack>*/ audioTrack,
+      Object /*AudioAttributes*/ attributes,
+      int[] sampleRate,
+      int channelMask,
+      int channelIndexMask,
+      int audioFormat,
+      int buffSizeInBytes,
+      int mode,
+      int[] sessionId,
+      @Nonnull Parcel attributionSource,
+      long nativeAudioTrack,
+      boolean offload,
+      int encapsulationMode,
+      Object tunerConfiguration,
+      @Nonnull String opPackageName,
+      @Nonnull String codecProvenance) {
     // If offload, AudioTrack.Builder.build() has checked offload support via AudioSystem.
     if (!offload && !isPcm(audioFormat) && !allowedNonPcmEncodings.contains(audioFormat)) {
       return AUDIOTRACK_ERROR_SETUP_NATIVEINITFAILED;
