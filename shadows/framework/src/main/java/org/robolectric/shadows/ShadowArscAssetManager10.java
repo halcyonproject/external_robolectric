@@ -1302,9 +1302,9 @@ public class ShadowArscAssetManager10 extends ShadowAssetManager.ArscBase {
     return result;
   }
 
-  // static jobjectArray NativeGetSizeConfigurations(JNIEnv* env, jclass /*clazz*/, jlong ptr) {
+  // static jobjectArray NativeGetResourceConfigurations(JNIEnv* env, jclass /*clazz*/, jlong ptr) {
   @Implementation(minSdk = P)
-  protected static @Nullable Configuration[] nativeGetSizeConfigurations(long ptr) {
+  protected static @Nullable Configuration[] nativeGetResourceConfigurations(long ptr) {
     CppAssetManager2 assetmanager = AssetManagerFromLong(ptr);
     Set<ResTable_config> configurations =
         assetmanager.GetResourceConfigurations(true /*exclude_system*/, false /*exclude_mipmap*/);
@@ -1803,8 +1803,8 @@ public class ShadowArscAssetManager10 extends ShadowAssetManager.ArscBase {
   //   {"nativeGetResourceTypeName", "(JI)Ljava/lang/String;", (void*)NativeGetResourceTypeName},
   //   {"nativeGetResourceEntryName", "(JI)Ljava/lang/String;", (void*)NativeGetResourceEntryName},
   //   {"nativeGetLocales", "(JZ)[Ljava/lang/String;", (void*)NativeGetLocales},
-  //   {"nativeGetSizeConfigurations", "(J)[Landroid/content/res/Configuration;",
-  //   (void*)NativeGetSizeConfigurations},
+  //   {"nativeGetResourceConfigurations", "(J)[Landroid/content/res/Configuration;",
+  //   (void*)NativeGetResourceConfigurations},
   //
   //   // Style attribute related methods.
   //   {"nativeApplyStyle", "(JJIIJ[IJJ)V", (void*)NativeApplyStyle},
