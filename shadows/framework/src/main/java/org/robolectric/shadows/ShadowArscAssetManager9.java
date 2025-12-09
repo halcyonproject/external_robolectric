@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import static android.os.Build.VERSION_CODES.BAKLAVA;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
@@ -22,6 +23,7 @@ import static org.robolectric.res.android.Util.JNI_FALSE;
 import static org.robolectric.res.android.Util.JNI_TRUE;
 import static org.robolectric.res.android.Util.isTruthy;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.annotation.AnyRes;
 import android.annotation.ArrayRes;
@@ -1288,9 +1290,9 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
     return result;
   }
 
-  // static jobjectArray NativeGetResourceConfigurations(JNIEnv* env, jclass /*clazz*/, jlong ptr) {
-  @Implementation(minSdk = P)
-  protected static @Nullable Configuration[] nativeGetResourceConfigurations(long ptr) {
+  // static jobjectArray NativeGetSizeConfigurations(JNIEnv* env, jclass /*clazz*/, jlong ptr) {
+  @Implementation(minSdk = P, maxSdk = BAKLAVA)
+  protected static @Nullable Configuration[] nativeGetSizeConfigurations(long ptr) {
     CppAssetManager2 assetmanager = AssetManagerFromLong(ptr);
     Set<ResTable_config> configurations =
         assetmanager.GetResourceConfigurations(true /*exclude_system*/, false /*exclude_mipmap*/);
@@ -1313,6 +1315,11 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
       // env.DeleteLocalRef(java_configuration);
     }
     return array;
+  }
+
+  @Implementation(minSdk = POST_BAKLAVA)
+  protected static @Nullable Configuration[] nativeGetResourceConfigurations(long ptr) {
+    return nativeGetSizeConfigurations(ptr);
   }
 
   // static void NativeApplyStyle(JNIEnv* env, jclass /*clazz*/, jlong ptr, jlong theme_ptr,
@@ -1782,8 +1789,8 @@ public class ShadowArscAssetManager9 extends ShadowAssetManager.ArscBase {
   //   {"nativeGetResourceTypeName", "(JI)Ljava/lang/String;", (void*)NativeGetResourceTypeName},
   //   {"nativeGetResourceEntryName", "(JI)Ljava/lang/String;", (void*)NativeGetResourceEntryName},
   //   {"nativeGetLocales", "(JZ)[Ljava/lang/String;", (void*)NativeGetLocales},
-  //   {"nativeGetResourceConfigurations", "(J)[Landroid/content/res/Configuration;",
-  //   (void*)NativeGetResourceConfigurations},
+  //   {"nativeGetSizeConfigurations", "(J)[Landroid/content/res/Configuration;",
+  //   (void*)NativeGetSizeConfigurations},
   //
   //   // Style attribute related methods.
   //   {"nativeApplyStyle", "(JJIIJ[IJJ)V", (void*)NativeApplyStyle},
