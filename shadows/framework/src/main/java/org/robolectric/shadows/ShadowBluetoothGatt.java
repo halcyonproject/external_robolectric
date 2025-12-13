@@ -78,24 +78,18 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
                     android.content.AttributionSource.class,
-                    boolean.class,
+                    BluetoothGattConnectionSettings.class,
                     BluetoothGattCallback.class,
-                    android.os.Handler.class
+                    Executor.class,
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
-                    0,
-                    false,
-                    0,
                     null,
-                    false,
+                    new BluetoothGattConnectionSettings.Builder().build(),
                     null,
-                    null
+                    null,
                   });
       } else if (apiLevel == BAKLAVA) {
         // During Baklava_1, BluetoothGatt changed it's internal constructor to take some new
@@ -131,24 +125,18 @@ public class ShadowBluetoothGatt {
                   new Class<?>[] {
                     iBluetoothGattClass,
                     BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
                     android.content.AttributionSource.class,
-                    boolean.class,
+                    BluetoothGattConnectionSettings.class,
                     BluetoothGattCallback.class,
-                    android.os.Handler.class
+                    Executor.class,
                   },
                   new Object[] {
                     ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
                     device,
-                    0,
-                    false,
-                    0,
                     null,
-                    false,
+                    new BluetoothGattConnectionSettings.Builder().build(),
                     null,
-                    null
+                    null,
                   });
         }
       } else if (apiLevel > R) {
