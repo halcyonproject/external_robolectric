@@ -7,13 +7,15 @@ import android.hardware.input.VirtualKeyboard;
 import android.os.Build.VERSION_CODES;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
 /** Shadow for VirtualKeyboard. */
 @Implements(value = VirtualKeyboard.class, minSdk = VERSION_CODES.TIRAMISU, isInAndroidSdk = false)
-public class ShadowVirtualKeyboard extends ShadowVirtualInputDevice {
+public class ShadowVirtualKeyboard {
 
+  private final AtomicBoolean isClosed = new AtomicBoolean(false);
   private final List<VirtualKeyEvent> sentEvents = new ArrayList<>();
 
   @Implementation
@@ -25,18 +27,12 @@ public class ShadowVirtualKeyboard extends ShadowVirtualInputDevice {
     return sentEvents;
   }
 
-  // POST_BAKLAVA moved close() to ShadowVirtualKeyboard.
-  @Override
-  @Implementation(minSdk = POST_BAKLAVA)
-  @SuppressWarnings("RedundantOverride") // Needed because of hierarchy changes with POST_B.
+  @Implementation
   protected void close() {
-    super.close();
+    isClosed.set(true);
   }
 
-  // POST_BAKLAVA moved close() to ShadowVirtualKeyboard.
-  @Override
-  @SuppressWarnings("RedundantOverride") // Needed because of hierarchy changes with POST_B.
   public boolean isClosed() {
-    return super.isClosed();
+    return isClosed.get();
   }
 }
