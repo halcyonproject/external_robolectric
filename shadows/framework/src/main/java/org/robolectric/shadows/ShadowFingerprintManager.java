@@ -31,7 +31,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
 /** Provides testing APIs for {@link FingerprintManager} */
 @SuppressWarnings("NewApi")
-@Implements(value = FingerprintManager.class, minSdk = M, maxSdk = BAKLAVA, isInAndroidSdk=false)
+@Implements(value = FingerprintManager.class, minSdk = M, maxSdk = BAKLAVA, isInAndroidSdk = false)
 public class ShadowFingerprintManager {
 
   private static final String TAG = "ShadowFingerprintManager";

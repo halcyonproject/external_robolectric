@@ -72,73 +72,22 @@ public class ShadowBluetoothGatt {
       BluetoothGatt bluetoothGatt;
       int apiLevel = RuntimeEnvironment.getApiLevel();
       if (apiLevel > BAKLAVA) {
-          bluetoothGatt =
-              Shadow.newInstance(
-                  BluetoothGatt.class,
-                  new Class<?>[] {
-                    iBluetoothGattClass,
-                    BluetoothDevice.class,
-                    android.content.AttributionSource.class,
-                    BluetoothGattConnectionSettings.class,
-                    BluetoothGattCallback.class,
-                    Executor.class,
-                  },
-                  new Object[] {
-                    ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
+        Object gattConnectionSettingsBuilder =
+            reflector(BluetoothGattConnectionSettingsBuilderReflector.class).newInstance();
+        Object gattConnectionSettings =
+            reflector(
+                    BluetoothGattConnectionSettingsBuilderReflector.class,
+                    gattConnectionSettingsBuilder)
+                .build();
+        bluetoothGatt =
+            reflector(BluetoothGattReflector.class)
+                .newInstance(
+                    ReflectionHelpers.createNullProxy(IBluetoothGatt.class),
                     device,
                     null,
-                    new BluetoothGattConnectionSettings.Builder().build(),
+                    gattConnectionSettings,
                     null,
-                    null,
-                  });
-      } else if (apiLevel == BAKLAVA) {
-        // During Baklava_1, BluetoothGatt changed it's internal constructor to take some new
-        // parameters and use the bluetoothGatt that can no longer be null.
-        // Depending on which Baklava_1 device, the constructor may or may not be present
-        try {
-          // check if BluetoothGatt has the old constructor
-          BluetoothGatt.class.getDeclaredConstructor(
-              iBluetoothGattClass,
-                    BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
-                    android.content.AttributionSource.class);
-          bluetoothGatt =
-              Shadow.newInstance(
-                  BluetoothGatt.class,
-                  new Class<?>[] {
-                    iBluetoothGattClass,
-                    BluetoothDevice.class,
-                    int.class,
-                    boolean.class,
-                    int.class,
-                    android.content.AttributionSource.class,
-                  },
-                  new Object[] {null, device, 0, false, 0, null});
-
-        } catch (NoSuchMethodException e) {
-          // Use the new constructor when the old constructor does not exist
-          bluetoothGatt =
-              Shadow.newInstance(
-                  BluetoothGatt.class,
-                  new Class<?>[] {
-                    iBluetoothGattClass,
-                    BluetoothDevice.class,
-                    android.content.AttributionSource.class,
-                    BluetoothGattConnectionSettings.class,
-                    BluetoothGattCallback.class,
-                    Executor.class,
-                  },
-                  new Object[] {
-                    ShadowBluetoothAdapter.getDefaultAdapter().getBluetoothGatt(),
-                    device,
-                    null,
-                    new BluetoothGattConnectionSettings.Builder().build(),
-                    null,
-                    null,
-                  });
-        }
+                    null);
       } else if (apiLevel > R) {
         bluetoothGatt =
             Shadow.newInstance(
@@ -549,6 +498,16 @@ public class ShadowBluetoothGatt {
         AttributionSource source,
         @WithType("android.bluetooth.BluetoothGattConnectionSettings")
             Object gattConnectionSettings);
+
+    @Constructor
+    BluetoothGatt newInstance(
+        IBluetoothGatt iGatt,
+        BluetoothDevice device,
+        AttributionSource source,
+        @WithType("android.bluetooth.BluetoothGattConnectionSettings")
+            Object gattConnectionSettings,
+        @WithType("android.bluetooth.BluetoothGattCallback") Object callback,
+        Executor executor);
 
     @Direct
     void disconnect();
