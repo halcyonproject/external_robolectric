@@ -4,6 +4,7 @@ import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static org.robolectric.util.reflector.Reflector.reflector;
 
+import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.impl.CameraMetadataNative;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
@@ -66,5 +67,8 @@ public class ShadowCameraMetadataNative {
   interface CameraMetadataNativeReflector {
     @Direct
     void __constructor__(CameraMetadataNative other);
+
+    @Direct
+    <T> T get(CaptureRequest.Key<T> key);
   }
 }

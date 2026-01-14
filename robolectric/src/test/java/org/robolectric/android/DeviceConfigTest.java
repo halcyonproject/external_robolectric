@@ -3,6 +3,7 @@ package org.robolectric.android;
 import static android.os.Build.VERSION_CODES.O;
 import static android.os.Build.VERSION_CODES.S;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.robolectric.android.DeviceConfig.getUiModeNight;
 import static org.robolectric.shadows.ShadowDisplayManager.addDisplay;
 
@@ -53,7 +54,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw400dp-w400dp-h800dp-normal-long-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
   }
 
   @Test
@@ -61,40 +62,43 @@ public class DeviceConfigTest {
     applyQualifiers(
         "en-rUS-ldltr-sw400dp-w400dp-h800dp-normal-notlong-notround-"
             + optsForO
-            + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+            + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
     assertThat(asQualifierString())
         .isEqualTo(
             "en-rUS-ldltr-sw400dp-w400dp-h800dp-normal-notlong-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
 
     applyQualifiers("fr-land");
     assertThat(asQualifierString())
         .isEqualTo(
             "fr-ldltr-sw400dp-w800dp-h400dp-normal-notlong-notround-"
                 + optsForO
-                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
 
     applyQualifiers("w500dp-large-television-night-xxhdpi-notouch-keyshidden");
     assertThat(asQualifierString())
         .isEqualTo(
             "fr-ldltr-sw400dp-w640dp-h500dp-large-notlong-notround-"
                 + optsForO
-                + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav");
+                + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav-1920x1500");
 
     applyQualifiers("long");
     assertThat(asQualifierString())
         .isEqualTo(
             "fr-ldltr-sw400dp-w640dp-h500dp-large-long-notround-"
                 + optsForO
-                + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav");
+                + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav-1920x1500");
 
-    applyQualifiers("round");
-    assertThat(asQualifierString())
-        .isEqualTo(
-            "fr-ldltr-sw400dp-w640dp-h500dp-large-long-round-"
-                + optsForO
-                + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav");
+    // round only applicable on APIs > = 26
+    if (RuntimeEnvironment.getApiLevel() >= O) {
+      applyQualifiers("round");
+      assertThat(asQualifierString())
+          .isEqualTo(
+              "fr-ldltr-sw400dp-w640dp-h500dp-large-long-round-"
+                  + optsForO
+                  + "land-television-night-xxhdpi-notouch-keyshidden-nokeys-navhidden-nonav-1920x1500");
+    }
   }
 
   @Config(minSdk = S)
@@ -215,7 +219,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw320dp-w320dp-h470dp-normal-notlong-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-470x320");
   }
 
   // todo: this fails on LOLLIPOP through M... why?
@@ -231,7 +235,7 @@ public class DeviceConfigTest {
             locale.getLanguage()
                 + "-ldrtl-sw320dp-w320dp-h470dp-normal-notlong-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-470x320");
   }
 
   @Test
@@ -243,7 +247,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw400dp-w800dp-h400dp-normal-long-notround-"
                 + optsForO
-                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
   }
 
   @Test
@@ -255,7 +259,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw400dp-w400dp-h800dp-normal-long-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x400");
   }
 
   @Test
@@ -267,7 +271,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw480dp-w640dp-h480dp-large-notlong-notround-"
                 + optsForO
-                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-640x480");
   }
 
   @Test
@@ -279,7 +283,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw640dp-w800dp-h640dp-large-notlong-notround-"
                 + optsForO
-                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "land-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-800x640");
   }
 
   @Test
@@ -291,7 +295,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw320dp-w320dp-h587dp-normal-long-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-587x320");
   }
 
   @Test
@@ -303,7 +307,7 @@ public class DeviceConfigTest {
         .isEqualTo(
             "en-rUS-ldltr-sw320dp-w320dp-h590dp-normal-long-notround-"
                 + optsForO
-                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav");
+                + "port-notnight-mdpi-finger-keyssoft-nokeys-navhidden-nonav-590x320");
   }
 
   @Ignore("consider how to reset uiMode type")
@@ -338,6 +342,39 @@ public class DeviceConfigTest {
     assertThat(displayMetrics.ydpi).isEqualTo((float) 240.0);
   }
 
+  /**
+   * Test that a number dpi (as opposed to a literal constant like xhdpi) is supported. This is
+   * necessary to simulate devices such as Nexus 6 that use intermediate densities. See
+   * DisplayMetrics.DENSITY_* constants.
+   */
+  @Test
+  public void applyQualifiers_numericDpi() {
+    applyQualifiers("w731dp-h1463dp-280dpi");
+    assertThat(displayMetrics.widthPixels).isEqualTo(1279);
+    assertThat(displayMetrics.heightPixels).isEqualTo(2560);
+    assertThat(displayMetrics.density).isEqualTo((float) 1.75);
+    assertThat(displayMetrics.xdpi).isEqualTo((float) 280.0);
+    assertThat(displayMetrics.ydpi).isEqualTo((float) 280.0);
+  }
+
+  @Test
+  public void applyQualifiers_pixels() {
+    applyQualifiers("280dpi-1280x2560");
+    assertThat(displayMetrics.widthPixels).isEqualTo(1280);
+    assertThat(displayMetrics.heightPixels).isEqualTo(2560);
+    assertThat(displayMetrics.density).isEqualTo((float) 1.75);
+    assertThat(displayMetrics.xdpi).isEqualTo((float) 280.0);
+    assertThat(displayMetrics.ydpi).isEqualTo((float) 280.0);
+
+    assertThat(configuration.screenWidthDp).isEqualTo(731);
+    assertThat(configuration.screenHeightDp).isEqualTo(1463);
+  }
+
+  @Test
+  public void applyQualifiers_pixelsWithoutDpiRejected() {
+    assertThrows(IllegalArgumentException.class, () -> applyQualifiers("1280x2560"));
+  }
+
   @Test
   public void uiModeNight() {
     assertThat(getUiModeNight(configuration)).isEqualTo(Configuration.UI_MODE_NIGHT_UNDEFINED);
@@ -354,7 +391,7 @@ public class DeviceConfigTest {
   }
 
   private String asQualifierString() {
-    return ConfigurationV25.resourceQualifierString(configuration, displayMetrics);
+    return RuntimeEnvironment.getQualifiers(configuration, displayMetrics);
   }
 
   private void changeDisplay(int displayId, String qualifiers) {
