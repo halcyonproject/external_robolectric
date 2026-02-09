@@ -13,6 +13,8 @@ android_robolectric_test {
         "src/sharedTest/java/android/telephony/PhoneNumberUtilsTest.java",
         // TODO:  tries to load the android native runtime and dies
         "src/sharedTest/java/android/view/accessibility/AccessibilityNodeInfoTest.java",
+        // TODO: RNG is not supported in the Android platform
+        "src/sharedTest/java/android/graphics/BitmapTest.java",
     ],
     static_libs: [
         "androidx.core_core",
