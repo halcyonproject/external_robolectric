@@ -5,7 +5,6 @@ import static android.os.Build.VERSION_CODES.S_V2;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static java.util.Objects.requireNonNull;
 import static org.robolectric.util.reflector.Reflector.reflector;
-import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothProfile;
@@ -15,19 +14,15 @@ import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.ComponentName;
 import android.content.Context;
-import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.ServiceManager;
-import android.util.Log;
 import javax.annotation.concurrent.GuardedBy;
 import org.robolectric.annotation.ClassName;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
-import org.robolectric.annotation.Resetter;
 import org.robolectric.util.reflector.ForType;
 
 /** Shadow for the IBluetoothManager stub system service */
@@ -90,7 +85,7 @@ public class ShadowIBluetoothManager {
       } catch (RemoteException e) {
         // nothing to do
       }
-    }
+  }
 
   @ForType(className = "android.bluetooth.IBluetoothProfileServiceConnection")
   private interface IBluetoothProfileServiceConnectionReflector {

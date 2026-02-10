@@ -8,12 +8,12 @@ third_party {
   license_type: NOTICE
   last_upgrade_date {
     year: 2026
-    month: 1
-    day: 9
+    month: 2
+    day: 3
   }
   identifier {
     type: "Git"
     value: "https://github.com/robolectric/robolectric/tree/google"
-    version: "7740e6ad399d2bec5040969c19ebbcad3cfb32be"
+    version: "cb18c34eb123b85d87d9be3ebff0b35e46588a01"
   }
 }
