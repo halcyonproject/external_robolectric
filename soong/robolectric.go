@@ -30,16 +30,12 @@ func init() {
 
 type buildProps struct {
 	android.ModuleBase
-	output android.WritablePath
-}
-
-var _ android.SourceFileProducer = (*buildProps)(nil)
-
-func (b *buildProps) Srcs() android.Paths {
-	return android.Paths{b.output}
 }
 
 func (b *buildProps) GenerateAndroidBuildActions(ctx android.ModuleContext) {
+	if ctx.ModuleDir() != "external/robolectric" || ctx.ModuleName() != "robolectric_build_props" {
+		ctx.ModuleErrorf("There can only be one robolectric_build_props in external/robolectric")
+	}
 
 	displayID := fmt.Sprintf("robolectric %s %s",
 		ctx.Config().PlatformVersionName(),
@@ -85,17 +81,10 @@ func (b *buildProps) GenerateAndroidBuildActions(ctx android.ModuleContext) {
 		"persist.debug.new_insets=0",
 	}
 
-	b.output = android.PathForModuleGen(ctx, "build.prop")
+	output := android.PathForModuleGen(ctx, "build.prop")
 
-	rule := android.NewRuleBuilder(pctx, ctx)
-	rule.SandboxDisabled()
-
-	rule.Command().Text("rm").Flag("-f").Output(b.output)
-	for _, l := range lines {
-		rule.Command().Text("echo").Text("'" + l + "'").Text(">>").Output(b.output)
-	}
-
-	rule.Build("build_prop", "robolectric build.prop")
+	android.WriteFileRule(ctx, output, strings.Join(lines, "\n"))
+	ctx.SetOutputFiles([]android.Path{output}, "")
 }
 
 func buildPropsFactory() android.Module {
