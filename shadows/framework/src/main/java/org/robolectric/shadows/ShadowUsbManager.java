@@ -134,6 +134,7 @@ public class ShadowUsbManager {
    * Revokes permission to a USB device granted to a package. This method does nothing if the
    * package doesn't have permission to access the device.
    */
+  @Implementation
   public void revokePermission(UsbDevice device, String packageName) {
     List<UsbDevice> usbDevices = grantedDevicePermissions.get(packageName);
     if (usbDevices != null) {
