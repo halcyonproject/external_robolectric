@@ -10,6 +10,7 @@ import static android.os.Build.VERSION_CODES.S;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
 import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 import static org.robolectric.util.reflector.Reflector.reflector;
+import static org.robolectric.versioning.VersionCalculator.POST_BAKLAVA;
 
 import android.os.MessageQueue;
 import android.view.Choreographer;
@@ -76,12 +77,22 @@ public class ShadowDisplayEventReceiver {
     return nativeInit(receiver, msgQueue);
   }
 
-  @Implementation(minSdk = UPSIDE_DOWN_CAKE)
+  @Implementation(minSdk = UPSIDE_DOWN_CAKE, maxSdk = BAKLAVA)
   protected static long nativeInit(
       WeakReference<DisplayEventReceiver> receiver,
       WeakReference<Object> vsyncEventData,
       MessageQueue msgQueue,
       int vsyncSource,
+      int eventRegistration,
+      long layerHandle) {
+    return nativeInit(receiver, msgQueue);
+  }
+
+  @Implementation(minSdk = POST_BAKLAVA)
+  protected static long nativeInit(
+      WeakReference<DisplayEventReceiver> receiver,
+      WeakReference<Object> vsyncEventData,
+      MessageQueue msgQueue,
       int eventRegistration,
       long layerHandle) {
     return nativeInit(receiver, msgQueue);
